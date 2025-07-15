@@ -1,0 +1,17 @@
+# Build outputs
+dist/
+build/
+
+# Dependencies
+node_modules/
+
+# Generated files
+*.d.ts
+
+# Logs
+*.log
+
+# Environment files
+.env
+.env.local
+.env.production 
