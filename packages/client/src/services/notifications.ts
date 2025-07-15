@@ -12,21 +12,34 @@ export interface NotificationOptions {
   persistent?: boolean;
 }
 
-export class NotificationService {
-  private container: HTMLElement | null = null;
-  private notifications: Map<string, HTMLElement> = new Map();
+/**
+ * Notification service module interface
+ */
+interface NotificationModule {
+  show: (options: NotificationOptions) => string;
+  remove: (id: string) => void;
+  clearAll: () => void;
+  error: (message: string, duration?: number) => string;
+  warning: (message: string, duration?: number) => string;
+  info: (message: string, duration?: number) => string;
+  success: (message: string, duration?: number) => string;
+}
 
-  constructor() {
-    this.createContainer();
-  }
+/**
+ * Create a notification service for displaying toast notifications
+ * @returns Notification service module with functions for showing notifications
+ */
+function createNotificationService(): NotificationModule {
+  let container: HTMLElement | null = null;
+  const notifications = new Map<string, HTMLElement>();
 
   /**
-   * Create the notification container
+   * Create the notification container in the DOM
    */
-  private createContainer(): void {
-    this.container = document.createElement('div');
-    this.container.id = 'notification-container';
-    this.container.style.cssText = `
+  function createContainer(): void {
+    container = document.createElement('div');
+    container.id = 'notification-container';
+    container.style.cssText = `
       position: fixed;
       top: 20px;
       right: 20px;
@@ -34,39 +47,40 @@ export class NotificationService {
       max-width: 400px;
       pointer-events: none;
     `;
-    document.body.appendChild(this.container);
+    document.body.appendChild(container);
   }
 
   /**
-   * Show a notification
+   * Get background color based on notification type
+   * @param type - The notification type
+   * @returns CSS color string for the notification background
    */
-  show(options: NotificationOptions): string {
-    const id = `notification-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    const notification = this.createNotification(id, options);
-    
-    if (this.container) {
-      this.container.appendChild(notification);
-      this.notifications.set(id, notification);
+  function getBackgroundColor(type: NotificationType): string {
+    switch (type) {
+      case 'error':
+        return '#ff5252';
+      case 'warning':
+        return '#ff9800';
+      case 'info':
+        return '#2196f3';
+      case 'success':
+        return '#4caf50';
+      default:
+        return '#757575';
     }
-
-    // Auto-remove after duration (default 5 seconds)
-    if (!options.persistent) {
-      setTimeout(() => {
-        this.remove(id);
-      }, options.duration || 5000);
-    }
-
-    return id;
   }
 
   /**
    * Create a notification element
+   * @param id - Unique identifier for the notification
+   * @param options - Notification configuration options
+   * @returns HTMLElement representing the notification
    */
-  private createNotification(id: string, options: NotificationOptions): HTMLElement {
+  function createNotification(id: string, options: NotificationOptions): HTMLElement {
     const notification = document.createElement('div');
     notification.id = id;
     notification.style.cssText = `
-      background: ${this.getBackgroundColor(options.type)};
+      background: ${getBackgroundColor(options.type)};
       color: white;
       padding: 16px;
       border-radius: 8px;
@@ -103,7 +117,7 @@ export class NotificationService {
       align-items: center;
       justify-content: center;
     `;
-    closeButton.onclick = () => this.remove(id);
+    closeButton.onclick = () => remove(id);
 
     // Add message
     const messageElement = document.createElement('div');
@@ -117,7 +131,7 @@ export class NotificationService {
     notification.appendChild(closeButton);
 
     // Click to dismiss
-    notification.onclick = () => this.remove(id);
+    notification.onclick = () => remove(id);
 
     // Animate in
     setTimeout(() => {
@@ -129,28 +143,40 @@ export class NotificationService {
   }
 
   /**
-   * Get background color based on notification type
+   * Show a notification
+   * @param options - Notification configuration options
+   * @returns Unique identifier for the notification
    */
-  private getBackgroundColor(type: NotificationType): string {
-    switch (type) {
-      case 'error':
-        return '#ff5252';
-      case 'warning':
-        return '#ff9800';
-      case 'info':
-        return '#2196f3';
-      case 'success':
-        return '#4caf50';
-      default:
-        return '#757575';
+  function show(options: NotificationOptions): string {
+    // Create container if it doesn't exist
+    if (!container) {
+      createContainer();
     }
+
+    const id = `notification-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const notification = createNotification(id, options);
+    
+    if (container) {
+      container.appendChild(notification);
+      notifications.set(id, notification);
+    }
+
+    // Auto-remove after duration (default 5 seconds)
+    if (!options.persistent) {
+      setTimeout(() => {
+        remove(id);
+      }, options.duration || 5000);
+    }
+
+    return id;
   }
 
   /**
    * Remove a notification
+   * @param id - Unique identifier of the notification to remove
    */
-  remove(id: string): void {
-    const notification = this.notifications.get(id);
+  function remove(id: string): void {
+    const notification = notifications.get(id);
     if (notification) {
       notification.style.opacity = '0';
       notification.style.transform = 'translateX(100%)';
@@ -159,7 +185,7 @@ export class NotificationService {
         if (notification.parentNode) {
           notification.parentNode.removeChild(notification);
         }
-        this.notifications.delete(id);
+        notifications.delete(id);
       }, 300);
     }
   }
@@ -167,40 +193,63 @@ export class NotificationService {
   /**
    * Clear all notifications
    */
-  clearAll(): void {
-    this.notifications.forEach((_, id) => {
-      this.remove(id);
+  function clearAll(): void {
+    notifications.forEach((_, id) => {
+      remove(id);
     });
   }
 
   /**
    * Show an error notification
+   * @param message - Error message to display
+   * @param duration - Duration in milliseconds (optional)
+   * @returns Unique identifier for the notification
    */
-  error(message: string, duration?: number): string {
-    return this.show({ type: 'error', message, duration });
+  function error(message: string, duration?: number): string {
+    return show({ type: 'error', message, duration });
   }
 
   /**
    * Show a warning notification
+   * @param message - Warning message to display
+   * @param duration - Duration in milliseconds (optional)
+   * @returns Unique identifier for the notification
    */
-  warning(message: string, duration?: number): string {
-    return this.show({ type: 'warning', message, duration });
+  function warning(message: string, duration?: number): string {
+    return show({ type: 'warning', message, duration });
   }
 
   /**
    * Show an info notification
+   * @param message - Info message to display
+   * @param duration - Duration in milliseconds (optional)
+   * @returns Unique identifier for the notification
    */
-  info(message: string, duration?: number): string {
-    return this.show({ type: 'info', message, duration });
+  function info(message: string, duration?: number): string {
+    return show({ type: 'info', message, duration });
   }
 
   /**
    * Show a success notification
+   * @param message - Success message to display
+   * @param duration - Duration in milliseconds (optional)
+   * @returns Unique identifier for the notification
    */
-  success(message: string, duration?: number): string {
-    return this.show({ type: 'success', message, duration });
+  function success(message: string, duration?: number): string {
+    return show({ type: 'success', message, duration });
   }
+
+  // Return the public API
+  return {
+    show,
+    remove,
+    clearAll,
+    error,
+    warning,
+    info,
+    success,
+  };
 }
 
-// Export singleton instance
-export const notifications = new NotificationService(); 
+// Create and export singleton instance
+export const notifications = createNotificationService(); 

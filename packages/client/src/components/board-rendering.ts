@@ -15,9 +15,20 @@ export interface BoardRenderingState {
 
 /**
  * Update the board display with current board data
- * @param scene - The Phaser scene
- * @param state - The board rendering state
- * @param setupTileInteraction - Callback to setup tile interactions
+ * Main board rendering function that manages the complete visual update pipeline:
+ * 1. Determines if this is initial setup or board update based on existing sprites
+ * 2. For updates: triggers animated transition with tiles falling off screen
+ * 3. For initial setup: creates static board with immediate positioning
+ * 4. Calculates responsive tile sizing based on screen dimensions
+ * 5. Applies theme colors and typography from common design system
+ * 6. Sets up tile interaction handlers for mouse/touch events
+ * @param scene - The active Phaser scene where board rendering occurs
+ * @param state - Board rendering state containing current board data and sprite references
+ * @param state.currentBoard - Game board data received from server with tile positions and letters
+ * @param state.tileSprites - 2D array of Phaser Rectangle objects representing tile backgrounds
+ * @param state.tileTexts - 2D array of Phaser Text objects for letter display
+ * @param setupTileInteraction - Callback function to configure interaction events for each tile
+ * @returns void - Updates visual elements directly in the Phaser scene
  */
 export function updateBoardDisplay(
   scene: Phaser.Scene,

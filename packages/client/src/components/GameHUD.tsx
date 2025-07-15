@@ -1,10 +1,8 @@
 /**
  * Game HUD Component
- * Displays player statistics, connection status, and word validation results
- * Uses game context for centralized state management
+ * Displays player session information and game state
  */
 
-import React from 'react';
 import { useGameContext } from '../context/GameContext';
 
 /**

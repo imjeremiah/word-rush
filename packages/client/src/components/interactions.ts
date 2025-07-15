@@ -17,12 +17,24 @@ export interface InteractionState {
 }
 
 /**
+ * Global map to track word submission timestamps for latency measurement
+ * Key: word string, Value: submission timestamp in milliseconds
+ * Used to calculate round-trip time when server responds
+ */
+export const wordSubmissionTimestamps = new Map<string, number>();
+
+/**
  * Check if two tiles are adjacent (including diagonally)
- * @param row1 - First tile row
- * @param col1 - First tile column
- * @param row2 - Second tile row
- * @param col2 - Second tile column
- * @returns True if tiles are adjacent
+ * Validates tile adjacency for word path formation using 8-directional connectivity:
+ * - Horizontal and vertical neighbors (4-connected)
+ * - Diagonal neighbors (8-connected total)
+ * - Excludes same-position (distance 0) as invalid
+ * Used for validating legal tile selection paths during word formation
+ * @param row1 - First tile row coordinate (0-indexed from top)
+ * @param col1 - First tile column coordinate (0-indexed from left)
+ * @param row2 - Second tile row coordinate (0-indexed from top)
+ * @param col2 - Second tile column coordinate (0-indexed from left)
+ * @returns True if tiles are adjacent in any of 8 directions, false otherwise
  */
 export function areAdjacent(row1: number, col1: number, row2: number, col2: number): boolean {
   const rowDiff = Math.abs(row1 - row2);
@@ -31,23 +43,32 @@ export function areAdjacent(row1: number, col1: number, row2: number, col2: numb
 }
 
 /**
- * Check if a tile is already selected
- * @param row - Tile row
- * @param col - Tile column
- * @param state - Interaction state
- * @returns True if tile is selected
+ * Check if a tile is already selected in the current word path
+ * Prevents tile reuse within a single word selection by checking position coordinates
+ * Essential for maintaining valid word paths according to game rules
+ * @param row - Tile row coordinate to check (0-indexed from top)
+ * @param col - Tile column coordinate to check (0-indexed from left)
+ * @param state - Current interaction state containing selected tiles array
+ * @param state.selectedTiles - Array of currently selected tiles with position data
+ * @returns True if tile position is already in the current selection path
  */
 export function isTileSelected(row: number, col: number, state: InteractionState): boolean {
   return state.selectedTiles.some(selected => selected.row === row && selected.col === col);
 }
 
 /**
- * Handle tile pointer down event
- * @param row - Tile row
- * @param col - Tile column
- * @param tileData - Tile data
- * @param boardState - Board rendering state
- * @param interactionState - Interaction state
+ * Handle tile pointer down event to initiate word selection
+ * Starts new word selection sequence when player clicks/touches a tile:
+ * 1. Prevents starting new selection if one is already in progress
+ * 2. Initializes selection state with clicked tile as first letter
+ * 3. Applies visual feedback by highlighting selected tile
+ * 4. Updates word display with first letter of new word
+ * @param row - Row coordinate of clicked tile (0-indexed from top)
+ * @param col - Column coordinate of clicked tile (0-indexed from left)
+ * @param tileData - Complete LetterTile data including letter, points, and position
+ * @param boardState - Board rendering state for visual updates and tile access
+ * @param interactionState - Interaction state to track selection progress and UI updates
+ * @returns void - Updates interaction state and visual elements directly
  */
 export function onTilePointerDown(
   row: number,
@@ -127,9 +148,15 @@ export function onTilePointerOver(
 }
 
 /**
- * Handle pointer up event (end selection)
- * @param boardState - Board rendering state
- * @param interactionState - Interaction state
+ * Handle pointer up event (end selection) with latency tracking
+ * Completes word selection and submits to server with timestamp tracking:
+ * 1. Validates selection has content and socket connection exists
+ * 2. Records submission timestamp for latency measurement
+ * 3. Emits word:submit event to server with word data
+ * 4. Clears current selection state for next word
+ * @param boardState - Board rendering state for visual updates
+ * @param interactionState - Interaction state containing selection and socket
+ * @returns void - Sends word submission to server and resets UI state
  */
 export function onPointerUp(
   boardState: BoardRenderingState,
@@ -141,6 +168,9 @@ export function onPointerUp(
   
   // Submit word if it's at least 2 letters
   if (word.length >= 2 && interactionState.gameSocket) {
+    // Record submission timestamp for latency measurement
+    wordSubmissionTimestamps.set(word, Date.now());
+    
     interactionState.gameSocket.emit('word:submit', {
       word,
       tiles: interactionState.selectedTiles.map(selected => selected.tile),

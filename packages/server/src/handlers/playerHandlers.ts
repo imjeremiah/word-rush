@@ -6,19 +6,28 @@
 
 import { Socket } from 'socket.io';
 import { ServerToClientEvents, ClientToServerEvents, InterServerEvents, SocketData } from '@word-rush/common';
-import { SessionService } from '../services/session.js';
+
+// Type import only, not runtime import to avoid unused var error
+type SessionServiceType = typeof import('../services/session.js').sessionService;
 
 /**
  * Handle player reconnection attempts
- * Tries to restore previous session based on session ID or username
- * @param socket - Socket connection to the client
- * @param data - Reconnection data containing session ID and optional username
- * @param sessionService - Session service for managing player sessions
+ * Manages the complete player reconnection flow to restore previous game sessions:
+ * 1. Searches for existing session by session ID or username fallback
+ * 2. Migrates found session to new socket connection
+ * 3. Preserves player score, username, and game progress
+ * 4. Sends session restoration confirmation or creates new session if not found
+ * @param socket - Socket.io connection from the reconnecting client
+ * @param data - Reconnection request data from client
+ * @param data.sessionId - Previous session identifier for exact match lookup
+ * @param data.username - Optional username for fallback session search
+ * @param sessionService - Functional session service module for managing player state
+ * @returns void - Communicates results via socket events (player:reconnect-success, player:reconnect-failed)
  */
 export function handlePlayerReconnect(
   socket: Socket<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>,
   data: { sessionId: string; username?: string },
-  sessionService: SessionService
+  sessionService: SessionServiceType
 ): void {
   const { sessionId, username } = data;
   console.log(`[${new Date().toISOString()}] Player attempting to reconnect with sessionId: ${sessionId}`);
@@ -53,15 +62,21 @@ export function handlePlayerReconnect(
 
 /**
  * Handle player joining with username
- * Creates or updates session with provided username
- * @param socket - Socket connection to the client
- * @param data - Join data containing player name
- * @param sessionService - Session service for managing player sessions
+ * Processes new player registration or existing player re-identification:
+ * 1. Creates new session if player is connecting for first time
+ * 2. Updates existing session with new username if reconnecting
+ * 3. Associates player identity with socket connection
+ * 4. Sends updated session data to client for UI updates
+ * @param socket - Socket.io connection from the joining client
+ * @param data - Player join request data
+ * @param data.playerName - Chosen username for the player (1-50 characters, trimmed)
+ * @param sessionService - Functional session service module for managing player state
+ * @returns void - Sends player:session-update event with new session data
  */
 export function handlePlayerJoin(
   socket: Socket<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>,
   data: { playerName: string },
-  sessionService: SessionService
+  sessionService: SessionServiceType
 ): void {
   const { playerName } = data;
   const updatedSession = sessionService.createOrUpdatePlayerSession(socket.id, playerName);
@@ -71,13 +86,18 @@ export function handlePlayerJoin(
 
 /**
  * Handle player connection
- * Creates initial session and sends welcome message
- * @param socket - Socket connection to the client
- * @param sessionService - Session service for managing player sessions
+ * Manages initial player connection setup and session initialization:
+ * 1. Creates new player session with auto-generated username
+ * 2. Associates session with socket connection ID
+ * 3. Sends welcome message and session data to client
+ * 4. Logs connection event for monitoring and debugging
+ * @param socket - Socket.io connection from the newly connected client
+ * @param sessionService - Functional session service module for managing player state
+ * @returns void - Sends server:welcome and player:session-update events
  */
 export function handlePlayerConnect(
   socket: Socket<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>,
-  sessionService: SessionService
+  sessionService: SessionServiceType
 ): void {
   console.log(`[${new Date().toISOString()}] Player connected: ${socket.id}`);
 
@@ -96,15 +116,20 @@ export function handlePlayerConnect(
 
 /**
  * Handle player disconnection
- * Marks player as disconnected but keeps session for potential reconnection
- * @param socket - Socket connection to the client
- * @param reason - Disconnect reason
- * @param sessionService - Session service for managing player sessions
+ * Manages graceful player disconnection while preserving session for reconnection:
+ * 1. Marks player session as disconnected (but preserves data)
+ * 2. Logs disconnection event with reason for monitoring
+ * 3. Maintains session in memory for potential reconnection within timeout window
+ * 4. Session will be cleaned up automatically after inactivity period
+ * @param socket - Socket.io connection that is disconnecting
+ * @param reason - Disconnection reason provided by Socket.io (network, client, server, etc.)
+ * @param sessionService - Functional session service module for managing player state
+ * @returns void - Updates session state internally, no client communication needed
  */
 export function handlePlayerDisconnect(
   socket: Socket<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>,
   reason: string,
-  sessionService: SessionService
+  sessionService: SessionServiceType
 ): void {
   console.log(
     `[${new Date().toISOString()}] Player disconnected: ${socket.id}, reason: ${reason}`
@@ -116,13 +141,19 @@ export function handlePlayerDisconnect(
 
 /**
  * Handle reconnection failure by creating new session
- * @param socket - Socket connection to the client
- * @param sessionService - Session service for managing player sessions
- * @param username - Optional username from failed reconnection attempt
+ * Fallback handler when session restoration fails during reconnection attempt:
+ * 1. Creates a fresh player session with new socket ID
+ * 2. Uses provided username or generates default name if none available
+ * 3. Notifies client that reconnection failed but new session was created
+ * 4. Logs the reconnection failure for monitoring and debugging
+ * @param socket - Socket.io connection from the failed reconnection attempt
+ * @param sessionService - Functional session service module for managing player state
+ * @param username - Optional username from reconnection attempt to preserve user identity
+ * @returns void - Sends player:reconnect-failed and player:session-update events
  */
 function handleReconnectionFailure(
   socket: Socket<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>,
-  sessionService: SessionService,
+  sessionService: SessionServiceType,
   username?: string
 ): void {
   console.log(`[${new Date().toISOString()}] No existing session found for reconnection, creating new session`);

@@ -9,10 +9,10 @@ import { Server, Socket } from 'socket.io';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import { SocketRateLimiter } from './services/rate-limiter.js';
-import { DictionaryService } from './services/dictionary.js';
-import { BoardService } from './services/board.js';
-import { SessionService } from './services/session.js';
+import { socketRateLimiter } from './services/rate-limiter.js';
+import { dictionaryService } from './services/dictionary.js';
+import { generateBoard } from './services/board.js';
+import { sessionService } from './services/session.js';
 import { validateSocketEvent, ClientEventSchemas } from './validation/schemas.js';
 import { handleWordSubmit } from './handlers/wordHandlers.js';
 import { handlePlayerReconnect, handlePlayerJoin, handlePlayerConnect, handlePlayerDisconnect } from './handlers/playerHandlers.js';
@@ -21,7 +21,8 @@ import {
   ServerToClientEvents, 
   ClientToServerEvents, 
   InterServerEvents, 
-  SocketData
+  SocketData,
+  LetterTile
 } from '@word-rush/common';
 
 const app = express();
@@ -43,12 +44,7 @@ const io = new Server<
 
 const PORT = process.env.PORT || 3001;
 
-// Initialize services
-const socketRateLimiter = new SocketRateLimiter();
-const dictionaryService = new DictionaryService();
-const boardService = new BoardService(dictionaryService);
-const sessionService = new SessionService();
-
+// Services are now functional modules - no initialization needed
 
 
 // Security middleware
@@ -166,34 +162,34 @@ io.on('connection', (socket) => {
   handlePlayerConnect(socket, sessionService);
   
   // Send initial board to the player
-  const initialBoard = boardService.generateBoard();
+  const initialBoard = generateBoard(dictionaryService);
   socket.emit('game:initial-board', { board: initialBoard });
 
   // Create services object for handlers
   const services = {
     dictionaryService,
-    boardService,
+    generateBoard,
     sessionService
   };
 
   // Handle player reconnection
   socket.on('player:reconnect', withErrorHandling(socket, 'player:reconnect', (data) => {
-    handlePlayerReconnect(socket, data, sessionService);
+    handlePlayerReconnect(socket, data as { sessionId: string; username?: string }, sessionService);
   }));
 
   // Handle player joining with username
   socket.on('game:join', withErrorHandling(socket, 'game:join', (data) => {
-    handlePlayerJoin(socket, data, sessionService);
+    handlePlayerJoin(socket, data as { playerName: string }, sessionService);
   }));
 
   // Handle board requests
   socket.on('game:request-board', withErrorHandlingNoData(socket, () => {
-    handleBoardRequest(socket, boardService);
+    handleBoardRequest(socket, dictionaryService, generateBoard);
   }));
 
   // Word submission handler
   socket.on('word:submit', withErrorHandling(socket, 'word:submit', (data) => {
-    handleWordSubmit(socket, data, services);
+    handleWordSubmit(socket, data as { word: string; tiles: LetterTile[] }, services);
   }));
 
   // Handle disconnection

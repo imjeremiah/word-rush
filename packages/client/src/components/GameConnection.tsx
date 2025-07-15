@@ -9,6 +9,36 @@ import { io } from 'socket.io-client';
 import { useGameContext } from '../context/GameContext';
 import { notifications } from '../services/notifications';
 import { withServerEventValidation } from '../validation/schemas';
+import { wordSubmissionTimestamps } from './interactions';
+
+/**
+ * Measure and log word validation latency
+ * Calculates round-trip time from submission to response and logs performance
+ * @param word - The word that was validated
+ * @param isValid - Whether the word was valid or not
+ * @returns void - Logs latency information to console
+ */
+function measureWordLatency(word: string, isValid: boolean): void {
+  const submissionTime = wordSubmissionTimestamps.get(word);
+  if (submissionTime) {
+    const responseTime = Date.now();
+    const latency = responseTime - submissionTime;
+    
+    // Clean up the timestamp
+    wordSubmissionTimestamps.delete(word);
+    
+    // Log with performance assessment
+    const status = isValid ? 'VALID' : 'INVALID';
+    const performanceWarning = latency > 150 ? ' ⚠️ SLOW' : '';
+    
+    console.log(`[Client] Word validation latency: ${latency}ms (${status}) - "${word}"${performanceWarning}`);
+    
+    // Additional warning for slow responses
+    if (latency > 150) {
+      console.warn(`[Client] Word validation exceeded 150ms target: ${latency}ms for "${word}"`);
+    }
+  }
+}
 
 /**
  * Game Connection component that manages Socket.io connectivity
@@ -108,6 +138,7 @@ function GameConnection(): null {
       });
       
       notifications.success(`"${data.word}" is valid! +${data.points} points`, 2000);
+      measureWordLatency(data.word, true);
     }));
 
     newSocket.on('word:invalid', withServerEventValidation('word:invalid', (data) => {
@@ -119,6 +150,7 @@ function GameConnection(): null {
       });
       
       notifications.error(`"${data.word}" is not valid: ${data.reason}`, 3000);
+      measureWordLatency(data.word, false);
     }));
 
     newSocket.on('game:score-update', withServerEventValidation('game:score-update', (data) => {

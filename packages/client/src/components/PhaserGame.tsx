@@ -118,8 +118,16 @@ const layoutState: LayoutState = {
 let loadingText: Phaser.GameObjects.Text | null = null;
 
 /**
- * Phaser preload function - loads game assets
- * @param socket - Optional Socket.io connection
+ * Phaser preload function - loads game assets and initializes font loading
+ * Core Phaser lifecycle method that handles initial resource preparation:
+ * 1. Establishes socket connection reference for game communication
+ * 2. Displays loading indicator to provide user feedback during startup
+ * 3. Initiates Google Fonts loading for consistent typography across platforms
+ * 4. Sets up socket event listeners for board data reception from server
+ * 5. Handles font loading success/failure with appropriate fallback strategies
+ * Called automatically by Phaser before scene creation begins
+ * @param socket - Optional Socket.io connection for server communication and real-time updates
+ * @returns void - Configures scene resources and event handlers for subsequent lifecycle phases
  */
 function preload(this: Phaser.Scene, socket?: Socket<ServerToClientEvents, ClientToServerEvents>) {
   interactionState.gameSocket = socket || null;
@@ -172,8 +180,17 @@ function preload(this: Phaser.Scene, socket?: Socket<ServerToClientEvents, Clien
 }
 
 /**
- * Phaser create function - initializes the game scene
- * @param socket - Optional Socket.io connection
+ * Phaser create function - initializes the game scene and UI elements
+ * Main scene initialization method called after preload completion:
+ * 1. Clears loading indicators and establishes clean scene state
+ * 2. Initializes tile sprite and text arrays for board rendering
+ * 3. Creates initial game layout with title and instruction text
+ * 4. Sets up responsive design handler for window resize events
+ * 5. Configures global pointer event system for tile interactions
+ * 6. Renders initial board if data available, otherwise requests from server
+ * Called automatically by Phaser after preload phase completes successfully
+ * @param socket - Optional Socket.io connection for server communication and board requests
+ * @returns void - Establishes complete interactive game scene ready for player input
  */
 function create(this: Phaser.Scene, socket?: Socket<ServerToClientEvents, ClientToServerEvents>) {
   interactionState.gameSocket = socket || null;

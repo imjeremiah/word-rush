@@ -1,9 +1,9 @@
 /**
- * Game Context - Shared state for socket connection and player session
- * Provides centralized state management for game-related data
+ * Game Context
+ * Centralized state management for game data using React Context API
  */
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, ReactNode } from 'react';
 import { Socket } from 'socket.io-client';
 import { ServerToClientEvents, ClientToServerEvents, PlayerSession } from '@word-rush/common';
 

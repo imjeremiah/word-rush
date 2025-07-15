@@ -7,18 +7,30 @@ import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
-export class DictionaryService {
-  private wordSet: Set<string> = new Set();
-  private isLoaded = false;
+/**
+ * Dictionary service state and functions
+ */
+export interface DictionaryModule {
+  isValidWord: (word: string) => boolean;
+  getWordCount: () => number;
+  isReady: () => boolean;
+  getWordsStartingWith: (prefix: string, limit?: number) => string[];
+}
 
-  constructor() {
-    this.loadWordList();
-  }
+/**
+ * Load the tournament word list into memory
+ * @returns Dictionary service module with all functions
+ * @throws Error if the dictionary fails to load
+ */
+function createDictionaryService(): DictionaryModule {
+  const wordSet: Set<string> = new Set();
+  let isLoaded = false;
 
   /**
    * Load the tournament word list into memory
+   * @throws Error if the dictionary file cannot be read or parsed
    */
-  private loadWordList(): void {
+  function loadWordList(): void {
     try {
       const __filename = fileURLToPath(import.meta.url);
       const __dirname = dirname(__filename);
@@ -32,9 +44,9 @@ export class DictionaryService {
         .filter(word => word.length > 0);
 
       // Add all words to the set for O(1) lookup
-      words.forEach(word => this.wordSet.add(word));
+      words.forEach(word => wordSet.add(word));
       
-      this.isLoaded = true;
+      isLoaded = true;
       console.log(`[${new Date().toISOString()}] Dictionary loaded: ${words.length} words`);
     } catch (error) {
       console.error(`[${new Date().toISOString()}] Failed to load dictionary:`, error);
@@ -46,9 +58,10 @@ export class DictionaryService {
    * Check if a word is valid according to the tournament word list
    * @param word - The word to validate (case insensitive)
    * @returns True if the word exists in the tournament dictionary
+   * @throws Error if the dictionary is not loaded
    */
-  isValidWord(word: string): boolean {
-    if (!this.isLoaded) {
+  function isValidWord(word: string): boolean {
+    if (!isLoaded) {
       throw new Error('Dictionary not loaded');
     }
     
@@ -61,21 +74,23 @@ export class DictionaryService {
     }
     
     // Check if word exists in the tournament word list
-    return this.wordSet.has(normalizedWord);
+    return wordSet.has(normalizedWord);
   }
 
   /**
    * Get the total number of words in the dictionary
+   * @returns The number of words loaded in the dictionary
    */
-  getWordCount(): number {
-    return this.wordSet.size;
+  function getWordCount(): number {
+    return wordSet.size;
   }
 
   /**
    * Check if the dictionary is loaded and ready
+   * @returns True if the dictionary has been successfully loaded
    */
-  isReady(): boolean {
-    return this.isLoaded;
+  function isReady(): boolean {
+    return isLoaded;
   }
 
   /**
@@ -84,15 +99,15 @@ export class DictionaryService {
    * @param limit - Maximum number of words to return (default: 10)
    * @returns Array of words that start with the given prefix, sorted alphabetically
    */
-  getWordsStartingWith(prefix: string, limit: number = 10): string[] {
-    if (!this.isLoaded) {
+  function getWordsStartingWith(prefix: string, limit: number = 10): string[] {
+    if (!isLoaded) {
       return [];
     }
     
     const normalizedPrefix = prefix.trim().toUpperCase();
     const results: string[] = [];
     
-    for (const word of this.wordSet) {
+    for (const word of wordSet) {
       if (word.startsWith(normalizedPrefix)) {
         results.push(word);
         if (results.length >= limit) {
@@ -103,4 +118,18 @@ export class DictionaryService {
     
     return results.sort();
   }
-} 
+
+  // Initialize the dictionary on creation
+  loadWordList();
+
+  // Return the public API
+  return {
+    isValidWord,
+    getWordCount,
+    isReady,
+    getWordsStartingWith,
+  };
+}
+
+// Create and export the dictionary service instance
+export const dictionaryService = createDictionaryService(); 
