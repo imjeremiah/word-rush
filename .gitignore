@@ -1,14 +1,14 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-pnpm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-lerna-debug.log*
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
 
-# Diagnostic reports (https://nodejs.org/api/report.html)
-report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+# Testing
+coverage/
+
+# Production builds
+build/
+dist/
 
 # Runtime data
 pids
@@ -20,13 +20,13 @@ pids
 lib-cov
 
 # Coverage directory used by tools like istanbul
-coverage
+coverage/
 *.lcov
 
 # nyc test coverage
 .nyc_output
 
-# Grunt intermediate storage (https://gruntjs.com/creating-plugins#storing-intermediate-files)
+# Grunt intermediate storage (https://gruntjs.com/creating-plugins#storing-task-files)
 .grunt
 
 # Bower dependency directory (https://bower.io/)
@@ -42,11 +42,11 @@ build/Release
 node_modules/
 jspm_packages/
 
-# Snowpack dependency directory (https://snowpack.dev/)
-web_modules/
-
 # TypeScript v1 declaration files
 typings/
+
+# TypeScript cache
+*.tsbuildinfo
 
 # Optional npm cache directory
 .npm
@@ -56,8 +56,9 @@ typings/
 
 # Microbundle cache
 .rpt2_cache/
-.rts2_cache/
-.rts_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
 
 # Optional REPL history
 .node_repl_history
@@ -70,47 +71,76 @@ typings/
 
 # dotenv environment variables file
 .env
+.env.local
 .env.development.local
 .env.test.local
 .env.production.local
 
-# parcel-bundler cache files
+# parcel-bundler cache (https://parceljs.org/)
 .cache
+.parcel-cache
 
 # Next.js build output
 .next
-out
 
-# Nuxt.js build output
+# Nuxt.js build / generate output
 .nuxt
 dist
 
-# Svelte build output
-.svelte-kit
-
-# SvelteKit build output
-build
-
-# Remix build output
-.remix/
-build/
-public/build/
-
-# Docusaurus build output
-.docusaurus
-
-# Gatsby build output
+# Gatsby files
 .cache/
-public
+# Comment in the public line in if your project uses Gatsby and *not* Next.js
+# https://nextjs.org/blog/next-9-1#public-directory-support
+# public
 
-# Hexo build output
-public
+# vuepress build output
+.vuepress/dist
 
-# Mac files
+# Serverless directories
+.serverless/
+
+# FuseBox cache
+.fusebox/
+
+# DynamoDB Local files
+.dynamodb/
+
+# TernJS port file
+.tern-port
+
+# Stores VSCode versions used for testing VSCode extensions
+.vscode-test
+
+# yarn v2
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
 
-# Cursor
-.cursor/
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
 
-# Taskmaster
-.taskmaster/ 
+# Phaser
+*.js.map 

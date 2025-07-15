@@ -11,53 +11,60 @@
 ### Features & Tasks
 
 #### 1. Monorepo & Project Initialization
-*   **Description**: Set up the core monorepo structure using npm/yarn/pnpm workspaces to manage the client, server, and common packages independently.
-*   **Steps**:
-    1.  Initialize the root `package.json` to define the workspaces.
-    2.  Create the `packages/client`, `packages/server`, and `packages/common` directories.
-    3.  Create basic `package.json` files within each of the three packages.
-    4.  Configure a root `tsconfig.json` to be extended by the individual packages.
-    5.  Move all existing project documentation (`.md` files) into a new `docs/` directory.
+
+- **Description**: Set up the core monorepo structure using npm/yarn/pnpm workspaces to manage the client, server, and common packages independently.
+- **Steps**:
+  1.  Initialize the root `package.json` to define the workspaces.
+  2.  Create the `packages/client`, `packages/server`, and `packages/common` directories.
+  3.  Create basic `package.json` files within each of the three packages.
+  4.  Configure a root `tsconfig.json` to be extended by the individual packages.
+  5.  Move all existing project documentation (`.md` files) into a new `docs/` directory.
 
 #### 2. Basic Server Setup
-*   **Description**: Create a minimal Express server that can run and accept Socket.io connections.
-*   **Steps**:
-    1.  In the `server` package, install `express`, `socket.io`, `typescript`, `ts-node`, and `nodemon`.
-    2.  Create an `index.ts` file that initializes a basic Express server.
-    3.  Integrate Socket.io, attach it to the server, and add a listener to log a message upon a new client connection.
-    4.  Add a `dev` script to the server's `package.json` to run the server using `nodemon`.
+
+- **Description**: Create a minimal Express server that can run and accept Socket.io connections.
+- **Steps**:
+  1.  In the `server` package, install `express`, `socket.io`, `typescript`, `ts-node`, and `nodemon`.
+  2.  Create an `index.ts` file that initializes a basic Express server.
+  3.  Integrate Socket.io, attach it to the server, and add a listener to log a message upon a new client connection.
+  4.  Add a `dev` script to the server's `package.json` to run the server using `nodemon`.
 
 #### 3. Basic Client Setup
-*   **Description**: Scaffold the frontend application using Vite and integrate a blank Phaser game.
-*   **Steps**:
-    1.  In the `client` package, use Vite to scaffold a new `React + TypeScript` project.
-    2.  Install `phaser` and `socket.io-client`.
-    3.  Create a minimal Phaser game instance with a single, empty `GameScene`.
-    4.  Create a React component to house and render the Phaser game canvas.
+
+- **Description**: Scaffold the frontend application using Vite and integrate a blank Phaser game.
+- **Steps**:
+  1.  In the `client` package, use Vite to scaffold a new `React + TypeScript` project.
+  2.  Install `phaser` and `socket.io-client`.
+  3.  Create a minimal Phaser game instance with a single, empty `GameScene`.
+  4.  Create a React component to house and render the Phaser game canvas.
 
 #### 4. Client-Server Communication
-*   **Description**: Ensure the client can successfully connect to the server's WebSocket.
-*   **Steps**:
-    1.  Implement a client-side service to initialize the Socket.io connection.
-    2.  Verify the connection by logging success messages on both the client and the server.
-    3.  Configure Vite's development server (`vite.config.ts`) to proxy API requests to the Express backend to prevent CORS issues.
+
+- **Description**: Ensure the client can successfully connect to the server's WebSocket.
+- **Steps**:
+  1.  Implement a client-side service to initialize the Socket.io connection.
+  2.  Verify the connection by logging success messages on both the client and the server.
+  3.  Configure Vite's development server (`vite.config.ts`) to proxy API requests to the Express backend to prevent CORS issues.
 
 #### 5. Linting and Formatting
-*   **Description**: Establish a consistent code style across the entire monorepo.
-*   **Steps**:
-    1.  Install and configure `ESLint` and `Prettier` in the root of the project.
-    2.  Create shared configurations that can be extended by the `client` and `server` packages.
-    3.  Add `lint` and `format` scripts to the root `package.json`.
+
+- **Description**: Establish a consistent code style across the entire monorepo.
+- **Steps**:
+  1.  Install and configure `ESLint` and `Prettier` in the root of the project.
+  2.  Create shared configurations that can be extended by the `client` and `server` packages.
+  3.  Add `lint` and `format` scripts to the root `package.json`.
 
 #### 6. Project Logging & Documentation
-*   **Description**: Initialize the AI development log.
-*   **Steps**:
-    1.  Create the `_docs/brainlift.md` file.
-    2.  Add the initial entry documenting the project setup and gap analysis session.
+
+- **Description**: Initialize the AI development log.
+- **Steps**:
+  1.  Create the `_docs/brainlift.md` file.
+  2.  Add the initial entry documenting the project setup and gap analysis session.
 
 #### 7. Basic Security & Error Handling
-*   **Description**: Implement foundational security and error handling on the server.
-*   **Steps**:
-    1.  On the server, add a basic rate-limiter for socket events to prevent spam.
-    2.  Implement a global `try...catch` wrapper for all socket event handlers that emits a `server:error` event to the client on failure.
-    3.  On the client, create a listener for `server:error` that displays a temporary toast notification. 
+
+- **Description**: Implement foundational security and error handling on the server.
+- **Steps**:
+  1.  On the server, add a basic rate-limiter for socket events to prevent spam.
+  2.  Implement a global `try...catch` wrapper for all socket event handlers that emits a `server:error` event to the client on failure.
+  3.  On the client, create a listener for `server:error` that displays a temporary toast notification.

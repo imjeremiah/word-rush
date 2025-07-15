@@ -6,25 +6,26 @@ This repository is built following a strict "AI-first" development philosophy. F
 
 ## Documentation
 
--   [**Project Overview**](./docs/project-overview.md): The core concept, features, and goals.
--   [**User Flow**](./docs/user-flow.md): The complete user journey.
--   [**Technology Stack**](./docs/tech-stack.md): A detailed breakdown of the tech stack and best practices.
--   [**UI & Interaction Rules**](./docs/ui-rules.md): Core principles for UI design.
--   [**Theme & Style Guide**](./docs/theme-rules.md): The specific colors, fonts, and styles.
--   [**Project & Code Conventions**](./docs/project-rules.md): The definitive guide to our development process, including structure and code style.
--   [**Development Phases**](./docs/phases/): A complete, iterative plan for building the project.
+- [**Project Overview**](./docs/project-overview.md): The core concept, features, and goals.
+- [**User Flow**](./docs/user-flow.md): The complete user journey.
+- [**Technology Stack**](./docs/tech-stack.md): A detailed breakdown of the tech stack and best practices.
+- [**UI & Interaction Rules**](./docs/ui-rules.md): Core principles for UI design.
+- [**Theme & Style Guide**](./docs/theme-rules.md): The specific colors, fonts, and styles.
+- [**Project & Code Conventions**](./docs/project-rules.md): The definitive guide to our development process, including structure and code style.
+- [**Development Phases**](./docs/phases/): A complete, iterative plan for building the project.
 
 ## Core Technologies
 
--   **Frontend**: React, Phaser 3, Vite, TypeScript
--   **Backend**: Node.js, Express, Socket.io, TypeScript
--   **Deployment**: Render
+- **Frontend**: React, Phaser 3, Vite, TypeScript
+- **Backend**: Node.js, Express, Socket.io, TypeScript
+- **Deployment**: Render
 
 ## Getting Started
 
 This project is a monorepo managed with npm workspaces.
 
 1.  **Install Dependencies**:
+
     ```sh
     npm install
     ```
@@ -35,4 +36,4 @@ This project is a monorepo managed with npm workspaces.
     npm run dev
     ```
 
-Please review the [Project & Code Conventions](./docs/project-rules.md) before contributing. 
+Please review the [Project & Code Conventions](./docs/project-rules.md) before contributing.

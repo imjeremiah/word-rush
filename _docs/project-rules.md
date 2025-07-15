@@ -5,10 +5,11 @@ This document outlines the definitive rules and conventions for the Word Rush pr
 ## 1. Core Philosophy: AI-First Development
 
 Our primary goal is to create an "AI-first" codebase. This means:
--   **Modularity**: Code is broken down into small, single-responsibility modules.
--   **Clarity**: Code is self-documenting, with clear naming and explicit types.
--   **Navigability**: A strict and logical file structure makes it easy to find any piece of code.
--   **Scalability**: The architecture is designed to grow without becoming overly complex.
+
+- **Modularity**: Code is broken down into small, single-responsibility modules.
+- **Clarity**: Code is self-documenting, with clear naming and explicit types.
+- **Navigability**: A strict and logical file structure makes it easy to find any piece of code.
+- **Scalability**: The architecture is designed to grow without becoming overly complex.
 
 ## 2. Directory Structure
 
@@ -51,32 +52,34 @@ We will use a monorepo structure managed by npm/yarn/pnpm workspaces. This keeps
 
 ## 3. File & Directory Naming Conventions
 
--   **Directories**: `kebab-case` (e.g., `game-logic`, `ui-components`).
--   **React Components**: `PascalCase` (e.g., `PlayerAvatar.tsx`).
--   **Hooks**: `useCamelCase` (e.g., `useSocket.ts`).
--   **All Other `.ts` / `.tsx` files**: `kebab-case` (e.g., `game-state.ts`, `socket-handler.ts`).
+- **Directories**: `kebab-case` (e.g., `game-logic`, `ui-components`).
+- **React Components**: `PascalCase` (e.g., `PlayerAvatar.tsx`).
+- **Hooks**: `useCamelCase` (e.g., `useSocket.ts`).
+- **All Other `.ts` / `.tsx` files**: `kebab-case` (e.g., `game-state.ts`, `socket-handler.ts`).
 
 ## 4. Code Style & Rules
 
 ### File Structure & Documentation
--   **File Header**: Every `.ts` and `.tsx` file must begin with a TSDoc block comment that explains the file's purpose and contents.
--   **Function Documentation**: Every function must be preceded by a TSDoc block comment detailing its purpose, all parameters (`@param`), and what it returns (`@returns`).
--   **File Length**: No file may exceed 500 lines. This is a strict rule to enforce modularity.
+
+- **File Header**: Every `.ts` and `.tsx` file must begin with a TSDoc block comment that explains the file's purpose and contents.
+- **Function Documentation**: Every function must be preceded by a TSDoc block comment detailing its purpose, all parameters (`@param`), and what it returns (`@returns`).
+- **File Length**: No file may exceed 500 lines. This is a strict rule to enforce modularity.
 
 ### Language & Patterns
--   **Functional Programming**: We will use functional and declarative patterns. Avoid `class` syntax entirely.
--   **Immutability**: Data structures should be treated as immutable. Use non-mutating methods (e.g., `.map`, `.filter`, spread syntax) instead of mutating data in place.
--   **Pure Functions**: Use the `function` keyword for pure functions. For other functions (e.g., those with side effects), use arrow function syntax.
--   **Type Safety**:
-    -   TypeScript's `strict` mode must be enabled.
-    -   Avoid `any` at all costs. Use `unknown` for data from external sources and perform runtime validation (e.g., with `zod`).
--   **Error Handling**: Throw descriptive errors. Do not return `null` or fallback values to hide problems. All asynchronous operations must have `.catch()` handlers.
--   **Variable Naming**: Use descriptive names that clarify intent. For booleans, use auxiliary verbs (e.g., `isLoading`, `hasError`, `canSubmit`).
--   **Enums**: Do not use TypeScript `enum`. Use object literals with `as const` for type-safe, string-based alternatives.
--   **Concise Syntax**:
-    -   Use ternary operators for simple conditional assignments.
-    -   Avoid unnecessary curly braces for single-line statements in conditionals.
-    -   Use optional chaining (`?.`) and nullish coalescing (`??`) where appropriate.
+
+- **Functional Programming**: We will use functional and declarative patterns. Avoid `class` syntax entirely.
+- **Immutability**: Data structures should be treated as immutable. Use non-mutating methods (e.g., `.map`, `.filter`, spread syntax) instead of mutating data in place.
+- **Pure Functions**: Use the `function` keyword for pure functions. For other functions (e.g., those with side effects), use arrow function syntax.
+- **Type Safety**:
+  - TypeScript's `strict` mode must be enabled.
+  - Avoid `any` at all costs. Use `unknown` for data from external sources and perform runtime validation (e.g., with `zod`).
+- **Error Handling**: Throw descriptive errors. Do not return `null` or fallback values to hide problems. All asynchronous operations must have `.catch()` handlers.
+- **Variable Naming**: Use descriptive names that clarify intent. For booleans, use auxiliary verbs (e.g., `isLoading`, `hasError`, `canSubmit`).
+- **Enums**: Do not use TypeScript `enum`. Use object literals with `as const` for type-safe, string-based alternatives.
+- **Concise Syntax**:
+  - Use ternary operators for simple conditional assignments.
+  - Avoid unnecessary curly braces for single-line statements in conditionals.
+  - Use optional chaining (`?.`) and nullish coalescing (`??`) where appropriate.
 
 ## 5. Commit Message Conventions
 
@@ -84,11 +87,11 @@ We will follow the **Conventional Commits** specification. This creates a clean 
 
 `<type>[optional scope]: <description>`
 
--   **Common types**:
-    -   `feat`: A new feature for the user.
-    -   `fix`: A bug fix for the user.
-    -   `docs`: Changes to documentation only.
-    -   `style`: Formatting, missing semi-colons, etc.; no code logic change.
-    -   `refactor`: A code change that neither fixes a bug nor adds a feature.
-    -   `test`: Adding missing tests or correcting existing tests.
-    -   `chore`: Updating build tasks, package manager configs, etc. 
+- **Common types**:
+  - `feat`: A new feature for the user.
+  - `fix`: A bug fix for the user.
+  - `docs`: Changes to documentation only.
+  - `style`: Formatting, missing semi-colons, etc.; no code logic change.
+  - `refactor`: A code change that neither fixes a bug nor adds a feature.
+  - `test`: Adding missing tests or correcting existing tests.
+  - `chore`: Updating build tasks, package manager configs, etc.
