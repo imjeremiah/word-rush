@@ -38,6 +38,7 @@ export interface WordSubmission {
   word: string;
   tiles: LetterTile[];
   playerId: string;
+  timestamp: number;
 }
 
 export interface WordValidationResult {
@@ -45,6 +46,26 @@ export interface WordValidationResult {
   word: string;
   points: number;
   reason?: string;
+  playerId: string;
+  timestamp: number;
+}
+
+// Error types
+export interface GameError {
+  code: string;
+  message: string;
+  details?: unknown;
+}
+
+// Session types
+export interface PlayerSession {
+  id: string;
+  username: string;
+  socketId: string;
+  isConnected: boolean;
+  lastActivity: number;
+  score: number;
+  wordsSubmitted: number;
 }
 
 // Game room types

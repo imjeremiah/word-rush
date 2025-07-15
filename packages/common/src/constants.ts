@@ -4,8 +4,8 @@
 
 // Default game configuration
 export const DEFAULT_GAME_CONFIG = {
-  boardWidth: 4,
-  boardHeight: 4,
+  boardWidth: 13,
+  boardHeight: 13,
   roundDuration: 90, // 90 seconds per round
   maxRounds: 3,
   minPlayers: 2,
