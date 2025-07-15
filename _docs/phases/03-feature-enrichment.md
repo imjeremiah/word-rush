@@ -45,7 +45,15 @@
     3.  Implement the UI for the `Shuffle Button`.
     4.  On click, the client sends a `player:shuffle` request; the server validates, deducts points, and sends a new board to that player only.
 
-#### 5. Difficulty and Balancing System
+#### 5. Speed Bonus & Dead Board System
+*   **Description**: Implement the speed bonus for rapid word submissions and the "dead board" check.
+*   **Steps**:
+    1.  On the server, when a player submits a valid word, store a `lastWordTimestamp`.
+    2.  If the next valid word is submitted within 3 seconds, apply a 1.5x score multiplier.
+    3.  When a player requests a shuffle, the server will first run its "solver" to check if the board was dead (e.g., < 5 words possible).
+    4.  If the board was not dead, deduct the point cost for the shuffle. If it was, the shuffle is free.
+
+#### 6. Difficulty and Balancing System
 *   **Description**: Allow players of different skill levels to compete fairly in the same match.
 *   **Steps**:
     1.  In the React `LobbyScreen` component, allow each player to select their difficulty level (`Easy`, `Medium`, `Hard`, `Extreme`).

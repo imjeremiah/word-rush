@@ -47,4 +47,17 @@
 *   **Steps**:
     1.  Install and configure `ESLint` and `Prettier` in the root of the project.
     2.  Create shared configurations that can be extended by the `client` and `server` packages.
-    3.  Add `lint` and `format` scripts to the root `package.json`. 
+    3.  Add `lint` and `format` scripts to the root `package.json`.
+
+#### 6. Project Logging & Documentation
+*   **Description**: Initialize the AI development log.
+*   **Steps**:
+    1.  Create the `_docs/brainlift.md` file.
+    2.  Add the initial entry documenting the project setup and gap analysis session.
+
+#### 7. Basic Security & Error Handling
+*   **Description**: Implement foundational security and error handling on the server.
+*   **Steps**:
+    1.  On the server, add a basic rate-limiter for socket events to prevent spam.
+    2.  Implement a global `try...catch` wrapper for all socket event handlers that emits a `server:error` event to the client on failure.
+    3.  On the client, create a listener for `server:error` that displays a temporary toast notification. 

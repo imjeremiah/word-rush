@@ -48,4 +48,12 @@
     1.  Implement graceful handling for player disconnections and reconnections, allowing a player to rejoin a match in progress.
     2.  Create a simple client-side settings panel for toggling sound effects and music volume.
     3.  Conduct thorough testing across different browsers to identify and fix any remaining bugs.
-    4.  Prepare the application for deployment on Render, including creating the `render.yaml` file. 
+    4.  Prepare the application for deployment on Render, including creating the `render.yaml` file.
+
+#### 6. Performance Validation & Final Documentation
+*   **Description**: Ensure the project meets all technical and documentation requirements from the project brief.
+*   **Steps**:
+    1.  Create and run a stress test script to validate that the server can handle 50 concurrent users with latency under 150ms.
+    2.  Verify that the client maintains 60 FPS during the stress test.
+    3.  Complete the `brainlift.md` with a final summary of the development process.
+    4.  Create the final demo video and other supporting documentation required by the brief. 

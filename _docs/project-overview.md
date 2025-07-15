@@ -29,19 +29,27 @@ The project's primary goal is to create a highly engaging, polished, and replaya
 - **Speed Bonus**: Instead of rewarding luck-based combos, the game rewards skill. Finding multiple words in rapid succession will grant players a temporary score multiplier, encouraging fast-paced, high-skill play.
 
 ### 3. UI/UX Philosophy: A Hybrid Approach
-// ... existing code ...
-### 5. Performance
-- The game will be optimized for smooth, 60fps performance in modern web browsers.
-- This will be achieved through hardware-accelerated rendering (WebGL via Phaser), efficient use of texture atlases, and object pooling for dynamic effects.
+Word Rush will use a hybrid model that leverages two specialized technologies to create a seamless and high-performance user experience:
+
+- **React for the Application Shell**: All non-game UI elements—such as the main menu, game lobbies, settings modals, and leaderboards—will be built with React. This leverages React's strength in creating complex, stateful, and accessible user interfaces.
+
+- **Phaser for Core Gameplay**: The core game screen—including the letter grid, tile animations, particle effects, and high-frequency updates—will be rendered by Phaser 3. This leverages Phaser's powerful 2D game engine to ensure fluid, 60fps gameplay that would be difficult to achieve with the DOM.
+
+This approach uses the best tool for each job: React for the static interface and Phaser for the dynamic, real-time game canvas. The key challenge, as outlined in the `ui-rules.md`, is to ensure these two parts are so visually integrated (sharing fonts, colors, and styling) that the user cannot perceive a difference between the React components and the Phaser canvas.
 
 ### 4. Multiplayer Support (Real-time)
 - The game will support 2-8 players in a real-time environment.
 - The server will be the authoritative source for game state, including the letter grid, player scores, and word validation.
 - A live leaderboard will display scores ticking up in real-time throughout the match.
+- **Session Management**: To keep the implementation straightforward, player sessions will be managed in-memory on the server. A player's state (username, score, etc.) will be associated with their unique `socket.id`. This state persists as long as the socket is connected and is cleaned up automatically on disconnect.
 
-### 5. Performance
-- The game will be optimized for smooth, 60fps performance in modern web browsers.
-- This will be achieved through hardware-accelerated rendering (WebGL via Phaser), efficient use of texture atlases, and object pooling for dynamic effects.
+### 5. Performance & Technical Metrics
+The project will be measured against the following concrete targets:
+- **Latency**: Word validation round-trip (client -> server -> client) must be **< 150ms**.
+- **Concurrency**: The server must support **50 concurrent players** per instance.
+- **Client FPS**: The Phaser canvas must maintain a steady **60 FPS** on modern desktop browsers during gameplay.
+- **Security**: The server will implement basic security measures, including input validation on all socket events and rate-limiting on frequent actions like word submission, to prevent trivial abuse.
+- **Error Handling**: The application will handle errors gracefully. The client will display non-intrusive notifications for server or connection errors, and the server will use centralized error handling to prevent crashes.
 
 ### 6. Complexity: Levels & Progression
 - **Progression: King of the Hill**: To meet the complexity requirement, the game will feature a session-based progression system. Instead of a persistent ELO rating, players compete to earn **Crowns**.
@@ -66,4 +74,7 @@ This hybrid model adjusts both the minimum required word length and the potentia
 
 This system directly addresses skill gaps:
 -   **Accessibility**: Lower difficulties provide a larger pool of valid words, making it easier to participate and clear tiles.
--   **Strategic Depth**: Higher difficulties reward players with a score multiplier for finding longer, more complex words, incentivizing players to challenge themselves. 
+-   **Strategic Depth**: Higher difficulties reward players with a score multiplier for finding longer, more complex words, incentivizing players to challenge themselves.
+
+### 8. AI Development Log
+- To meet the project brief's requirements, this project's development will be documented in the [**`brainlift.md`**](./brainlift.md) file, which serves as a log of our AI-augmented learning, decision-making, and implementation process. 

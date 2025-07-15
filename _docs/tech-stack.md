@@ -107,3 +107,16 @@ This document outlines the official technology stack for the Word Rush project. 
     4.  The board is considered "valid" only if it contains a minimum threshold of possible words (e.g., at least 8 words of 3+ letters).
     5.  If the board fails this check, it is discarded, and the server repeats the drawing process until a valid board is generated.
 -   **Pitfall**: Performing this check on the client side would expose the dictionary and make cheating possible. It must remain on the server.
+
+## Appendix: Official Scrabble Distribution
+
+This is the standard English letter distribution and point values used for this project.
+
+-   **0 Points**: Blank/Wild (2 tiles)
+-   **1 Point**: E (12), A (9), I (9), O (8), N (6), R (6), T (6), L (4), S (4), U (4)
+-   **2 Points**: D (4), G (3)
+-   **3 Points**: B (2), C (2), M (2), P (2)
+-   **4 Points**: F (2), H (2), V (2), W (2), Y (2)
+-   **5 Points**: K (1)
+-   **8 Points**: J (1), X (1)
+-   **10 Points**: Q (1), Z (1)
