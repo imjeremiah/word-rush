@@ -25,6 +25,8 @@ export class SocketRateLimiter {
 
   /**
    * Check if a client has exceeded their rate limit
+   * @param clientId - Unique identifier for the client (usually socket.id)
+   * @returns True if the request is allowed, false if rate limit exceeded
    */
   checkLimit(clientId: string): boolean {
     const now = Date.now();
@@ -57,7 +59,9 @@ export class SocketRateLimiter {
   }
 
   /**
-   * Get remaining requests for a client
+   * Get remaining requests for a client in the current window
+   * @param clientId - Unique identifier for the client (usually socket.id)
+   * @returns Number of requests remaining in the current rate limit window
    */
   getRemainingRequests(clientId: string): number {
     const entry = this.limits.get(clientId);

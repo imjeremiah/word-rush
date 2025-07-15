@@ -10,11 +10,14 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@types/webfontloader": "^1.6.38",
     "@word-rush/common": "1.0.0",
+    "phaser": "^3.70.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "phaser": "^3.70.0",
-    "socket.io-client": "^4.7.2"
+    "socket.io-client": "^4.7.2",
+    "webfontloader": "^1.6.28",
+    "zod": "^4.0.5"
   },
   "devDependencies": {
     "@types/react": "^18.2.15",

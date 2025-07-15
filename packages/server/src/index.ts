@@ -9,15 +9,19 @@ import { Server, Socket } from 'socket.io';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import { SocketRateLimiter } from './services/rate-limiter';
-import { DictionaryService } from './services/dictionary';
-import { BoardService } from './services/board';
+import { SocketRateLimiter } from './services/rate-limiter.js';
+import { DictionaryService } from './services/dictionary.js';
+import { BoardService } from './services/board.js';
+import { SessionService } from './services/session.js';
+import { validateSocketEvent, ClientEventSchemas } from './validation/schemas.js';
+import { handleWordSubmit } from './handlers/wordHandlers.js';
+import { handlePlayerReconnect, handlePlayerJoin, handlePlayerConnect, handlePlayerDisconnect } from './handlers/playerHandlers.js';
+import { handleBoardRequest } from './handlers/gameHandlers.js';
 import { 
   ServerToClientEvents, 
   ClientToServerEvents, 
   InterServerEvents, 
-  SocketData,
-  PlayerSession 
+  SocketData
 } from '@word-rush/common';
 
 const app = express();
@@ -43,9 +47,9 @@ const PORT = process.env.PORT || 3001;
 const socketRateLimiter = new SocketRateLimiter();
 const dictionaryService = new DictionaryService();
 const boardService = new BoardService(dictionaryService);
+const sessionService = new SessionService();
 
-// Player session management
-const playerSessions = new Map<string, PlayerSession>();
+
 
 // Security middleware
 app.use(helmet());
@@ -75,46 +79,21 @@ app.get('/health', (_, res) => {
       loaded: dictionaryService.isReady(),
       wordCount: dictionaryService.getWordCount()
     },
-    activePlayers: playerSessions.size
+    activePlayers: sessionService.getActivePlayerCount()
   });
 });
 
-/**
- * Create or update a player session
- */
-function createOrUpdatePlayerSession(socketId: string, username?: string): PlayerSession {
-  let session = playerSessions.get(socketId);
-  
-  if (!session) {
-    session = {
-      id: socketId,
-      username: username || `Player-${socketId.substring(0, 8)}`,
-      socketId,
-      isConnected: true,
-      lastActivity: Date.now(),
-      score: 0,
-      wordsSubmitted: 0,
-    };
-    playerSessions.set(socketId, session);
-  } else {
-    session.isConnected = true;
-    session.lastActivity = Date.now();
-    if (username) {
-      session.username = username;
-    }
-  }
-  
-  return session;
-}
+
 
 /**
- * Wrapper function for socket event handlers to provide error handling and rate limiting
+ * Wrapper function for socket event handlers to provide error handling, rate limiting, and validation
  */
-function withErrorHandling<T extends unknown[]>(
+function withErrorHandling<T extends keyof typeof ClientEventSchemas>(
   socket: Socket<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>,
-  handler: (...args: T) => void | Promise<void>
+  eventName: T,
+  handler: (data: unknown) => void | Promise<void>
 ) {
-  return async (...args: T) => {
+  return async (data: unknown) => {
     try {
       // Check rate limit
       if (!socketRateLimiter.checkLimit(socket.id)) {
@@ -125,7 +104,49 @@ function withErrorHandling<T extends unknown[]>(
         return;
       }
 
-      await handler(...args);
+      // Validate event data
+      const validation = validateSocketEvent(eventName, data);
+      if (!validation.success) {
+        socket.emit('server:error', {
+          message: `Invalid event data: ${validation.error}`,
+          code: 'VALIDATION_ERROR'
+        });
+        return;
+      }
+
+      await handler(validation.data);
+    } catch (error) {
+      console.error(
+        `[${new Date().toISOString()}] Socket error for ${socket.id}:`,
+        error
+      );
+      socket.emit('server:error', { 
+        message: 'An error occurred on the server',
+        code: 'INTERNAL_ERROR'
+      });
+    }
+  };
+}
+
+/**
+ * Wrapper for events that don't expect data
+ */
+function withErrorHandlingNoData(
+  socket: Socket<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>,
+  handler: () => void | Promise<void>
+) {
+  return async () => {
+    try {
+      // Check rate limit
+      if (!socketRateLimiter.checkLimit(socket.id)) {
+        socket.emit('server:rate-limit', {
+          message: 'Rate limit exceeded. Please slow down.',
+          retryAfter: 60
+        });
+        return;
+      }
+
+      await handler();
     } catch (error) {
       console.error(
         `[${new Date().toISOString()}] Socket error for ${socket.id}:`,
@@ -141,110 +162,47 @@ function withErrorHandling<T extends unknown[]>(
 
 // Socket.io connection handling
 io.on('connection', (socket) => {
-  console.log(`[${new Date().toISOString()}] Player connected: ${socket.id}`);
-
-  // Create initial player session
-  const session = createOrUpdatePlayerSession(socket.id);
+  // Handle initial connection
+  handlePlayerConnect(socket, sessionService);
   
   // Send initial board to the player
   const initialBoard = boardService.generateBoard();
   socket.emit('game:initial-board', { board: initialBoard });
-  
-  // Send player session info
-  socket.emit('player:session-update', { session });
+
+  // Create services object for handlers
+  const services = {
+    dictionaryService,
+    boardService,
+    sessionService
+  };
+
+  // Handle player reconnection
+  socket.on('player:reconnect', withErrorHandling(socket, 'player:reconnect', (data) => {
+    handlePlayerReconnect(socket, data, sessionService);
+  }));
 
   // Handle player joining with username
-  socket.on('game:join', withErrorHandling(socket, (data) => {
-    const { playerName } = data;
-    const updatedSession = createOrUpdatePlayerSession(socket.id, playerName);
-    socket.emit('player:session-update', { session: updatedSession });
-    console.log(`[${new Date().toISOString()}] Player ${playerName} joined with ID: ${socket.id}`);
+  socket.on('game:join', withErrorHandling(socket, 'game:join', (data) => {
+    handlePlayerJoin(socket, data, sessionService);
   }));
 
   // Handle board requests
-  socket.on('game:request-board', withErrorHandling(socket, () => {
-    const newBoard = boardService.generateBoard();
-    socket.emit('game:initial-board', { board: newBoard });
+  socket.on('game:request-board', withErrorHandlingNoData(socket, () => {
+    handleBoardRequest(socket, boardService);
+  }));
+
+  // Word submission handler
+  socket.on('word:submit', withErrorHandling(socket, 'word:submit', (data) => {
+    handleWordSubmit(socket, data, services);
   }));
 
   // Handle disconnection
   socket.on('disconnect', (reason) => {
-    console.log(
-      `[${new Date().toISOString()}] Player disconnected: ${socket.id}, reason: ${reason}`
-    );
-    
-    // Mark player as disconnected but keep session for potential reconnection
-    const session = playerSessions.get(socket.id);
-    if (session) {
-      session.isConnected = false;
-      session.lastActivity = Date.now();
-    }
-  });
-
-  // Word submission handler
-  socket.on('word:submit', withErrorHandling(socket, (data) => {
-    const { word } = data;
-    
-    // Get player session
-    const session = playerSessions.get(socket.id);
-    if (!session) {
-      socket.emit('server:error', { 
-        message: 'Player session not found',
-        code: 'NO_SESSION'
-      });
-      return;
-    }
-
-    // Validate word using dictionary service
-    const isValid = dictionaryService.isValidWord(word);
-    
-    // Calculate points using BoardService
-    const points = isValid ? boardService.calculateWordScore(word) : 0;
-    
-    // Update player score if valid
-    if (isValid) {
-      session.score += points;
-      session.wordsSubmitted += 1;
-      session.lastActivity = Date.now();
-      
-      // Send score update
-      socket.emit('game:score-update', {
-        playerId: socket.id,
-        score: points,
-        totalScore: session.score
-      });
-    }
-    
-    // Send validation result back to client
-    socket.emit('word:validation-result', {
-      isValid,
-      word,
-      points,
-      reason: isValid ? undefined : 'Word not found in dictionary',
-      playerId: socket.id,
-      timestamp: Date.now()
-    });
-  }));
-
-  // Send welcome message to newly connected client
-  socket.emit('server:welcome', {
-    message: 'Connected to Word Rush server',
-    socketId: socket.id,
+    handlePlayerDisconnect(socket, reason, sessionService);
   });
 });
 
-// Clean up inactive sessions every 5 minutes
-setInterval(() => {
-  const now = Date.now();
-  const fiveMinutes = 5 * 60 * 1000;
-  
-  for (const [socketId, session] of playerSessions.entries()) {
-    if (!session.isConnected && (now - session.lastActivity) > fiveMinutes) {
-      playerSessions.delete(socketId);
-      console.log(`[${new Date().toISOString()}] Cleaned up inactive session: ${socketId}`);
-    }
-  }
-}, 5 * 60 * 1000);
+// Session cleanup is now handled by SessionService
 
 // Global error handler
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

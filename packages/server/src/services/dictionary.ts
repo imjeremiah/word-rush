@@ -4,7 +4,8 @@
  */
 
 import { readFileSync } from 'fs';
-import { join } from 'path';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 
 export class DictionaryService {
   private wordSet: Set<string> = new Set();
@@ -19,6 +20,8 @@ export class DictionaryService {
    */
   private loadWordList(): void {
     try {
+      const __filename = fileURLToPath(import.meta.url);
+      const __dirname = dirname(__filename);
       const filePath = join(__dirname, '..', 'assets', 'TWL06.txt');
       const fileContent = readFileSync(filePath, 'utf-8');
       
@@ -41,6 +44,8 @@ export class DictionaryService {
 
   /**
    * Check if a word is valid according to the tournament word list
+   * @param word - The word to validate (case insensitive)
+   * @returns True if the word exists in the tournament dictionary
    */
   isValidWord(word: string): boolean {
     if (!this.isLoaded) {
@@ -75,6 +80,9 @@ export class DictionaryService {
 
   /**
    * Get words that start with a specific prefix (for debugging/testing)
+   * @param prefix - The prefix to search for (case insensitive)
+   * @param limit - Maximum number of words to return (default: 10)
+   * @returns Array of words that start with the given prefix, sorted alphabetically
    */
   getWordsStartingWith(prefix: string, limit: number = 10): string[] {
     if (!this.isLoaded) {

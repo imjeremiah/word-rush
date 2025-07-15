@@ -6,7 +6,7 @@
 
 import { LETTER_DISTRIBUTION, LETTER_BAG } from '@word-rush/common';
 import { GameBoard, LetterTile } from '@word-rush/common';
-import { DictionaryService } from './dictionary';
+import { DictionaryService } from './dictionary.js';
 
 export class BoardService {
   private dictionaryService: DictionaryService;
@@ -14,6 +14,7 @@ export class BoardService {
   private readonly boardHeight = 4;
   private readonly minWordsRequired = 10; // Minimum words for a valid board
   private readonly maxGenerationAttempts = 100; // Prevent infinite loops
+  private readonly minWordLength = 3; // Minimum word length for board validation
 
   constructor(dictionaryService: DictionaryService) {
     this.dictionaryService = dictionaryService;
@@ -83,23 +84,42 @@ export class BoardService {
   }
 
   /**
-   * Find all valid words on the board (used for validation)
+   * Find all valid words on the board using path validation rules
+   * Searches from every position as a potential starting point
+   * Ensures all found words follow valid path rules:
+   * - Adjacent tiles only (including diagonals)
+   * - No duplicate tile usage per word
+   * - Meet minimum word length requirements
+   * @param board - The game board to analyze
+   * @returns Array of unique valid words found on the board
    */
   private findAllValidWords(board: GameBoard): string[] {
     const foundWords = new Set<string>();
     
-    // Check all possible starting positions
+    // Check all possible starting positions on the board
     for (let row = 0; row < board.height; row++) {
       for (let col = 0; col < board.width; col++) {
+        // Start a new search from this position with empty word and no used positions
         this.findWordsFromPosition(board, row, col, '', new Set(), foundWords);
       }
     }
     
+    // Convert Set to Array to remove duplicates and return
     return Array.from(foundWords);
   }
 
   /**
    * Recursively find words starting from a specific position
+   * Implements path validation rules:
+   * - No position can be reused in a single word path
+   * - Each step must be adjacent (including diagonally)
+   * - Words must meet minimum length requirement
+   * @param board - The game board to search
+   * @param row - Current row position (0-indexed)
+   * @param col - Current column position (0-indexed)
+   * @param currentWord - Word built so far in this path
+   * @param usedPositions - Set of position keys already used in this path
+   * @param foundWords - Set to collect all valid words found
    */
   private findWordsFromPosition(
     board: GameBoard,
@@ -109,33 +129,39 @@ export class BoardService {
     usedPositions: Set<string>,
     foundWords: Set<string>
   ): void {
-    // Check bounds
+    // Check bounds - ensure we're within the board
     if (row < 0 || row >= board.height || col < 0 || col >= board.width) {
       return;
     }
 
     const positionKey = `${row}-${col}`;
     
-    // Check if this position is already used
+    // Path validation: Check if this position is already used in current path
     if (usedPositions.has(positionKey)) {
       return;
     }
 
-    // Add current letter to the word
+    // Add current letter to the word and track position
     const newWord = currentWord + board.tiles[row][col].letter;
     const newUsedPositions = new Set(usedPositions);
     newUsedPositions.add(positionKey);
 
-    // Check if current word is valid (minimum 3 letters for MVP)
-    if (newWord.length >= 3 && this.dictionaryService.isValidWord(newWord)) {
+    // Check if current word meets minimum length and is valid in dictionary
+    if (newWord.length >= this.minWordLength && this.dictionaryService.isValidWord(newWord)) {
       foundWords.add(newWord);
     }
 
-    // Continue searching in all 8 directions (including diagonals)
+    // Stop searching if word gets too long (performance optimization)
+    if (newWord.length >= 20) {
+      return;
+    }
+
+    // Continue searching in all 8 adjacent directions (including diagonals)
+    // This ensures adjacency requirement is met
     const directions = [
-      [-1, -1], [-1, 0], [-1, 1],
-      [0, -1],           [0, 1],
-      [1, -1],  [1, 0],  [1, 1]
+      [-1, -1], [-1, 0], [-1, 1],  // Top row (NW, N, NE)
+      [0, -1],           [0, 1],   // Middle row (W, E)
+      [1, -1],  [1, 0],  [1, 1]    // Bottom row (SW, S, SE)
     ];
 
     for (const [deltaRow, deltaCol] of directions) {
@@ -151,14 +177,18 @@ export class BoardService {
   }
 
   /**
-   * Get the point value for a letter
+   * Get the point value for a letter based on Scrabble scoring
+   * @param letter - The letter to get points for (case insensitive)
+   * @returns The point value of the letter (1-10)
    */
   getLetterPoints(letter: string): number {
     return LETTER_DISTRIBUTION[letter as keyof typeof LETTER_DISTRIBUTION]?.points || 1;
   }
 
   /**
-   * Calculate the score for a word
+   * Calculate the total score for a word based on letter point values
+   * @param word - The word to calculate score for
+   * @returns The total point value of the word
    */
   calculateWordScore(word: string): number {
     return word.split('').reduce((score, letter) => {

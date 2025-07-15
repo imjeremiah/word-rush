@@ -3,6 +3,9 @@ node_modules/
 .pnp
 .pnp.js
 
+# Tasks Checklist
+checklist.md
+
 # Testing
 coverage/
 

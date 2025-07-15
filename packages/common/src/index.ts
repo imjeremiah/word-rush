@@ -4,18 +4,21 @@
  */
 
 // Import types from types.ts
-import { WordValidationResult, GameBoard, LetterTile, PlayerSession } from './types';
+import { GameBoard, LetterTile, PlayerSession } from './types.js';
 
 // Socket.io event types for type-safe client-server communication
 export interface ServerToClientEvents {
   'server:welcome': (data: { message: string; socketId: string }) => void;
   'server:error': (data: { message: string; code?: string }) => void;
   'server:rate-limit': (data: { message: string; retryAfter: number }) => void;
-  'word:validation-result': (data: WordValidationResult) => void;
+  'word:valid': (data: { word: string; points: number; score: number }) => void;
+  'word:invalid': (data: { word: string; reason: string }) => void;
   'game:board-update': (data: { board: GameBoard }) => void;
   'game:initial-board': (data: { board: GameBoard }) => void;
   'game:score-update': (data: { playerId: string; score: number; totalScore: number }) => void;
   'player:session-update': (data: { session: PlayerSession }) => void;
+  'player:reconnect-success': (data: { message: string; session: PlayerSession }) => void;
+  'player:reconnect-failed': (data: { message: string }) => void;
 }
 
 export interface ClientToServerEvents {
@@ -23,6 +26,7 @@ export interface ClientToServerEvents {
   'game:join': (data: { playerName: string }) => void;
   'game:leave': () => void;
   'game:request-board': () => void;
+  'player:reconnect': (data: { sessionId: string; username?: string }) => void;
 }
 
 export interface InterServerEvents {
@@ -51,5 +55,6 @@ export const DIFFICULTY_CONFIGS: Record<DifficultyLevel, DifficultyConfig> = {
   extreme: { minWordLength: 5, scoreMultiplier: 2.0 },
 };
 
-export * from './types';
-export * from './constants';
+export * from './types.js';
+export * from './constants.js';
+export * from './theme.js';
