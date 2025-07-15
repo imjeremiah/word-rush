@@ -11,11 +11,13 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { SocketRateLimiter } from './services/rate-limiter';
 import { DictionaryService } from './services/dictionary';
+import { BoardService } from './services/board';
 import { 
   ServerToClientEvents, 
   ClientToServerEvents, 
   InterServerEvents, 
-  SocketData 
+  SocketData,
+  PlayerSession 
 } from '@word-rush/common';
 
 const app = express();
@@ -40,6 +42,10 @@ const PORT = process.env.PORT || 3001;
 // Initialize services
 const socketRateLimiter = new SocketRateLimiter();
 const dictionaryService = new DictionaryService();
+const boardService = new BoardService(dictionaryService);
+
+// Player session management
+const playerSessions = new Map<string, PlayerSession>();
 
 // Security middleware
 app.use(helmet());
@@ -68,9 +74,38 @@ app.get('/health', (_, res) => {
     dictionary: {
       loaded: dictionaryService.isReady(),
       wordCount: dictionaryService.getWordCount()
-    }
+    },
+    activePlayers: playerSessions.size
   });
 });
+
+/**
+ * Create or update a player session
+ */
+function createOrUpdatePlayerSession(socketId: string, username?: string): PlayerSession {
+  let session = playerSessions.get(socketId);
+  
+  if (!session) {
+    session = {
+      id: socketId,
+      username: username || `Player-${socketId.substring(0, 8)}`,
+      socketId,
+      isConnected: true,
+      lastActivity: Date.now(),
+      score: 0,
+      wordsSubmitted: 0,
+    };
+    playerSessions.set(socketId, session);
+  } else {
+    session.isConnected = true;
+    session.lastActivity = Date.now();
+    if (username) {
+      session.username = username;
+    }
+  }
+  
+  return session;
+}
 
 /**
  * Wrapper function for socket event handlers to provide error handling and rate limiting
@@ -108,22 +143,77 @@ function withErrorHandling<T extends unknown[]>(
 io.on('connection', (socket) => {
   console.log(`[${new Date().toISOString()}] Player connected: ${socket.id}`);
 
+  // Create initial player session
+  const session = createOrUpdatePlayerSession(socket.id);
+  
+  // Send initial board to the player
+  const initialBoard = boardService.generateBoard();
+  socket.emit('game:initial-board', { board: initialBoard });
+  
+  // Send player session info
+  socket.emit('player:session-update', { session });
+
+  // Handle player joining with username
+  socket.on('game:join', withErrorHandling(socket, (data) => {
+    const { playerName } = data;
+    const updatedSession = createOrUpdatePlayerSession(socket.id, playerName);
+    socket.emit('player:session-update', { session: updatedSession });
+    console.log(`[${new Date().toISOString()}] Player ${playerName} joined with ID: ${socket.id}`);
+  }));
+
+  // Handle board requests
+  socket.on('game:request-board', withErrorHandling(socket, () => {
+    const newBoard = boardService.generateBoard();
+    socket.emit('game:initial-board', { board: newBoard });
+  }));
+
   // Handle disconnection
   socket.on('disconnect', (reason) => {
     console.log(
       `[${new Date().toISOString()}] Player disconnected: ${socket.id}, reason: ${reason}`
     );
+    
+    // Mark player as disconnected but keep session for potential reconnection
+    const session = playerSessions.get(socket.id);
+    if (session) {
+      session.isConnected = false;
+      session.lastActivity = Date.now();
+    }
   });
 
   // Word submission handler
   socket.on('word:submit', withErrorHandling(socket, (data) => {
     const { word } = data;
     
+    // Get player session
+    const session = playerSessions.get(socket.id);
+    if (!session) {
+      socket.emit('server:error', { 
+        message: 'Player session not found',
+        code: 'NO_SESSION'
+      });
+      return;
+    }
+
     // Validate word using dictionary service
     const isValid = dictionaryService.isValidWord(word);
     
-    // Calculate points based on Scrabble scoring (simplified for now)
-    const points = isValid ? word.length * 10 : 0;
+    // Calculate points using BoardService
+    const points = isValid ? boardService.calculateWordScore(word) : 0;
+    
+    // Update player score if valid
+    if (isValid) {
+      session.score += points;
+      session.wordsSubmitted += 1;
+      session.lastActivity = Date.now();
+      
+      // Send score update
+      socket.emit('game:score-update', {
+        playerId: socket.id,
+        score: points,
+        totalScore: session.score
+      });
+    }
     
     // Send validation result back to client
     socket.emit('word:validation-result', {
@@ -142,6 +232,19 @@ io.on('connection', (socket) => {
     socketId: socket.id,
   });
 });
+
+// Clean up inactive sessions every 5 minutes
+setInterval(() => {
+  const now = Date.now();
+  const fiveMinutes = 5 * 60 * 1000;
+  
+  for (const [socketId, session] of playerSessions.entries()) {
+    if (!session.isConnected && (now - session.lastActivity) > fiveMinutes) {
+      playerSessions.delete(socketId);
+      console.log(`[${new Date().toISOString()}] Cleaned up inactive session: ${socketId}`);
+    }
+  }
+}, 5 * 60 * 1000);
 
 // Global error handler
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

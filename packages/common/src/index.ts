@@ -4,7 +4,7 @@
  */
 
 // Import types from types.ts
-import { WordValidationResult, GameBoard, LetterTile } from './types';
+import { WordValidationResult, GameBoard, LetterTile, PlayerSession } from './types';
 
 // Socket.io event types for type-safe client-server communication
 export interface ServerToClientEvents {
@@ -13,12 +13,16 @@ export interface ServerToClientEvents {
   'server:rate-limit': (data: { message: string; retryAfter: number }) => void;
   'word:validation-result': (data: WordValidationResult) => void;
   'game:board-update': (data: { board: GameBoard }) => void;
+  'game:initial-board': (data: { board: GameBoard }) => void;
+  'game:score-update': (data: { playerId: string; score: number; totalScore: number }) => void;
+  'player:session-update': (data: { session: PlayerSession }) => void;
 }
 
 export interface ClientToServerEvents {
   'word:submit': (data: { word: string; tiles: LetterTile[] }) => void;
   'game:join': (data: { playerName: string }) => void;
   'game:leave': () => void;
+  'game:request-board': () => void;
 }
 
 export interface InterServerEvents {
