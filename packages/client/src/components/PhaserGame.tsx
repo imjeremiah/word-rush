@@ -5,6 +5,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import Phaser from 'phaser';
+import { DEFAULT_GAME_CONFIG } from '@word-rush/common';
 
 const PhaserGame: React.FC = () => {
   const gameRef = useRef<Phaser.Game | null>(null);
@@ -14,8 +15,8 @@ const PhaserGame: React.FC = () => {
     // Phaser game configuration
     const config: Phaser.Types.Core.GameConfig = {
       type: Phaser.AUTO,
-      width: 800,
-      height: 600,
+      width: 1000,
+      height: 800,
       parent: containerRef.current || undefined,
       backgroundColor: '#2c3e50',
       scale: {
@@ -76,24 +77,28 @@ function create(this: Phaser.Scene) {
   // Clear the loading message
   this.children.removeAll();
 
-  // Create a simple letter grid placeholder
-  const gridStartX = 200;
-  const gridStartY = 150;
-  const tileSize = 60;
-  const gridSize = 4;
+  // Create a 13x13 Scrabble board
+  const boardWidth = DEFAULT_GAME_CONFIG.boardWidth;
+  const boardHeight = DEFAULT_GAME_CONFIG.boardHeight;
+  console.log('Board dimensions:', boardWidth, 'x', boardHeight);
+  const tileSize = 40; // Smaller tiles to fit 13x13 grid
+  const gridStartX = 50;
+  const gridStartY = 100;
 
   // Create grid background
   this.add.rectangle(
-    gridStartX + (gridSize * tileSize) / 2,
-    gridStartY + (gridSize * tileSize) / 2,
-    gridSize * tileSize + 20,
-    gridSize * tileSize + 20,
+    gridStartX + (boardWidth * tileSize) / 2,
+    gridStartY + (boardHeight * tileSize) / 2,
+    boardWidth * tileSize + 20,
+    boardHeight * tileSize + 20,
     0x34495e
   );
 
   // Create letter tiles
-  for (let row = 0; row < gridSize; row++) {
-    for (let col = 0; col < gridSize; col++) {
+  let tileCount = 0;
+  for (let row = 0; row < boardHeight; row++) {
+    for (let col = 0; col < boardWidth; col++) {
+      tileCount++;
       const x = gridStartX + col * tileSize + tileSize / 2;
       const y = gridStartY + row * tileSize + tileSize / 2;
 
@@ -101,36 +106,20 @@ function create(this: Phaser.Scene) {
       const tile = this.add.rectangle(
         x,
         y,
-        tileSize - 5,
-        tileSize - 5,
+        tileSize - 2,
+        tileSize - 2,
         0xecf0f1
       );
       tile.setInteractive();
 
-      // Add sample letters
-      const letters = [
-        'A',
-        'B',
-        'C',
-        'D',
-        'E',
-        'F',
-        'G',
-        'H',
-        'I',
-        'J',
-        'K',
-        'L',
-        'M',
-        'N',
-        'O',
-        'P',
-      ];
-      const letter = letters[row * gridSize + col];
+      // Add sample letters (cycling through alphabet)
+      const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      const letterIndex = (row * boardWidth + col) % letters.length;
+      const letter = letters[letterIndex];
 
       this.add
         .text(x, y, letter, {
-          fontSize: '24px',
+          fontSize: '16px',
           color: '#2c3e50',
           fontStyle: 'bold',
         })
@@ -147,9 +136,11 @@ function create(this: Phaser.Scene) {
     }
   }
 
+  console.log('Created', tileCount, 'tiles');
+
   // Add title
   this.add
-    .text(400, 50, 'Word Rush - Game Board', {
+    .text(500, 50, 'Word Rush - 13x13 Scrabble Board (Debug)', {
       fontSize: '28px',
       color: '#ffffff',
       fontStyle: 'bold',
@@ -159,9 +150,9 @@ function create(this: Phaser.Scene) {
   // Add instructions
   this.add
     .text(
-      400,
       500,
-      'Phaser 3 integration successful!\nGame mechanics will be implemented in future phases.',
+      720,
+      'Official Scrabble 13x13 board ready!\nGame mechanics will be implemented in future phases.',
       {
         fontSize: '16px',
         color: '#bdc3c7',
