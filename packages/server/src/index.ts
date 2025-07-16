@@ -100,16 +100,9 @@ app.get('/health', (_, res) => {
   });
 });
 
-// Initialize board pre-generation cache after dictionary is ready
-if (dictionaryService.isReady()) {
-  preGenerateBoards(dictionaryService, 12).then(() => {
-    console.log(`[${new Date().toISOString()}] 🚀 Board cache initialization complete`);
-  }).catch(error => {
-    console.error(`[${new Date().toISOString()}] ❌ Board cache initialization failed:`, error);
-  });
-} else {
-  console.warn(`[${new Date().toISOString()}] ⚠️ Dictionary not ready, skipping board pre-generation`);
-}
+// TEMPORARILY DISABLED: Initialize board pre-generation cache after dictionary is ready
+// Board generation will happen on-demand for now to allow immediate server startup
+console.log(`[${new Date().toISOString()}] ⚡ Skipping board pre-generation for fast startup - boards will be generated on-demand`);
 
 // Set up periodic cache maintenance
 setInterval(() => {
@@ -121,7 +114,7 @@ setInterval(() => {
   
   // Trigger board pre-generation if cache is running low
   if (cacheStats.cacheSize < 3 && !cacheStats.isPreGenerating && dictionaryService.isReady()) {
-    preGenerateBoards(dictionaryService, 8).catch(console.error);
+    preGenerateBoards(dictionaryService, 3).catch(console.error);
   }
 }, 30 * 60 * 1000); // Every 30 minutes
 

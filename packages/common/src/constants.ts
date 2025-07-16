@@ -139,3 +139,60 @@ export const PERFORMANCE_TARGETS = {
   /** Maximum concurrent players the server must support */
   MAX_CONCURRENT_PLAYERS: 50,
 };
+
+/**
+ * 🚀 PHASE 5A: Advanced Game Modes Configuration
+ * Enhanced gameplay modes that provide themed word validation and special letter distribution
+ */
+export const GAME_MODES = {
+  /** Standard mode with full dictionary */
+  STANDARD: 'standard',
+  /** Animals-themed mode with only animal words */
+  ANIMALS: 'animals',
+  /** Science-themed mode with scientific terms */
+  SCIENCE: 'science',
+  /** High-value letter mode with increased rare letter frequency */
+  HIGH_VALUE: 'high_value',
+} as const;
+
+export type GameMode = typeof GAME_MODES[keyof typeof GAME_MODES];
+
+/**
+ * Themed word categories for advanced game modes
+ * Pre-defined word lists for category-specific gameplay
+ */
+export const THEME_CATEGORIES = {
+  [GAME_MODES.ANIMALS]: [
+    'CAT', 'DOG', 'BIRD', 'FISH', 'LION', 'TIGER', 'BEAR', 'WOLF', 'FOX', 'DEER',
+    'HORSE', 'COW', 'PIG', 'SHEEP', 'GOAT', 'DUCK', 'CHICKEN', 'RABBIT', 'MOUSE', 'RAT',
+    'ELEPHANT', 'GIRAFFE', 'ZEBRA', 'MONKEY', 'GORILLA', 'PANDA', 'KOALA', 'KANGAROO',
+    'PENGUIN', 'EAGLE', 'HAWK', 'OWL', 'CROW', 'ROBIN', 'SPARROW', 'PEACOCK',
+    'WHALE', 'DOLPHIN', 'SHARK', 'OCTOPUS', 'STARFISH', 'CRAB', 'LOBSTER',
+    'BUTTERFLY', 'BEE', 'ANT', 'SPIDER', 'SNAKE', 'LIZARD', 'FROG', 'TURTLE'
+  ],
+  [GAME_MODES.SCIENCE]: [
+    'ATOM', 'MOLECULE', 'ELEMENT', 'PROTON', 'NEUTRON', 'ELECTRON', 'NUCLEUS',
+    'CHEMISTRY', 'PHYSICS', 'BIOLOGY', 'GEOLOGY', 'ASTRONOMY', 'GRAVITY',
+    'ENERGY', 'FORCE', 'MASS', 'VELOCITY', 'ACCELERATION', 'FRICTION',
+    'MAGNET', 'ELECTRIC', 'CURRENT', 'VOLTAGE', 'CIRCUIT', 'BATTERY',
+    'CARBON', 'OXYGEN', 'HYDROGEN', 'NITROGEN', 'HELIUM', 'SODIUM',
+    'DNA', 'RNA', 'PROTEIN', 'ENZYME', 'CELL', 'TISSUE', 'ORGAN',
+    'VIRUS', 'BACTERIA', 'VACCINE', 'ANTIBIOTIC', 'MEDICINE',
+    'PLANET', 'STAR', 'GALAXY', 'SOLAR', 'LUNAR', 'COMET', 'METEOR'
+  ]
+} as const;
+
+/**
+ * High-value letter distribution for challenging gameplay
+ * Increases frequency of rare, high-point letters
+ */
+export const HIGH_VALUE_LETTER_BIAS = {
+  J: 3, // Increased from 1 to 3
+  Q: 3, // Increased from 1 to 3  
+  X: 3, // Increased from 1 to 3
+  Z: 3, // Increased from 1 to 3
+  K: 2, // Increased from 1 to 2
+  V: 3, // Increased from 2 to 3
+  W: 3, // Increased from 2 to 3
+  Y: 3, // Increased from 2 to 3
+} as const;

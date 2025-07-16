@@ -4,7 +4,7 @@
  * Provides the primary navigation for multiplayer game flow
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useGameContext } from '../context/GameContext';
 
 /**
@@ -90,7 +90,7 @@ function MainMenu(): JSX.Element {
  * Allows players to create a new multiplayer lobby with custom settings
  */
 function CreateGameScreen({ onBack }: { onBack: () => void }): JSX.Element {
-  const { socket, setCurrentRoom, setGameState } = useGameContext();
+  const { socket, setCurrentRoom, setGameState, gameState, currentRoom, connectionStatus } = useGameContext();
   const [playerName, setPlayerName] = useState('');
   const [settings, setSettings] = useState({
     totalRounds: 3,
@@ -102,17 +102,78 @@ function CreateGameScreen({ onBack }: { onBack: () => void }): JSX.Element {
   });
   const [isCreating, setIsCreating] = useState(false);
 
+  // Reset creating state when game state changes to lobby (room successfully created)
+  useEffect(() => {
+    if (gameState === 'lobby' || currentRoom) {
+      console.log('[CreateGameScreen] Room creation successful, resetting creating state', {
+        gameState,
+        currentRoom: currentRoom?.roomCode,
+        wasCreating: isCreating
+      });
+      setIsCreating(false);
+    }
+  }, [gameState, currentRoom, isCreating]);
+
+  // Add socket error handling to reset creating state on failures
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleRoomError = (data: any) => {
+      console.error('Room creation error:', data);
+      setIsCreating(false);
+    };
+
+    const handleServerError = (data: any) => {
+      console.error('Server error during room creation:', data);
+      setIsCreating(false);
+    };
+
+    // Listen for errors that might occur during room creation
+    socket.on('room:not-found', handleRoomError);
+    socket.on('server:error', handleServerError);
+
+    return () => {
+      socket.off('room:not-found', handleRoomError);
+      socket.off('server:error', handleServerError);
+    };
+  }, [socket]);
+
   /**
    * Handle room creation
    */
   const handleCreateRoom = (): void => {
-    if (!socket || !playerName.trim()) return;
+    if (!socket || !playerName.trim()) {
+      console.warn('[CreateGameScreen] Cannot create room - missing socket or player name');
+      return;
+    }
+    
+    if (connectionStatus !== 'connected') {
+      console.warn('[CreateGameScreen] Cannot create room - not connected to server', { connectionStatus });
+      alert('Please wait for connection to server before creating a room.');
+      return;
+    }
+    
+    console.log('[CreateGameScreen] Starting room creation...', {
+      playerName: playerName.trim(),
+      socketConnected: socket.connected,
+      connectionStatus,
+      gameState,
+      currentRoom
+    });
     
     setIsCreating(true);
     socket.emit('room:create', {
       playerName: playerName.trim(),
       settings
     });
+
+    // Add timeout to prevent getting stuck in "Creating..." state
+    setTimeout(() => {
+      if (gameState !== 'lobby' && !currentRoom) {
+        console.warn('[CreateGameScreen] Room creation timeout - resetting state');
+        setIsCreating(false);
+      }
+    }, 10000); // 10 second timeout
   };
 
   /**
@@ -187,12 +248,22 @@ function CreateGameScreen({ onBack }: { onBack: () => void }): JSX.Element {
             </div>
           </div>
 
+          {connectionStatus !== 'connected' && (
+            <div className="connection-status">
+              <p style={{ color: '#ff6b6b', marginBottom: '10px' }}>
+                {connectionStatus === 'connecting' ? '🔌 Connecting to server...' : '❌ Disconnected from server'}
+              </p>
+            </div>
+          )}
+
           <button 
             className="create-button"
             onClick={handleCreateRoom}
-            disabled={!playerName.trim() || isCreating}
+            disabled={!playerName.trim() || isCreating || connectionStatus !== 'connected'}
           >
-            {isCreating ? 'Creating...' : 'Create Room'}
+            {isCreating ? 'Creating...' : 
+             connectionStatus !== 'connected' ? 'Connecting...' : 
+             'Create Room'}
           </button>
         </div>
       </div>
@@ -205,22 +276,84 @@ function CreateGameScreen({ onBack }: { onBack: () => void }): JSX.Element {
  * Allows players to join an existing multiplayer lobby using a room code
  */
 function JoinGameScreen({ onBack }: { onBack: () => void }): JSX.Element {
-  const { socket } = useGameContext();
+  const { socket, connectionStatus, gameState, currentRoom } = useGameContext();
   const [playerName, setPlayerName] = useState('');
   const [roomCode, setRoomCode] = useState('');
   const [isJoining, setIsJoining] = useState(false);
+
+  // Reset joining state when game state changes to lobby (room successfully joined)
+  useEffect(() => {
+    if (gameState === 'lobby' || currentRoom) {
+      console.log('[JoinGameScreen] Room join successful, resetting joining state', {
+        gameState,
+        currentRoom: currentRoom?.roomCode,
+        wasJoining: isJoining
+      });
+      setIsJoining(false);
+    }
+  }, [gameState, currentRoom, isJoining]);
+
+  // Add socket error handling to reset joining state on failures
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleRoomError = (data: any) => {
+      console.error('Room join error:', data);
+      setIsJoining(false);
+    };
+
+    const handleServerError = (data: any) => {
+      console.error('Server error during room join:', data);
+      setIsJoining(false);
+    };
+
+    // Listen for errors that might occur during room joining
+    socket.on('room:not-found', handleRoomError);
+    socket.on('server:error', handleServerError);
+
+    return () => {
+      socket.off('room:not-found', handleRoomError);
+      socket.off('server:error', handleServerError);
+    };
+  }, [socket]);
 
   /**
    * Handle room joining
    */
   const handleJoinRoom = (): void => {
-    if (!socket || !playerName.trim() || !roomCode.trim()) return;
+    if (!socket || !playerName.trim() || !roomCode.trim()) {
+      console.warn('[JoinGameScreen] Cannot join room - missing required fields');
+      return;
+    }
     
+    if (connectionStatus !== 'connected') {
+      console.warn('[JoinGameScreen] Cannot join room - not connected to server', { connectionStatus });
+      alert('Please wait for connection to server before joining a room.');
+      return;
+    }
+    
+    console.log('[JoinGameScreen] Starting room join...', {
+      playerName: playerName.trim(),
+      roomCode: roomCode.trim().toUpperCase(),
+      socketConnected: socket.connected,
+      connectionStatus,
+      gameState,
+      currentRoom
+    });
+
     setIsJoining(true);
     socket.emit('room:join', {
       roomCode: roomCode.trim().toUpperCase(),
       playerName: playerName.trim()
     });
+
+    // Add timeout to prevent getting stuck in "Joining..." state
+    setTimeout(() => {
+      if (gameState !== 'lobby' && !currentRoom) {
+        console.warn('[JoinGameScreen] Room join timeout - resetting state');
+        setIsJoining(false);
+      }
+    }, 10000); // 10 second timeout
   };
 
   /**
@@ -275,12 +408,22 @@ function JoinGameScreen({ onBack }: { onBack: () => void }): JSX.Element {
             <small>Enter the 4-character room code from your host</small>
           </div>
 
+          {connectionStatus !== 'connected' && (
+            <div className="connection-status">
+              <p style={{ color: '#ff6b6b', marginBottom: '10px' }}>
+                {connectionStatus === 'connecting' ? '🔌 Connecting to server...' : '❌ Disconnected from server'}
+              </p>
+            </div>
+          )}
+
           <button 
             className="join-button"
             onClick={handleJoinRoom}
-            disabled={!playerName.trim() || roomCode.length !== 4 || isJoining}
+            disabled={!playerName.trim() || roomCode.length !== 4 || isJoining || connectionStatus !== 'connected'}
           >
-            {isJoining ? 'Joining...' : 'Join Room'}
+            {isJoining ? 'Joining...' : 
+             connectionStatus !== 'connected' ? 'Connecting...' : 
+             'Join Room'}
           </button>
         </div>
       </div>

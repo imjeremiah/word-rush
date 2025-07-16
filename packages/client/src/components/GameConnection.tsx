@@ -4,7 +4,7 @@
  * Uses game context to share state across the application
  */
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 import { useGameContext } from '../context/GameContext';
 import { notifications } from '../services/notifications';
@@ -77,66 +77,123 @@ function GameConnection(): null {
     setMatchComplete,
     setRoundTimer,
     setRoundTimerOptimized,
+    roundTimer, // 🔴 PHASE 2A: Fix roundTimer reference error
   } = useGameContext();
 
+  // Use refs to prevent stale closures and constant reconnections
+  const contextRef = useRef({
+    setSocket,
+    setConnectionStatus,
+    setPlayerSession,
+    setLastWordResult,
+    setGameState,
+    setMatchData,
+    setCurrentRoom,
+    setRoundSummary,
+    setMatchComplete,
+    setRoundTimer,
+    setRoundTimerOptimized
+  });
+
+  // Update refs when context values change
+  contextRef.current = {
+    setSocket,
+    setConnectionStatus,
+    setPlayerSession,
+    setLastWordResult,
+    setGameState,
+    setMatchData,
+    setCurrentRoom,
+    setRoundSummary,
+    setMatchComplete,
+    setRoundTimer,
+    setRoundTimerOptimized
+  };
+
   useEffect(() => {
+    console.log('🔌 Creating socket connection (should only happen once)');
     const newSocket = io('http://localhost:3001', {
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
       timeout: 20000,
     });
-    setSocket(newSocket);
+    contextRef.current.setSocket(newSocket);
 
     // Connection event handlers (no validation needed for built-in socket events)
     newSocket.on('connect', () => {
-      console.log('Connected to server');
-      setConnectionStatus('connected');
-      
-      // Try to reconnect with previous session if available
-      const storedSession = localStorage.getItem('wordRushSession');
-      if (storedSession) {
-        try {
-          const sessionData = JSON.parse(storedSession);
-          console.log('Attempting to reconnect with stored session:', sessionData);
-          newSocket.emit('player:reconnect', {
-            sessionId: sessionData.id,
-            username: sessionData.username
-          });
-        } catch (error) {
-          console.error('Failed to parse stored session:', error);
-          localStorage.removeItem('wordRushSession');
+      try {
+        console.log('Connected to server');
+        contextRef.current.setConnectionStatus('connected');
+        
+        // Try to reconnect with previous session if available
+        const storedSession = localStorage.getItem('wordRushSession');
+        if (storedSession) {
+          try {
+            const sessionData = JSON.parse(storedSession);
+            console.log('Attempting to reconnect with stored session:', sessionData);
+            newSocket.emit('player:reconnect', {
+              sessionId: sessionData.id,
+              username: sessionData.username
+            });
+          } catch (error) {
+            console.error('Failed to parse stored session:', error);
+            localStorage.removeItem('wordRushSession');
+            notifications.success('Connected to Word Rush server!', 3000);
+          }
+        } else {
           notifications.success('Connected to Word Rush server!', 3000);
         }
-      } else {
-        notifications.success('Connected to Word Rush server!', 3000);
+      } catch (error) {
+        console.error('Error in connect handler:', error);
+        contextRef.current.setConnectionStatus('connected'); // Still mark as connected
       }
     });
 
     newSocket.on('disconnect', () => {
-      console.log('Disconnected from server');
-      setConnectionStatus('disconnected');
-      notifications.warning('Disconnected from server', 3000);
+      try {
+        console.log('Disconnected from server');
+        contextRef.current.setConnectionStatus('disconnected');
+        notifications.warning('Disconnected from server', 3000);
+      } catch (error) {
+        console.error('Error in disconnect handler:', error);
+      }
     });
 
     newSocket.on('reconnect', (attemptNumber) => {
-      console.log(`Reconnected after ${attemptNumber} attempts`);
-      notifications.info(`Reconnected after ${attemptNumber} attempts`, 3000);
+      try {
+        console.log(`Reconnected after ${attemptNumber} attempts`);
+        notifications.info(`Reconnected after ${attemptNumber} attempts`, 3000);
+      } catch (error) {
+        console.error('Error in reconnect handler:', error);
+      }
     });
 
     newSocket.on('reconnect_attempt', (attemptNumber) => {
-      console.log(`Reconnection attempt ${attemptNumber}`);
-      setConnectionStatus('connecting');
+      try {
+        console.log(`Reconnection attempt ${attemptNumber}`);
+        setConnectionStatus('connecting');
+      } catch (error) {
+        console.error('Error in reconnect_attempt handler:', error);
+      }
     });
 
     newSocket.on('reconnect_error', (error) => {
-      console.error('Reconnection error:', error);
-      notifications.error('Reconnection failed', 3000);
+      try {
+        console.error('Reconnection error:', error);
+        notifications.error('Reconnection failed', 3000);
+      } catch (handlerError) {
+        console.error('Error in reconnect_error handler:', handlerError);
+      }
     });
 
     newSocket.on('reconnect_failed', () => {
-      console.error('All reconnection attempts failed');
-      notifications.error('Failed to reconnect. Please refresh the page.', 5000);
+      try {
+        console.error('All reconnection attempts failed');
+        notifications.error('Failed to reconnect. Please refresh the page.', 5000);
+      } catch (error) {
+        console.error('Error in reconnect_failed handler:', error);
+      }
     });
 
     // Server message handlers with validation
@@ -248,6 +305,10 @@ function GameConnection(): null {
     newSocket.on('room:created', withServerEventValidation('room:created', (data) => {
       console.log('Room created:', data);
       notifications.success(`Room created! Code: ${data.roomCode}`, 4000);
+      
+      // Force state transition to ensure UI updates properly
+      // The room:joined event should follow immediately, but this ensures transition
+      console.log('Room creation confirmed, waiting for room:joined event...');
     }));
 
     newSocket.on('room:joined', withServerEventValidation('room:joined', (data) => {
@@ -305,82 +366,112 @@ function GameConnection(): null {
     }));
 
     newSocket.on('match:started', withServerEventValidation('match:started', (data) => {
-      const receiveTime = Date.now();
-      console.log('Match started:', data);
-      
-      // Track game state change for component stability
-      localStorage.setItem('wordRushGameState', 'match');
-      localStorage.setItem('wordRushRoundData', JSON.stringify({
-        currentRound: data.currentRound,
-        totalRounds: data.totalRounds,
-        startTime: Date.now()
-      }));
-      
-      // Board checksum validation
-      const boardString = JSON.stringify({
-        width: data.board.width,
-        height: data.board.height,
-        tiles: data.board.tiles.map(row => 
-          row.map(tile => ({ letter: tile.letter, points: tile.points, x: tile.x, y: tile.y }))
-        )
-      });
-      
-      // Create MD5 hash for client-side validation (simplified version)
-      const clientChecksum = btoa(boardString).slice(0, 16); // Simple hash for client validation
-      
-      console.log(`[${new Date().toISOString()}] Board validation: server_checksum=${data.boardChecksum}, client_validation=${clientChecksum}, board_size=${data.board.width}x${data.board.height}, players=${data.playerCount}`);
-      
-      // Log board contents for synchronization debugging
-      const boardSummary = data.board.tiles.map(row => row.map(tile => tile.letter).join('')).join('|');
-      console.log(`[${new Date().toISOString()}] Board layout: ${boardSummary}`);
-      
-      setGameState('match');
-      setRoundTimer({
-        timeRemaining: data.timeRemaining,
-        currentRound: data.currentRound,
-        totalRounds: data.totalRounds
-      });
-      setMatchData({
-        currentRound: data.currentRound,
-        totalRounds: data.totalRounds,
-        timeRemaining: data.timeRemaining,
-        leaderboard: [] // Will be updated separately
-      });
-      notifications.success('Match started! Good luck!', 3000);
+      try {
+        const receiveTime = Date.now();
+        console.log('Match started:', data);
+        
+        // 🔴 PHASE 2A: Add comprehensive error handling and validation
+        if (!data || !data.board || !data.currentRound || !data.totalRounds) {
+          console.error(`[${new Date().toISOString()}] ❌ Invalid match:started data:`, data);
+          notifications.error('Invalid match data received', 3000);
+          return;
+        }
+        
+        // Track game state change for component stability
+        localStorage.setItem('wordRushGameState', 'match');
+        localStorage.setItem('wordRushRoundData', JSON.stringify({
+          currentRound: data.currentRound,
+          totalRounds: data.totalRounds,
+          startTime: Date.now()
+        }));
+        
+        // Board checksum validation with error handling
+        try {
+          const boardString = JSON.stringify({
+            width: data.board.width,
+            height: data.board.height,
+            tiles: data.board.tiles.map(row => 
+              row.map(tile => ({ letter: tile.letter, points: tile.points, x: tile.x, y: tile.y }))
+            )
+          });
+          
+          // Create MD5 hash for client-side validation (simplified version)
+          const clientChecksum = btoa(boardString).slice(0, 16); // Simple hash for client validation
+          
+          console.log(`[${new Date().toISOString()}] Board validation: server_checksum=${data.boardChecksum}, client_validation=${clientChecksum}, board_size=${data.board.width}x${data.board.height}, players=${data.playerCount}`);
+          
+          // Log board contents for synchronization debugging
+          const boardSummary = data.board.tiles.map(row => row.map(tile => tile.letter).join('')).join('|');
+          console.log(`[${new Date().toISOString()}] Board layout: ${boardSummary}`);
+        } catch (boardError) {
+          console.error(`[${new Date().toISOString()}] ❌ Board checksum validation failed:`, boardError);
+          // Continue anyway, as this is non-critical
+        }
+        
+        setGameState('match');
+        setRoundTimer({
+          timeRemaining: data.timeRemaining || 90000,
+          currentRound: data.currentRound,
+          totalRounds: data.totalRounds
+        });
+        setMatchData({
+          currentRound: data.currentRound,
+          totalRounds: data.totalRounds,
+          timeRemaining: data.timeRemaining || 90000,
+          leaderboard: [] // Will be updated separately
+        });
+        notifications.success('Match started! Good luck!', 3000);
+      } catch (error) {
+        console.error(`[${new Date().toISOString()}] ❌ Error processing match:started event:`, error, 'Data:', data);
+        notifications.error('Failed to start match', 3000);
+        // Try to recover by going back to lobby
+        setGameState('lobby');
+      }
     }));
 
     // Board synchronization event handler
     newSocket.on('board:resync', (data: { board: any; boardChecksum: string; timeRemaining: number; sequenceNumber: number; syncType: string }) => {
-      console.log(`[${new Date().toISOString()}] 📡 Board resync received (${data.syncType}): checksum=${data.boardChecksum}`);
-      
-      // Validate and apply the synchronized board state
-      const boardString = JSON.stringify({
-        width: data.board.width,
-        height: data.board.height,
-        tiles: data.board.tiles.map((row: any[]) => 
-          row.map(tile => ({ letter: tile.letter, points: tile.points, x: tile.x, y: tile.y }))
-        )
-      });
-      
-      const clientChecksum = btoa(boardString).slice(0, 16);
-      
-      if (data.syncType === 'rejoin') {
-        console.log(`[${new Date().toISOString()}] 🔄 Rejoined game successfully: board synchronized`);
-        setGameState('match');
-        setRoundTimer({
-          timeRemaining: data.timeRemaining,
-          currentRound: (data as any).currentRound || 1,
-          totalRounds: (data as any).totalRounds || 3
+      try {
+        console.log(`[${new Date().toISOString()}] 📡 Board resync received (${data.syncType}): checksum=${data.boardChecksum}`);
+        
+        // 🔴 PHASE 2A: Add comprehensive error handling and validation
+        if (!data || !data.board || !data.syncType) {
+          console.error(`[${new Date().toISOString()}] ❌ Invalid board:resync data:`, data);
+          return;
+        }
+        
+        // Validate and apply the synchronized board state
+        const boardString = JSON.stringify({
+          width: data.board.width,
+          height: data.board.height,
+          tiles: data.board.tiles.map((row: any[]) => 
+            row.map(tile => ({ letter: tile.letter, points: tile.points, x: tile.x, y: tile.y }))
+          )
         });
-        notifications.success('Rejoined game successfully!', 3000);
-      } else if (data.syncType === 'periodic') {
-        // Silent periodic sync - just validate
-        console.log(`[${new Date().toISOString()}] 🔄 Periodic board sync: checksum validated`);
-      }
-      
-      // Update round timer if available
-      if (data.timeRemaining && roundTimer) {
-        setRoundTimerOptimized(data.timeRemaining);
+        
+        const clientChecksum = btoa(boardString).slice(0, 16);
+        
+        if (data.syncType === 'rejoin') {
+          console.log(`[${new Date().toISOString()}] 🔄 Rejoined game successfully: board synchronized`);
+          setGameState('match');
+          setRoundTimer({
+            timeRemaining: data.timeRemaining,
+            currentRound: (data as any).currentRound || 1,
+            totalRounds: (data as any).totalRounds || 3
+          });
+          notifications.success('Rejoined game successfully!', 3000);
+        } else if (data.syncType === 'periodic') {
+          // Silent periodic sync - just validate
+          console.log(`[${new Date().toISOString()}] 🔄 Periodic board sync: checksum validated`);
+        }
+        
+        // Update round timer if available
+        if (data.timeRemaining && roundTimer) {
+          setRoundTimerOptimized(data.timeRemaining);
+        }
+      } catch (error) {
+        console.error(`[${new Date().toISOString()}] ❌ Error processing board:resync event:`, error, 'Data:', data);
+        notifications.error('Board synchronization failed', 3000);
       }
     });
 
@@ -456,9 +547,10 @@ function GameConnection(): null {
 
     // Cleanup on unmount
     return () => {
+      console.log('🔌 Closing socket connection (cleanup)');
       newSocket.close();
     };
-  }, [setSocket, setConnectionStatus, setPlayerSession, setLastWordResult, setGameState, setMatchData, setCurrentRoom, setRoundSummary, setMatchComplete, setRoundTimer, setRoundTimerOptimized]);
+  }, []); // Empty dependency array to prevent socket recreation
 
   return null; // This component only manages logic, no UI
 }

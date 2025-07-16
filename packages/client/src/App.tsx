@@ -32,11 +32,11 @@ const App: React.FC = () => {
 };
 
 /**
- * App Content component that uses game context with enhanced stability
+ * 🟡 PHASE 3A: Optimized App Content component with React.memo and performance optimizations
  * Routes between different screens based on game state with component key stability
  * @returns JSX element with the appropriate screen for current game state
  */
-function AppContent(): JSX.Element {
+const AppContent = React.memo((): JSX.Element => {
   const { 
     socket, 
     gameState, 
@@ -56,7 +56,66 @@ function AppContent(): JSX.Element {
     return `phaser-${roomIdentifier}-${sessionIdentifier}`;
   }, [currentRoom?.roomCode, playerSession?.id]);
 
-  console.log(`[${new Date().toISOString()}] 🎯 AppContent render: gameState=${gameState}, phaserKey=${phaserGameKey}`);
+  // 🟡 PHASE 3A: Memoize expensive computations to prevent unnecessary recalculations
+  const isHost = React.useMemo(() => {
+    return currentRoom?.hostId === socket?.id;
+  }, [currentRoom?.hostId, socket?.id]);
+
+  const isGameActive = React.useMemo(() => {
+    return currentRoom?.isGameActive || false;
+  }, [currentRoom?.isGameActive]);
+
+  const currentPlayerId = React.useMemo(() => {
+    return socket?.id || '';
+  }, [socket?.id]);
+
+  const playerPoints = React.useMemo(() => {
+    return playerSession?.score || 0;
+  }, [playerSession?.score]);
+
+  const canShuffle = React.useMemo(() => {
+    return playerPoints >= 5;
+  }, [playerPoints]);
+
+  // 🟡 PHASE 3A: Memoized event handlers to prevent unnecessary re-renders
+  const handleShuffle = React.useCallback(() => {
+    if (socket) {
+      socket.emit('game:shuffle-request');
+    }
+  }, [socket]);
+
+  const handleContinue = React.useCallback(() => {
+    // Manual unpause fallback for host
+    setGameState('match');
+    notifications.info('Continuing to next round...', 2000);
+  }, [setGameState]);
+
+  const handleStartNewMatch = React.useCallback(() => {
+    if (socket && currentRoom) {
+      socket.emit('match:start-new-match', { roomCode: currentRoom.roomCode });
+    }
+  }, [socket, currentRoom]);
+
+  const handleReturnToLobby = React.useCallback(() => {
+    setGameState('lobby');
+    notifications.info('Returning to lobby...', 2000);
+  }, [setGameState]);
+
+  // 🟡 PHASE 3A: Render bailout conditions for unchanged states
+  const shouldRenderPhaser = React.useMemo(() => {
+    return gameState === 'match' && roundTimer && currentRoom;
+  }, [gameState, roundTimer, currentRoom]);
+
+  const shouldRenderRoundEnd = React.useMemo(() => {
+    return gameState === 'round-end' && roundSummary && currentRoom;
+  }, [gameState, roundSummary, currentRoom]);
+
+  const shouldRenderMatchEnd = React.useMemo(() => {
+    return gameState === 'match-end' && matchComplete && currentRoom;
+  }, [gameState, matchComplete, currentRoom]);
+
+  // Debug logging for render optimization
+  console.log(`[${new Date().toISOString()}] 🎯 AppContent render: gameState=${gameState}, phaserKey=${phaserGameKey}, optimized=true`);
 
   return (
     <div className="app">
@@ -67,12 +126,12 @@ function AppContent(): JSX.Element {
       
       {gameState === 'lobby' && <LobbyScreen />}
       
-      {gameState === 'match' && roundTimer && currentRoom && (
+      {shouldRenderPhaser && (
         <>
           <header className="app-header">
             <h1>Word Rush - Multiplayer Match</h1>
             <div className="room-indicator">
-              Room: {currentRoom.roomCode}
+              Room: {currentRoom!.roomCode}
             </div>
           </header>
 
@@ -80,18 +139,14 @@ function AppContent(): JSX.Element {
             <div className="game-container">
               <div className="ui-section">
                 <GameHUD 
-                  timer={roundTimer}
-                  players={currentRoom.players}
-                  currentPlayerId={socket?.id || ''}
-                  canShuffle={(playerSession?.score || 0) >= 5}
-                  playerPoints={playerSession?.score || 0}
+                  timer={roundTimer!}
+                  players={currentRoom!.players}
+                  currentPlayerId={currentPlayerId}
+                  canShuffle={canShuffle}
+                  playerPoints={playerPoints}
                   shuffleCost={5}
-                  onShuffle={() => {
-                    if (socket) {
-                      socket.emit('game:shuffle-request');
-                    }
-                  }}
-                  isGameActive={currentRoom.isGameActive || false}
+                  onShuffle={handleShuffle}
+                  isGameActive={isGameActive}
                 />
                 <GameControls />
               </div>
@@ -99,7 +154,8 @@ function AppContent(): JSX.Element {
               <div className="game-section">
                 <PhaserGame 
                   key={phaserGameKey}
-                  socket={socket || undefined} 
+                  socket={socket || undefined}
+                  gameState={gameState}
                 />
               </div>
             </div>
@@ -107,37 +163,26 @@ function AppContent(): JSX.Element {
         </>
       )}
 
-      {gameState === 'round-end' && roundSummary && currentRoom && (
+      {shouldRenderRoundEnd && (
         <RoundSummary
-          roundSummary={roundSummary}
-          isHost={currentRoom.hostId === socket?.id}
-          currentPlayerId={socket?.id || ''}
-          onContinue={() => {
-            // Manual unpause fallback for host
-            setGameState('match');
-            notifications.info('Continuing to next round...', 2000);
-          }}
+          roundSummary={roundSummary!}
+          isHost={isHost}
+          currentPlayerId={currentPlayerId}
+          onContinue={handleContinue}
         />
       )}
 
-      {gameState === 'match-end' && matchComplete && currentRoom && (
+      {shouldRenderMatchEnd && (
         <MatchComplete
-          matchComplete={matchComplete}
-          isHost={currentRoom.hostId === socket?.id}
-          currentPlayerId={socket?.id || ''}
-          onStartNewMatch={() => {
-            if (socket) {
-              socket.emit('match:start-new-match', { roomCode: currentRoom.roomCode });
-            }
-          }}
-          onReturnToLobby={() => {
-            setGameState('lobby');
-            notifications.info('Returning to lobby...', 2000);
-          }}
+          matchComplete={matchComplete!}
+          isHost={isHost}
+          currentPlayerId={currentPlayerId}
+          onStartNewMatch={handleStartNewMatch}
+          onReturnToLobby={handleReturnToLobby}
         />
       )}
     </div>
   );
-}
+});
 
 export default App;

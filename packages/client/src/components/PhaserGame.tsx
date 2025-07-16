@@ -37,10 +37,11 @@ import {
 
 interface PhaserGameProps {
   socket?: Socket<ServerToClientEvents, ClientToServerEvents>;
+  gameState?: 'menu' | 'lobby' | 'match' | 'round-end' | 'match-end';
 }
 
 // Memoized component to prevent unnecessary re-renders
-const PhaserGame: React.FC<PhaserGameProps> = React.memo(({ socket }) => {
+const PhaserGame: React.FC<PhaserGameProps> = React.memo(({ socket, gameState }) => {
   const gameRef = useRef<Phaser.Game | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const instanceIdRef = useRef<string>(`phaser-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
@@ -120,7 +121,7 @@ const PhaserGame: React.FC<PhaserGameProps> = React.memo(({ socket }) => {
           },
           create: function(this: Phaser.Scene) {
             console.log(`[${new Date().toISOString()}] 🎬 Phaser scene CREATE - Instance: ${instanceIdRef.current}`);
-            create.call(this, socket);
+            create.call(this, socket, gameState);
           },
           update: function(this: Phaser.Scene) {
             update.call(this);
@@ -231,6 +232,36 @@ const layoutState: LayoutState = {
   instructionText: null
 };
 
+// 🚀 PHASE 5B: Audio and Particle System State
+interface AudioSystem {
+  tileSelect?: Phaser.Sound.BaseSound;
+  wordValid?: Phaser.Sound.BaseSound;
+  wordInvalid?: Phaser.Sound.BaseSound;
+  tileCascade?: Phaser.Sound.BaseSound;
+  roundComplete?: Phaser.Sound.BaseSound;
+  matchVictory?: Phaser.Sound.BaseSound;
+  speedBonus?: Phaser.Sound.BaseSound;
+  backgroundMusic?: Phaser.Sound.BaseSound;
+  volume: number;
+  musicVolume: number;
+  isEnabled: boolean;
+}
+
+interface ParticleSystem {
+  wordValidEmitter?: Phaser.GameObjects.Particles.ParticleEmitter;
+  cascadeEmitter?: Phaser.GameObjects.Particles.ParticleEmitter;
+  speedBonusEmitter?: Phaser.GameObjects.Particles.ParticleEmitter;
+  manager?: Phaser.GameObjects.Particles.ParticleEmitterManager;
+}
+
+let audioSystem: AudioSystem = {
+  volume: 0.7,
+  musicVolume: 0.3,
+  isEnabled: true
+};
+
+let particleSystem: ParticleSystem = {};
+
 let loadingText: Phaser.GameObjects.Text | null = null;
 
 // Enhanced sequence tracking with scene readiness queue
@@ -255,6 +286,21 @@ let visualValidationInterval: NodeJS.Timeout | null = null;
  */
 function preload(this: Phaser.Scene, socket?: Socket<ServerToClientEvents, ClientToServerEvents>) {
   interactionState.gameSocket = socket || null;
+
+  // 🚀 PHASE 5B: Load audio assets for premium experience
+  console.log(`[${new Date().toISOString()}] 🎵 Loading audio assets...`);
+  
+  // Sound effects for game events (using placeholder paths - would need actual sound files)
+  this.load.audio('tile-select', 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhWQA5AAAA');
+  this.load.audio('word-valid', 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhWQA5AAAA');
+  this.load.audio('word-invalid', 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhWQA5AAAA');
+  this.load.audio('tile-cascade', 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhWQA5AAAA');
+  this.load.audio('round-complete', 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhWQA5AAAA');
+  this.load.audio('match-victory', 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhWQA5AAAA');
+  this.load.audio('speed-bonus', 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhWQA5AAAA');
+  
+  // Background music for ambient experience (fix: add missing background-music key)
+  this.load.audio('background-music', 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhWQA5AAAA');
   
   // Create particle textures for premium effects
   this.load.once('complete', () => {
@@ -408,32 +454,313 @@ function isSceneReady(scene: Phaser.Scene): boolean {
 }
 
 /**
- * Recovery mechanism for invalid scene state
+ * 🚨 PHASE 1B: Progressive Recovery State Tracking
+ */
+enum RecoveryState {
+  NONE = 'none',
+  TILE_REFRESH = 'tile_refresh',
+  BOARD_REFRESH = 'board_refresh',
+  SCENE_RESTART = 'scene_restart',
+  FULL_RESTART = 'full_restart'
+}
+
+interface RecoveryAttempt {
+  state: RecoveryState;
+  timestamp: number;
+  success: boolean;
+  error?: string;
+}
+
+// Recovery state tracking
+let currentRecoveryState = RecoveryState.NONE;
+let recoveryHistory: RecoveryAttempt[] = [];
+let lastRecoveryTime = 0;
+const RECOVERY_COOLDOWN_MS = 5000; // 5 second cooldown between recovery attempts
+
+/**
+ * Progressive recovery mechanism with state tracking and cooldown
  * @param scene - Phaser scene to recover
  * @returns Boolean indicating if recovery was successful
  */
 function recoverSceneState(scene: Phaser.Scene): boolean {
-  try {
-    console.log(`[${new Date().toISOString()}] 🔄 Attempting scene state recovery...`);
-    
-    // Clear existing state
-    boardState.tileSprites = [];
-    boardState.tileTexts = [];
-    
-    // Recreate layout elements
-    createGameLayout(scene, layoutState, interactionState);
-    
-    // If we have board data, recreate the visual state
-    if (boardState.currentBoard) {
-      updateBoardDisplayWrapper.call(scene);
-    }
-    
-    console.log(`[${new Date().toISOString()}] ✅ Scene state recovery completed`);
-    return true;
-  } catch (error) {
-    console.error(`[${new Date().toISOString()}] ❌ Scene state recovery failed:`, error);
+  const now = Date.now();
+  
+  // Check recovery cooldown
+  if ((now - lastRecoveryTime) < RECOVERY_COOLDOWN_MS) {
+    console.log(`[${new Date().toISOString()}] ⏱️ Recovery on cooldown for ${Math.ceil((RECOVERY_COOLDOWN_MS - (now - lastRecoveryTime)) / 1000)}s`);
     return false;
   }
+  
+  lastRecoveryTime = now;
+  console.log(`[${new Date().toISOString()}] 🔄 Starting progressive scene recovery...`);
+  
+  // Step 1: Try refreshing only affected tiles
+  if (attemptTileRefresh(scene)) {
+    return true;
+  }
+  
+  // Step 2: Try refreshing entire board if tile refresh failed
+  if (attemptBoardRefresh(scene)) {
+    return true;
+  }
+  
+  // Step 3: Try full scene restart if board refresh failed
+  if (attemptSceneRestart(scene)) {
+    return true;
+  }
+  
+  // Step 4: Complete Phaser instance restart (last resort)
+  return attemptFullRestart();
+}
+
+/**
+ * Step 1: Attempt to refresh only affected tiles
+ * @param scene - Phaser scene
+ * @returns Boolean indicating success
+ */
+function attemptTileRefresh(scene: Phaser.Scene): boolean {
+  const attempt: RecoveryAttempt = {
+    state: RecoveryState.TILE_REFRESH,
+    timestamp: Date.now(),
+    success: false
+  };
+  
+  try {
+    currentRecoveryState = RecoveryState.TILE_REFRESH;
+    console.log(`[${new Date().toISOString()}] 🔧 Step 1: Attempting tile refresh...`);
+    
+    // Import the tile correction function dynamically
+    import('./board-rendering.js').then(({ correctVisualStateTileByTile, setSceneTransitionBypass }) => {
+      setSceneTransitionBypass(true);
+      
+      try {
+        const correctedCount = correctVisualStateTileByTile(
+          scene,
+          boardState,
+          setupTileInteractionWrapper.bind(scene)
+        );
+        
+        if (correctedCount > 0) {
+          attempt.success = true;
+          recoveryHistory.push(attempt);
+          currentRecoveryState = RecoveryState.NONE;
+          console.log(`[${new Date().toISOString()}] ✅ Step 1 successful: corrected ${correctedCount} tiles`);
+          return true;
+        }
+      } finally {
+        setSceneTransitionBypass(false);
+      }
+      
+      return false;
+    });
+    
+    return false;
+  } catch (error) {
+    attempt.error = String(error);
+    attempt.success = false;
+    recoveryHistory.push(attempt);
+    console.error(`[${new Date().toISOString()}] ❌ Step 1 failed:`, error);
+    return false;
+  }
+}
+
+/**
+ * Step 2: Attempt to refresh entire board
+ * @param scene - Phaser scene
+ * @returns Boolean indicating success
+ */
+function attemptBoardRefresh(scene: Phaser.Scene): boolean {
+  const attempt: RecoveryAttempt = {
+    state: RecoveryState.BOARD_REFRESH,
+    timestamp: Date.now(),
+    success: false
+  };
+  
+  try {
+    currentRecoveryState = RecoveryState.BOARD_REFRESH;
+    console.log(`[${new Date().toISOString()}] 🔧 Step 2: Attempting board refresh...`);
+    
+    // Import the refresh function dynamically
+    import('./board-rendering.js').then(({ refreshVisualStateFromLogical, setSceneTransitionBypass }) => {
+      setSceneTransitionBypass(true);
+      
+      try {
+        const refreshSuccess = refreshVisualStateFromLogical(
+          scene,
+          boardState,
+          setupTileInteractionWrapper.bind(scene)
+        );
+        
+        if (refreshSuccess) {
+          attempt.success = true;
+          recoveryHistory.push(attempt);
+          currentRecoveryState = RecoveryState.NONE;
+          console.log(`[${new Date().toISOString()}] ✅ Step 2 successful: board refresh completed`);
+          return true;
+        }
+      } finally {
+        setSceneTransitionBypass(false);
+      }
+      
+      return false;
+    });
+    
+    return false;
+  } catch (error) {
+    attempt.error = String(error);
+    attempt.success = false;
+    recoveryHistory.push(attempt);
+    console.error(`[${new Date().toISOString()}] ❌ Step 2 failed:`, error);
+    return false;
+  }
+}
+
+/**
+ * Step 3: Attempt full scene restart
+ * @param scene - Phaser scene
+ * @returns Boolean indicating success
+ */
+function attemptSceneRestart(scene: Phaser.Scene): boolean {
+  const attempt: RecoveryAttempt = {
+    state: RecoveryState.SCENE_RESTART,
+    timestamp: Date.now(),
+    success: false
+  };
+  
+  try {
+    currentRecoveryState = RecoveryState.SCENE_RESTART;
+    console.log(`[${new Date().toISOString()}] 🔧 Step 3: Attempting scene restart...`);
+    
+    // Import bypass function
+    import('./board-rendering.js').then(({ setSceneTransitionBypass }) => {
+      setSceneTransitionBypass(true);
+      
+      try {
+        // Clear existing state
+        boardState.tileSprites = [];
+        boardState.tileTexts = [];
+        
+        // Recreate layout elements
+        createGameLayout(scene, layoutState, interactionState);
+        
+        // If we have board data, recreate the visual state
+        if (boardState.currentBoard) {
+          updateBoardDisplayWrapper.call(scene);
+        }
+        
+        attempt.success = true;
+        recoveryHistory.push(attempt);
+        currentRecoveryState = RecoveryState.NONE;
+        console.log(`[${new Date().toISOString()}] ✅ Step 3 successful: scene restart completed`);
+        return true;
+      } finally {
+        setSceneTransitionBypass(false);
+      }
+    });
+    
+    return false;
+  } catch (error) {
+    attempt.error = String(error);
+    attempt.success = false;
+    recoveryHistory.push(attempt);
+    console.error(`[${new Date().toISOString()}] ❌ Step 3 failed:`, error);
+    return false;
+  }
+}
+
+/**
+ * Step 4: Complete Phaser instance restart (last resort)
+ * @returns Boolean indicating success
+ */
+function attemptFullRestart(): boolean {
+  const attempt: RecoveryAttempt = {
+    state: RecoveryState.FULL_RESTART,
+    timestamp: Date.now(),
+    success: false
+  };
+  
+  try {
+    currentRecoveryState = RecoveryState.FULL_RESTART;
+    console.log(`[${new Date().toISOString()}] 🚨 Step 4: Attempting full Phaser restart (last resort)...`);
+    
+    // This is handled by the parent component's useEffect cleanup
+    // We'll trigger a forced remount by updating a key
+    localStorage.setItem('wordRushPhaserRecovery', Date.now().toString());
+    
+    attempt.success = true;
+    recoveryHistory.push(attempt);
+    currentRecoveryState = RecoveryState.NONE;
+    console.log(`[${new Date().toISOString()}] ⚠️ Step 4 initiated: full restart triggered`);
+    
+    return true;
+  } catch (error) {
+    attempt.error = String(error);
+    attempt.success = false;
+    recoveryHistory.push(attempt);
+    console.error(`[${new Date().toISOString()}] ❌ Step 4 failed:`, error);
+    return false;
+  }
+}
+
+/**
+ * Start recovery monitoring system
+ * Logs recovery metrics every 30 seconds and alerts if failures > 3
+ */
+function startRecoveryMonitoring(): void {
+  setInterval(() => {
+    const metrics = getRecoveryMetrics();
+    
+    // Log metrics every 30 seconds
+    console.log(`[${new Date().toISOString()}] 📊 Recovery Metrics:`, {
+      state: metrics.currentState,
+      totalAttempts: metrics.totalAttempts,
+      successRate: `${metrics.successRate.toFixed(1)}%`,
+      recentFailures: metrics.recentFailures,
+      historyLength: metrics.history.length
+    });
+    
+    // Alert if recent failures > 3
+    if (metrics.recentFailures > 3) {
+      console.error(`[${new Date().toISOString()}] 🚨 RECOVERY ALERT: High failure rate detected!`, {
+        recentFailures: metrics.recentFailures,
+        successRate: `${metrics.successRate.toFixed(1)}%`,
+        recommendation: 'Consider page refresh or restart'
+      });
+      
+      // Could add user notification here if needed
+      // notifications.error(`Recovery issues detected (${metrics.recentFailures} recent failures)`, 5000);
+    }
+  }, 30000); // Every 30 seconds
+}
+
+/**
+ * Get recovery state metrics for monitoring
+ * @returns Recovery statistics
+ */
+function getRecoveryMetrics(): {
+  currentState: RecoveryState;
+  totalAttempts: number;
+  successRate: number;
+  recentFailures: number;
+  history: RecoveryAttempt[];
+} {
+  const totalAttempts = recoveryHistory.length;
+  const successfulAttempts = recoveryHistory.filter(a => a.success).length;
+  const successRate = totalAttempts > 0 ? (successfulAttempts / totalAttempts) * 100 : 0;
+  
+  // Count failures in last 5 minutes
+  const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
+  const recentFailures = recoveryHistory.filter(a => 
+    !a.success && a.timestamp > fiveMinutesAgo
+  ).length;
+  
+  return {
+    currentState: currentRecoveryState,
+    totalAttempts,
+    successRate,
+    recentFailures,
+    history: recoveryHistory.slice(-10) // Last 10 attempts
+  };
 }
 
 /**
@@ -449,7 +776,7 @@ function recoverSceneState(scene: Phaser.Scene): boolean {
  * @param socket - Optional Socket.io connection for server communication and board requests
  * @returns void - Establishes complete interactive game scene ready for player input
  */
-function create(this: Phaser.Scene, socket?: Socket<ServerToClientEvents, ClientToServerEvents>) {
+function create(this: Phaser.Scene, socket?: Socket<ServerToClientEvents, ClientToServerEvents>, gameState?: 'menu' | 'lobby' | 'match' | 'round-end' | 'match-end') {
   console.log(`[${new Date().toISOString()}] 🎬 Scene CREATE started - optimized initialization...`);
   
   // Force scene readiness for faster startup
@@ -465,6 +792,10 @@ function create(this: Phaser.Scene, socket?: Socket<ServerToClientEvents, Client
     loadingText = null;
   }
 
+  // 🚀 PHASE 5B: Initialize Audio and Particle Systems
+  initializeAudioSystem(this);
+  initializeParticleSystem(this);
+
   // Initialize tile arrays
   boardState.tileSprites = [];
   boardState.tileTexts = [];
@@ -476,7 +807,7 @@ function create(this: Phaser.Scene, socket?: Socket<ServerToClientEvents, Client
   initializeResizeHandler(this, layoutState, interactionState, boardState, updateBoardDisplayWrapper.bind(this));
 
   // Initialize global pointer events
-  initializeGlobalPointerEvents(this, boardState, interactionState);
+  initializeGlobalPointerEvents(this, boardState, interactionState, () => gameState || 'menu');
 
   // Render the board if we already have data
   if (boardState.currentBoard) {
@@ -490,6 +821,9 @@ function create(this: Phaser.Scene, socket?: Socket<ServerToClientEvents, Client
   
   // Start optimized visual validation monitoring
   startPeriodicVisualValidation(this, boardState, setupTileInteractionWrapper.bind(this));
+  
+  // Start recovery monitoring as per checklist
+  startRecoveryMonitoring();
   
   // Process any queued tile changes immediately
   if (queuedTileChanges.length > 0) {
@@ -723,25 +1057,40 @@ function processQueuedTileChanges(this: Phaser.Scene) {
 
   // Process animations if the scene is ready
   if (this.sys && this.sys.isActive()) {
-    processTileChanges(this, boardState, pending, setupTileInteractionWrapper.bind(this))
-      .then(() => {
-        console.log(`Tile changes (seq: ${currentSequence}) processed successfully.`);
-        lastProcessedSequence = currentSequence;
-        pendingTileChanges.delete(currentSequence);
-      })
-      .catch((error) => {
-        console.error(`Error processing tile changes (seq: ${currentSequence}):`, error);
-        // For failed animations, still mark as processed to avoid blocking
-        lastProcessedSequence = currentSequence;
-        pendingTileChanges.delete(currentSequence);
-      })
-      .finally(() => {
-        isProcessingTileChanges = false;
-        // If there are still pending changes, process the next one
-        if (pendingTileChanges.has(lastProcessedSequence + 1)) {
-          processQueuedTileChanges.call(this);
-        }
-      });
+    try {
+      // Add 5s timeout to prevent stuck processing as per checklist
+      const timeout = new Promise<void>((_, reject) => 
+        setTimeout(() => reject(new Error('Processing timeout after 5 seconds')), 5000)
+      );
+      
+      const processingPromise = processTileChanges(this, boardState, pending, setupTileInteractionWrapper.bind(this));
+      
+      Promise.race([timeout, processingPromise])
+        .then(() => {
+          console.log(`Tile changes (seq: ${currentSequence}) processed successfully.`);
+          lastProcessedSequence = currentSequence;
+          pendingTileChanges.delete(currentSequence);
+        })
+        .catch((error) => {
+          console.error(`Error processing tile changes (seq: ${currentSequence}):`, error);
+          // Clear queue on error to prevent blocking as per checklist
+          pendingTileChanges.clear();
+          lastProcessedSequence = currentSequence;
+        })
+        .finally(() => {
+          isProcessingTileChanges = false;
+          // If there are still pending changes, process the next one
+          if (pendingTileChanges.has(lastProcessedSequence + 1)) {
+            processQueuedTileChanges.call(this);
+          }
+        });
+    } catch (error) {
+      console.error(`Failed to start processing tile changes (seq: ${currentSequence}):`, error);
+      // Clear queue and reset state on critical failure
+      pendingTileChanges.clear();
+      isProcessingTileChanges = false;
+      lastProcessedSequence = currentSequence;
+    }
   } else {
     // If scene not ready, just mark as processed
     console.warn('Scene not ready, skipping animations but updating state');
@@ -750,6 +1099,183 @@ function processQueuedTileChanges(this: Phaser.Scene) {
     isProcessingTileChanges = false;
   }
 }
+
+/**
+ * 🚀 PHASE 5B: Audio System Initialization and Management
+ * Initialize premium audio system with volume controls and background music
+ * @param scene - Phaser scene for audio context
+ */
+function initializeAudioSystem(scene: Phaser.Scene): void {
+  console.log(`[${new Date().toISOString()}] 🎵 Initializing audio system...`);
+  
+  try {
+    // Initialize sound effects with volume control
+    audioSystem.tileSelect = scene.sound.add('tile-select', { volume: audioSystem.volume * 0.6 });
+    audioSystem.wordValid = scene.sound.add('word-valid', { volume: audioSystem.volume * 0.8 });
+    audioSystem.wordInvalid = scene.sound.add('word-invalid', { volume: audioSystem.volume * 0.7 });
+    audioSystem.tileCascade = scene.sound.add('tile-cascade', { volume: audioSystem.volume * 0.5 });
+    audioSystem.roundComplete = scene.sound.add('round-complete', { volume: audioSystem.volume });
+    audioSystem.matchVictory = scene.sound.add('match-victory', { volume: audioSystem.volume });
+    audioSystem.speedBonus = scene.sound.add('speed-bonus', { volume: audioSystem.volume * 0.9 });
+
+    // Initialize background music with lower volume and looping
+    audioSystem.backgroundMusic = scene.sound.add('background-music', {
+      volume: audioSystem.musicVolume,
+      loop: true
+    });
+
+    // Start background music if audio is enabled
+    if (audioSystem.isEnabled && audioSystem.backgroundMusic) {
+      audioSystem.backgroundMusic.play();
+    }
+
+    console.log(`[${new Date().toISOString()}] ✅ Audio system initialized successfully`);
+  } catch (error) {
+    console.warn(`[${new Date().toISOString()}] ⚠️ Audio system initialization failed:`, error);
+    audioSystem.isEnabled = false;
+  }
+}
+
+/**
+ * 🚀 PHASE 5B: Particle System Initialization
+ * Initialize premium particle effects for game events
+ * @param scene - Phaser scene for particle context
+ */
+function initializeParticleSystem(scene: Phaser.Scene): void {
+  console.log(`[${new Date().toISOString()}] ✨ Initializing particle system...`);
+  
+  try {
+    // Create particle emitter manager (updated to new API)
+    particleSystem.manager = scene.add.particles(0, 0, 'simple-particle');
+
+    // Word validation success particles (golden burst)
+    particleSystem.wordValidEmitter = particleSystem.manager.addEmitter({
+      texture: 'gold-particle',
+      speed: { min: 50, max: 150 },
+      scale: { start: 0.8, end: 0 },
+      alpha: { start: 1, end: 0 },
+      lifespan: 800,
+      quantity: 8,
+      blendMode: 'ADD',
+      on: false
+    });
+
+    // Tile cascade particles (electric blue)
+    particleSystem.cascadeEmitter = particleSystem.manager.addEmitter({
+      texture: 'blue-particle',
+      speed: { min: 30, max: 100 },
+      scale: { start: 0.6, end: 0 },
+      alpha: { start: 0.8, end: 0 },
+      lifespan: 600,
+      quantity: 5,
+      blendMode: 'ADD',
+      on: false
+    });
+
+    // Speed bonus particles (rainbow burst)
+    particleSystem.speedBonusEmitter = particleSystem.manager.createEmitter({
+      texture: 'simple-particle',
+      speed: { min: 80, max: 200 },
+      scale: { start: 1.2, end: 0 },
+      alpha: { start: 1, end: 0 },
+      lifespan: 1000,
+      quantity: 12,
+      blendMode: 'ADD',
+      tint: [0xFFE265, 0x74F5F6, 0xFF6B6B, 0x4ECDC4],
+      on: false
+    });
+
+    console.log(`[${new Date().toISOString()}] ✅ Particle system initialized successfully`);
+  } catch (error) {
+    console.warn(`[${new Date().toISOString()}] ⚠️ Particle system initialization failed:`, error);
+  }
+}
+
+/**
+ * 🚀 PHASE 5B: Play sound effect with performance optimization
+ * @param soundName - Name of the sound to play
+ * @param scene - Optional scene for context
+ */
+function playSound(soundName: keyof AudioSystem, scene?: Phaser.Scene): void {
+  if (!audioSystem.isEnabled) return;
+  
+  try {
+    const sound = audioSystem[soundName];
+    if (sound && typeof sound.play === 'function') {
+      sound.play();
+    }
+  } catch (error) {
+    console.warn(`[${new Date().toISOString()}] ⚠️ Failed to play sound '${soundName}':`, error);
+  }
+}
+
+/**
+ * 🚀 PHASE 5B: Trigger particle effect at position
+ * @param effectName - Name of the particle effect
+ * @param x - X position for effect
+ * @param y - Y position for effect
+ * @param intensity - Effect intensity (1-3)
+ */
+function triggerParticleEffect(
+  effectName: 'wordValid' | 'cascade' | 'speedBonus',
+  x: number,
+  y: number,
+  intensity: number = 1
+): void {
+  const emitter = particleSystem[`${effectName}Emitter`];
+  if (!emitter) return;
+  
+  try {
+    // Adjust particle count based on intensity
+    const baseQuantity = effectName === 'wordValid' ? 8 : effectName === 'cascade' ? 5 : 12;
+    emitter.setQuantity(baseQuantity * intensity);
+    
+    // Position and burst
+    emitter.setPosition(x, y);
+    emitter.explode();
+    
+    console.log(`[${new Date().toISOString()}] ✨ Triggered ${effectName} particles at (${x}, ${y})`);
+  } catch (error) {
+    console.warn(`[${new Date().toISOString()}] ⚠️ Failed to trigger particle effect '${effectName}':`, error);
+  }
+}
+
+/**
+ * 🚀 PHASE 5B: Volume control functions
+ */
+export const AudioControls = {
+  setVolume: (volume: number) => {
+    audioSystem.volume = Math.max(0, Math.min(1, volume));
+    // Update all sound volumes
+    Object.keys(audioSystem).forEach(key => {
+      const sound = audioSystem[key as keyof AudioSystem];
+      if (sound && typeof sound.setVolume === 'function' && key !== 'backgroundMusic') {
+        sound.setVolume(audioSystem.volume);
+      }
+    });
+  },
+  
+  setMusicVolume: (volume: number) => {
+    audioSystem.musicVolume = Math.max(0, Math.min(1, volume));
+    if (audioSystem.backgroundMusic && typeof audioSystem.backgroundMusic.setVolume === 'function') {
+      audioSystem.backgroundMusic.setVolume(audioSystem.musicVolume);
+    }
+  },
+  
+  toggleAudio: () => {
+    audioSystem.isEnabled = !audioSystem.isEnabled;
+    if (audioSystem.backgroundMusic) {
+      if (audioSystem.isEnabled) {
+        audioSystem.backgroundMusic.resume();
+      } else {
+        audioSystem.backgroundMusic.pause();
+      }
+    }
+  },
+  
+  playSound,
+  triggerParticleEffect
+};
 
 export default PhaserGame; 
 

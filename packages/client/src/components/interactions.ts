@@ -31,6 +31,13 @@ export interface InteractionState {
 export const wordSubmissionTimestamps = new Map<string, number>();
 
 /**
+ * Debounce mechanism to prevent rapid word submissions
+ * Helps handle slow word validations and prevents server overload
+ */
+let lastSubmissionTime = 0;
+const WORD_SUBMISSION_DEBOUNCE_MS = 200;
+
+/**
  * Check if two tiles are adjacent (including diagonally)
  * Validates tile adjacency for word path formation using 8-directional connectivity:
  * - Horizontal and vertical neighbors (4-connected)
@@ -175,14 +182,34 @@ export function onTilePointerOver(
  */
 export function onPointerUp(
   boardState: BoardRenderingState,
-  interactionState: InteractionState
+  interactionState: InteractionState,
+  gameState?: 'menu' | 'lobby' | 'match' | 'round-end' | 'match-end'
 ): void {
   if (!interactionState.isSelecting || interactionState.selectedTiles.length === 0) return;
 
   const word = interactionState.selectedTiles.map(selected => selected.tile.letter).join('');
   
-  // Submit word if it's at least 2 letters
+  // Submit word only if game is active and word is valid length
   if (word.length >= 2 && interactionState.gameSocket) {
+    // Check if game state allows submissions (only during 'match')
+    if (gameState !== 'match') {
+      console.warn(`[Interactions] Word submission blocked - game not active (state: ${gameState})`);
+      // Still clear selection to provide user feedback
+      clearSelection(boardState, interactionState);
+      return;
+    }
+    
+    // Apply debounce to prevent rapid submissions
+    const currentTime = Date.now();
+    if (currentTime - lastSubmissionTime < WORD_SUBMISSION_DEBOUNCE_MS) {
+      console.warn(`[Interactions] Word submission debounced - too rapid (${currentTime - lastSubmissionTime}ms)`);
+      // Still clear selection to provide user feedback
+      clearSelection(boardState, interactionState);
+      return;
+    }
+    
+    lastSubmissionTime = currentTime;
+    
     // Record submission timestamp for latency measurement
     wordSubmissionTimestamps.set(word, Date.now());
     
@@ -294,10 +321,11 @@ export function setupTileInteraction(
 export function initializeGlobalPointerEvents(
   scene: Phaser.Scene,
   boardState: BoardRenderingState,
-  interactionState: InteractionState
+  interactionState: InteractionState,
+  getGameState: () => 'menu' | 'lobby' | 'match' | 'round-end' | 'match-end'
 ): void {
   // Set up global pointer up event
   scene.input.on('pointerup', () => {
-    onPointerUp(boardState, interactionState);
+    onPointerUp(boardState, interactionState, getGameState());
   });
 } 

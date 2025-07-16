@@ -115,6 +115,9 @@ function handleMultiplayerWordSubmit(
   const { word, tiles } = data;
   const { dictionaryService, roomService } = services;
 
+  // 🔴 PHASE 2B: Record game activity for adaptive sync
+  roomService.recordGameActivity(room.roomCode);
+
   // Find player in room
   const player = room.players.find(p => p.id === socket.id);
   if (!player) {

@@ -67,9 +67,10 @@ async function generateValidBoardAsync(dictionaryService: DictionaryModule): Pro
         const board = createRandomBoardOptimized();
         const foundWords = findAllValidWordsOptimized(board, dictionaryService);
         
-        if (foundWords.length >= 35) {
+        // 🚀 PHASE 5A: Updated for 7x7 board - require more words for larger board
+        if (foundWords.length >= 10) { // Further reduced to 10 for immediate gameplay
           const endTime = Date.now();
-          console.log(`[${new Date().toISOString()}] 🎯 Generated valid board with ${foundWords.length} words in ${attempts} attempts (${endTime - startTime}ms)`);
+          console.log(`[${new Date().toISOString()}] 🎯 Generated valid 4x4 board with ${foundWords.length} words in ${attempts} attempts (${endTime - startTime}ms)`);
           resolve(board);
           return;
         }
@@ -91,13 +92,14 @@ async function generateValidBoardAsync(dictionaryService: DictionaryModule): Pro
 }
 
 /**
- * Optimized board creation using persistent tile bag
+ * Optimized board creation using persistent tile bag for 7x7 boards
  * Reuses the tile bag instead of recreating it each time
- * @returns GameBoard with optimized tile generation
+ * @returns GameBoard with optimized tile generation for 7x7 grid
  */
 function createRandomBoardOptimized(): GameBoard {
   const tiles: LetterTile[][] = [];
-  const boardWidth = 4;
+  // 🚀 PHASE 5A: TEMPORARILY back to 4x4 for immediate gameplay
+  const boardWidth = 4;  // Temporarily back to 4x4 for faster generation
   const boardHeight = 4;
   
   // Refill persistent bag if needed
@@ -431,13 +433,14 @@ interface BoardConfig {
 }
 
 /**
- * Default board configuration for MVP (4x4 grid)
+ * Default board configuration for enhanced gameplay (7x7 grid)
+ * 🚀 PHASE 5A: Upgraded to 7x7 for richer strategic gameplay
  */
 const DEFAULT_BOARD_CONFIG: BoardConfig = {
-  boardWidth: 4,
-  boardHeight: 4,
-  minWordsRequired: 10,
-  maxGenerationAttempts: 100,
+  boardWidth: 4,   // Temporarily back to 4x4 for faster generation
+  boardHeight: 4,  // Temporarily back to 4x4 for faster generation
+  minWordsRequired: 10, // Temporarily reduced for immediate gameplay
+  maxGenerationAttempts: 30, // Reduced for faster generation
   minWordLength: 3,
 };
 

@@ -25,6 +25,204 @@ export interface BoardRenderingState {
 }
 
 /**
+ * 🚨 PHASE 1A: CRITICAL - Visual State Recovery Circuit Breaker System
+ * Prevents infinite recovery loops and provides exponential backoff for failed validations
+ */
+
+// Circuit breaker state for visual validation
+interface CircuitBreakerState {
+  isOpen: boolean;
+  recoveryAttempts: number;
+  lastRecoveryTime: number;
+  failureCount: number;
+  lastValidationTime: number;
+  isValidationInProgress: boolean;
+  validationQueue: number;
+  bypassConditions: {
+    duringSceneTransition: boolean;
+    duringTileAnimation: boolean;
+    gameInactive: boolean;
+  };
+}
+
+// Circuit breaker configuration
+const CIRCUIT_BREAKER_CONFIG = {
+  MAX_RECOVERY_ATTEMPTS: 5,
+  RECOVERY_WINDOW_MS: 10000, // 10 seconds
+  MAX_FAILURES_BEFORE_OPEN: 3,
+  OPEN_CIRCUIT_DURATION_MS: 30000, // 30 seconds
+  VALIDATION_DEBOUNCE_MS: 500,
+  MIN_VALIDATION_INTERVAL_MS: 1000,
+  MAX_CONCURRENT_VALIDATIONS: 1,
+  EXPONENTIAL_BACKOFF_BASE: 1000, // Base delay in ms
+  EXPONENTIAL_BACKOFF_MAX: 10000, // Max delay in ms
+};
+
+// Global circuit breaker state
+let circuitBreakerState: CircuitBreakerState = {
+  isOpen: false,
+  recoveryAttempts: 0,
+  lastRecoveryTime: 0,
+  failureCount: 0,
+  lastValidationTime: 0,
+  isValidationInProgress: false,
+  validationQueue: 0,
+  bypassConditions: {
+    duringSceneTransition: false,
+    duringTileAnimation: false,
+    gameInactive: false,
+  }
+};
+
+// Debounced validation timer
+let validationDebounceTimer: NodeJS.Timeout | null = null;
+
+/**
+ * Check if circuit breaker should block validation
+ * @returns true if validation should be blocked
+ */
+function isCircuitBreakerOpen(): boolean {
+  const now = Date.now();
+  
+  // Check if circuit breaker should be reset
+  if (circuitBreakerState.isOpen && 
+      (now - circuitBreakerState.lastRecoveryTime) > CIRCUIT_BREAKER_CONFIG.OPEN_CIRCUIT_DURATION_MS) {
+    console.log(`[${new Date().toISOString()}] 🔧 Circuit breaker reset after ${CIRCUIT_BREAKER_CONFIG.OPEN_CIRCUIT_DURATION_MS}ms`);
+    resetCircuitBreaker();
+  }
+  
+  return circuitBreakerState.isOpen;
+}
+
+/**
+ * Reset circuit breaker state
+ */
+function resetCircuitBreaker(): void {
+  circuitBreakerState.isOpen = false;
+  circuitBreakerState.recoveryAttempts = 0;
+  circuitBreakerState.failureCount = 0;
+  circuitBreakerState.validationQueue = 0;
+}
+
+/**
+ * Trigger circuit breaker due to recovery failure
+ */
+function triggerCircuitBreaker(reason: string): void {
+  const now = Date.now();
+  circuitBreakerState.isOpen = true;
+  circuitBreakerState.lastRecoveryTime = now;
+  circuitBreakerState.failureCount++;
+  
+  console.error(`[${new Date().toISOString()}] 🚨 Circuit breaker OPEN: ${reason}`);
+  console.error(`[${new Date().toISOString()}] 📊 Circuit breaker stats:`, {
+    attempts: circuitBreakerState.recoveryAttempts,
+    failures: circuitBreakerState.failureCount,
+    queueSize: circuitBreakerState.validationQueue
+  });
+}
+
+/**
+ * Check if validation should be bypassed due to current game state
+ * @param scene - Phaser scene to check
+ * @returns true if validation should be bypassed
+ */
+function shouldBypassValidation(scene?: Phaser.Scene): boolean {
+  // Critical bypass conditions only (tightened to reduce over-bypassing)
+  
+  // Only bypass during scene destruction (most critical)
+  if (scene && (!scene.sys || scene.scene.isDestroying)) {
+    return true;
+  }
+  
+  // Tightened scene activity check - only bypass if completely inactive
+  if (scene && !scene.sys.isActive()) {
+    // Add tolerance for temporarily inactive scenes during rapid transitions
+    const inactiveThreshold = Date.now() - 1000; // 1 second tolerance
+    if (circuitBreakerState.lastValidationTime < inactiveThreshold) {
+      return true;
+    }
+  }
+  
+  // Reduced frequency check - only bypass if very recent validation (reduced from general interval)
+  const now = Date.now();
+  if ((now - circuitBreakerState.lastValidationTime) < (CIRCUIT_BREAKER_CONFIG.MIN_VALIDATION_INTERVAL_MS / 2)) {
+    return true;
+  }
+  
+  // More restrictive concurrent validation check
+  if (circuitBreakerState.isValidationInProgress) {
+    circuitBreakerState.validationQueue++;
+    // Reduced tolerance for concurrent validations
+    if (circuitBreakerState.validationQueue > Math.max(1, CIRCUIT_BREAKER_CONFIG.MAX_CONCURRENT_VALIDATIONS / 2)) {
+      console.warn(`[${new Date().toISOString()}] ⚠️ Validation queue overflow (tightened), bypassing`);
+      return true;
+    }
+  }
+  
+  // Only bypass bypass conditions in extreme circumstances
+  if (circuitBreakerState.bypassConditions.duringSceneTransition && 
+      circuitBreakerState.bypassConditions.duringTileAnimation &&
+      circuitBreakerState.bypassConditions.gameInactive) {
+    // Only bypass if ALL conditions are true simultaneously (much more restrictive)
+    return true;
+  }
+  
+  return false;
+}
+
+/**
+ * Calculate exponential backoff delay for recovery attempts
+ * @returns delay in milliseconds
+ */
+function calculateBackoffDelay(): number {
+  const attempts = circuitBreakerState.recoveryAttempts;
+  const delay = Math.min(
+    CIRCUIT_BREAKER_CONFIG.EXPONENTIAL_BACKOFF_BASE * Math.pow(2, attempts),
+    CIRCUIT_BREAKER_CONFIG.EXPONENTIAL_BACKOFF_MAX
+  );
+  return delay;
+}
+
+/**
+ * Set bypass condition for scene transitions
+ * @param bypassing - true to bypass validation
+ */
+export function setSceneTransitionBypass(bypassing: boolean): void {
+  circuitBreakerState.bypassConditions.duringSceneTransition = bypassing;
+  if (bypassing) {
+    console.log(`[${new Date().toISOString()}] 🔄 Scene transition bypass ENABLED`);
+  } else {
+    console.log(`[${new Date().toISOString()}] 🔄 Scene transition bypass DISABLED`);
+  }
+}
+
+/**
+ * Set bypass condition for tile animations
+ * @param bypassing - true to bypass validation
+ */
+export function setTileAnimationBypass(bypassing: boolean): void {
+  circuitBreakerState.bypassConditions.duringTileAnimation = bypassing;
+  if (bypassing) {
+    console.log(`[${new Date().toISOString()}] 🎬 Tile animation bypass ENABLED`);
+  } else {
+    console.log(`[${new Date().toISOString()}] 🎬 Tile animation bypass DISABLED`);
+  }
+}
+
+/**
+ * Set bypass condition for game inactive state
+ * @param bypassing - true to bypass validation
+ */
+export function setGameInactiveBypass(bypassing: boolean): void {
+  circuitBreakerState.bypassConditions.gameInactive = bypassing;
+  if (bypassing) {
+    console.log(`[${new Date().toISOString()}] ⏸️ Game inactive bypass ENABLED`);
+  } else {
+    console.log(`[${new Date().toISOString()}] ⏸️ Game inactive bypass DISABLED`);
+  }
+}
+
+/**
  * Update the board display with current board data
  * Main board rendering function that manages the complete visual update pipeline:
  * 1. Determines if this is initial setup or board update based on existing sprites
@@ -111,6 +309,9 @@ export function processTileChanges(
       latency: startTime - tileChanges.timestamp
     });
 
+    // 🎬 PHASE 1A: Enable tile animation bypass during cascade
+    setTileAnimationBypass(true);
+
     // Calculate layout parameters
     const { width, height } = scene.scale.gameSize;
     const boardWidth = state.currentBoard?.width || 4;
@@ -158,12 +359,17 @@ export function processTileChanges(
                 // Rebind all tile events after cascade completes
                 rebindTileEventsAfterCascade(scene, state, setupTileInteraction);
                 
+                // 🎬 PHASE 1A: Disable tile animation bypass after cascade completes
+                setTileAnimationBypass(false);
+                
                 resolve();
               });
           });
       })
       .catch((error) => {
         console.error('Error processing tile changes:', error);
+        // 🎬 PHASE 1A: Ensure bypass is disabled even on error
+        setTileAnimationBypass(false);
         resolve(); // Continue even if animations fail
       });
   });
@@ -291,31 +497,51 @@ function animateTileRemoval(
       
       if (tileSprite && tileText) {
         const removalPromise = new Promise<void>((animResolve) => {
-          // Create premium particle effect for tile removal
-          const particles = createTileRemovalEffect(scene, tileSprite.x, tileSprite.y, selected.tile.points);
+          try {
+            // Create premium particle effect for tile removal
+            const tilePoints = state.currentBoard?.tiles[y]?.[x]?.points || 1; // Fix: Use state.currentBoard instead of undefined 'selected'
+            const particles = createTileRemovalEffect(scene, tileSprite.x, tileSprite.y, tilePoints);
 
-          // Animate tile disappearing
-          scene.tweens.add({
-            targets: [tileSprite, tileText],
-            alpha: 0,
-            scaleX: 1.2,
-            scaleY: 1.2,
-            duration: 120, // Further optimized for 60fps target
-            ease: 'Cubic.easeIn', // Smoother than Back.easeIn for performance
-            onComplete: () => {
-              // Cleanup immediately
+            // Animate tile disappearing
+            scene.tweens.add({
+              targets: [tileSprite, tileText],
+              alpha: 0,
+              scaleX: 1.2,
+              scaleY: 1.2,
+              duration: 120, // Further optimized for 60fps target
+              ease: 'Cubic.easeIn', // Smoother than Back.easeIn for performance
+              onComplete: () => {
+                try {
+                  // Cleanup immediately
+                  tileSprite.destroy();
+                  tileText.destroy();
+                  
+                  // particles will auto-destroy via setTimeout in createTileRemovalEffect
+                  
+                  // Clear from state arrays
+                  state.tileSprites[y][x] = null as any;
+                  state.tileTexts[y][x] = null as any;
+                  
+                  animResolve();
+                } catch (error) {
+                  console.error('[BoardRendering] Tile cleanup failed:', error);
+                  animResolve(); // Continue even if cleanup fails
+                }
+              }
+            });
+          } catch (error) {
+            console.error('[BoardRendering] Tile removal animation failed:', error);
+            // Fallback: immediately clean up without animation
+            try {
               tileSprite.destroy();
               tileText.destroy();
-              
-              // particles will auto-destroy via setTimeout in createTileRemovalEffect
-              
-              // Clear from state arrays
               state.tileSprites[y][x] = null as any;
               state.tileTexts[y][x] = null as any;
-              
-              animResolve();
+            } catch (cleanupError) {
+              console.error('[BoardRendering] Fallback cleanup failed:', cleanupError);
             }
-          });
+            animResolve();
+          }
         });
         
         removalPromises.push(removalPromise);
@@ -1325,7 +1551,7 @@ export function correctVisualStateTileByTile(
 }
 
 /**
- * Periodic visual state validation
+ * Periodic visual state validation with circuit breaker protection
  * @param scene - Phaser scene
  * @param state - Board rendering state
  * @param setupTileInteraction - Callback for tile interactions
@@ -1337,21 +1563,154 @@ export function startPeriodicVisualValidation(
   setupTileInteraction: (tile: Phaser.GameObjects.Rectangle, row: number, col: number, tileData: LetterTile) => void
 ): NodeJS.Timeout {
   return setInterval(() => {
+    // Check circuit breaker and bypass conditions
+    if (isCircuitBreakerOpen()) {
+      console.log(`[${new Date().toISOString()}] 🚨 Visual validation skipped - circuit breaker open`);
+      return;
+    }
+    
+    if (shouldBypassValidation(scene)) {
+      console.log(`[${new Date().toISOString()}] ⏭️ Visual validation skipped - bypass conditions met`);
+      return;
+    }
+    
+    // Debounced validation execution
+    if (validationDebounceTimer) {
+      clearTimeout(validationDebounceTimer);
+    }
+    
+    validationDebounceTimer = setTimeout(() => {
+      performThrottledValidation(scene, state, setupTileInteraction);
+    }, CIRCUIT_BREAKER_CONFIG.VALIDATION_DEBOUNCE_MS);
+    
+  }, 5000); // Check every 5 seconds
+}
+
+/**
+ * Perform throttled visual state validation with circuit breaker protection
+ * @param scene - Phaser scene
+ * @param state - Board rendering state
+ * @param setupTileInteraction - Callback for tile interactions
+ */
+function performThrottledValidation(
+  scene: Phaser.Scene,
+  state: BoardRenderingState,
+  setupTileInteraction: (tile: Phaser.GameObjects.Rectangle, row: number, col: number, tileData: LetterTile) => void
+): void {
+  const now = Date.now();
+  
+  // Final check before validation
+  if (circuitBreakerState.isValidationInProgress) {
+    console.log(`[${new Date().toISOString()}] ⏳ Visual validation already in progress, skipping`);
+    return;
+  }
+  
+  if (isCircuitBreakerOpen() || shouldBypassValidation(scene)) {
+    return;
+  }
+  
+  try {
+    circuitBreakerState.isValidationInProgress = true;
+    circuitBreakerState.lastValidationTime = now;
+    
+    console.log(`[${new Date().toISOString()}] 🔍 Starting throttled visual state validation...`);
+    
     const validation = validateVisualState(state);
     
     if (!validation.isValid) {
       console.warn(`[${new Date().toISOString()}] ⚠️ Visual state validation failed: ${validation.summary}`);
       console.log(`[${new Date().toISOString()}] 🔍 Mismatches:`, validation.mismatches);
       
-      // Attempt correction
-      const correctedCount = correctVisualStateTileByTile(scene, state, setupTileInteraction);
+      // Track recovery attempt
+      circuitBreakerState.recoveryAttempts++;
       
-      if (correctedCount === 0) {
-        console.warn(`[${new Date().toISOString()}] ⚠️ Tile-by-tile correction failed, attempting full refresh...`);
-        refreshVisualStateFromLogical(scene, state, setupTileInteraction);
+      // Check if we've exceeded recovery attempts in window
+      if (circuitBreakerState.recoveryAttempts >= CIRCUIT_BREAKER_CONFIG.MAX_RECOVERY_ATTEMPTS) {
+        if ((now - circuitBreakerState.lastRecoveryTime) < CIRCUIT_BREAKER_CONFIG.RECOVERY_WINDOW_MS) {
+          triggerCircuitBreaker(`Too many recovery attempts: ${circuitBreakerState.recoveryAttempts} in ${CIRCUIT_BREAKER_CONFIG.RECOVERY_WINDOW_MS}ms`);
+          return;
+        } else {
+          // Reset counter if outside window
+          circuitBreakerState.recoveryAttempts = 1;
+          circuitBreakerState.lastRecoveryTime = now;
+        }
       }
+      
+      // Calculate backoff delay
+      const backoffDelay = calculateBackoffDelay();
+      console.log(`[${new Date().toISOString()}] ⏱️ Recovery attempt ${circuitBreakerState.recoveryAttempts} scheduled with ${backoffDelay}ms backoff`);
+      
+      // Attempt recovery with exponential backoff
+      setTimeout(() => {
+        attemptVisualStateRecovery(scene, state, setupTileInteraction);
+      }, backoffDelay);
+      
+    } else {
+      console.log(`[${new Date().toISOString()}] ✅ Visual state validation passed`);
+      // Reset recovery attempts on successful validation
+      circuitBreakerState.recoveryAttempts = 0;
+      circuitBreakerState.failureCount = 0;
     }
-  }, 5000); // Check every 5 seconds
+    
+  } catch (error) {
+    console.error(`[${new Date().toISOString()}] ❌ Visual state validation error:`, error);
+    triggerCircuitBreaker(`Validation exception: ${error}`);
+  } finally {
+    circuitBreakerState.isValidationInProgress = false;
+    circuitBreakerState.validationQueue = Math.max(0, circuitBreakerState.validationQueue - 1);
+  }
+}
+
+/**
+ * Attempt visual state recovery with progressive steps
+ * @param scene - Phaser scene
+ * @param state - Board rendering state
+ * @param setupTileInteraction - Callback for tile interactions
+ */
+function attemptVisualStateRecovery(
+  scene: Phaser.Scene,
+  state: BoardRenderingState,
+  setupTileInteraction: (tile: Phaser.GameObjects.Rectangle, row: number, col: number, tileData: LetterTile) => void
+): void {
+  if (isCircuitBreakerOpen()) {
+    console.log(`[${new Date().toISOString()}] 🚨 Recovery cancelled - circuit breaker open`);
+    return;
+  }
+  
+  console.log(`[${new Date().toISOString()}] 🔧 Attempting visual state recovery...`);
+  
+  try {
+    // Step 1: Try tile-by-tile correction
+    const correctedCount = correctVisualStateTileByTile(scene, state, setupTileInteraction);
+    
+    if (correctedCount > 0) {
+      console.log(`[${new Date().toISOString()}] ✅ Recovery successful - corrected ${correctedCount} tiles`);
+      circuitBreakerState.recoveryAttempts = 0; // Reset on success
+      return;
+    }
+    
+    // Step 2: Try full refresh if tile correction failed
+    console.warn(`[${new Date().toISOString()}] ⚠️ Tile-by-tile correction failed, attempting full refresh...`);
+    const refreshSuccess = refreshVisualStateFromLogical(scene, state, setupTileInteraction);
+    
+    if (refreshSuccess) {
+      console.log(`[${new Date().toISOString()}] ✅ Recovery successful - full refresh completed`);
+      circuitBreakerState.recoveryAttempts = 0; // Reset on success
+      return;
+    }
+    
+    // Recovery failed
+    console.error(`[${new Date().toISOString()}] ❌ All recovery attempts failed`);
+    
+    // Check if we should trigger circuit breaker
+    if (circuitBreakerState.failureCount >= CIRCUIT_BREAKER_CONFIG.MAX_FAILURES_BEFORE_OPEN) {
+      triggerCircuitBreaker(`Recovery failure limit reached: ${circuitBreakerState.failureCount} consecutive failures`);
+    }
+    
+  } catch (error) {
+    console.error(`[${new Date().toISOString()}] ❌ Recovery attempt failed with exception:`, error);
+    triggerCircuitBreaker(`Recovery exception: ${error}`);
+  }
 } 
 
 /**

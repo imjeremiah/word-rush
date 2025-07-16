@@ -39,12 +39,12 @@ interface GameHUDProps {
 }
 
 /**
- * Game HUD display component
+ * 🟡 PHASE 3A: Optimized Game HUD display component with React.memo
  * Provides real-time game information and controls during active gameplay
  * @param props - GameHUD component props
  * @returns In-game HUD with timer, leaderboard, and controls
  */
-export function GameHUD({
+export const GameHUD = React.memo<GameHUDProps>(({
   timer,
   players,
   currentPlayerId,
@@ -53,7 +53,7 @@ export function GameHUD({
   shuffleCost,
   onShuffle,
   isGameActive
-}: GameHUDProps): JSX.Element {
+}: GameHUDProps): JSX.Element => {
 
   /**
    * Format time remaining for display
@@ -298,4 +298,4 @@ export function GameHUD({
 
     </div>
   );
-} 
+}); 

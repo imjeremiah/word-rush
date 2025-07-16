@@ -1,9 +1,10 @@
 /**
  * Game Context
  * Centralized state management for game data using React Context API
+ * 🟡 PHASE 3B: Enhanced with state batching, validation, and debouncing
  */
 
-import { createContext, useContext, useState, useRef, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useRef, useCallback, ReactNode, useReducer, startTransition } from 'react';
 import { Socket } from 'socket.io-client';
 import { 
   ServerToClientEvents, 
@@ -20,6 +21,47 @@ interface RoundTimer {
   totalRounds: number;
   displayTime?: string; // For preventing unnecessary re-renders
 }
+
+/**
+ * 🟡 PHASE 3B: Enhanced State Management Types
+ */
+
+// Valid game state transitions - expanded to allow more flexible flow
+const VALID_STATE_TRANSITIONS: Record<string, string[]> = {
+  'menu': ['lobby', 'match', 'round-end'], // Add round-end for direct transitions
+  'lobby': ['menu', 'match', 'round-end', 'match-end'], // Add more transitions for reconnect scenarios
+  'match': ['round-end', 'match-end', 'lobby', 'menu'], // Allow direct menu transition for error recovery
+  'round-end': ['match', 'match-end', 'lobby', 'menu'], // Allow menu transition and ensure match continuation
+  'match-end': ['lobby', 'menu', 'match'] // Allow returning to match for error recovery
+};
+
+// State update queue for batching
+interface StateUpdate {
+  type: 'gameState' | 'currentRoom' | 'roundTimer' | 'matchData' | 'playerSession';
+  value: any;
+  timestamp: number;
+  priority: 'low' | 'medium' | 'high';
+}
+
+// Debouncing configuration
+const DEBOUNCE_CONFIG = {
+  timerUpdates: 100, // 100ms debounce for timer updates
+  roomUpdates: 50,   // 50ms debounce for room updates
+  sessionUpdates: 200, // 200ms debounce for session updates
+  stateChanges: 0,   // No debounce for critical state changes
+};
+
+// State change logging for debugging
+interface StateChangeLog {
+  timestamp: number;
+  fromState: any;
+  toState: any;
+  type: string;
+  triggeredBy: string;
+}
+
+const stateChangeHistory: StateChangeLog[] = [];
+const MAX_HISTORY_SIZE = 50;
 
 interface GameContextType {
   socket: Socket<ServerToClientEvents, ClientToServerEvents> | null;
@@ -58,6 +100,19 @@ interface GameContextType {
   setMatchComplete: (complete: any) => void;
   setRoundTimer: (timer: RoundTimer | null) => void;
   setRoundTimerOptimized: (timeRemaining: number) => void; // New optimized setter
+  safeSetRoundTimer: (timer: RoundTimer | null) => void; // Safe wrapper to prevent crashes
+  // 🟡 PHASE 3B: Batch update function for complex state operations
+  batchUpdateGameState: (updates: {
+    gameState?: 'menu' | 'lobby' | 'match' | 'round-end' | 'match-end';
+    currentRoom?: GameRoom | null;
+    matchData?: {
+      currentRound: number;
+      totalRounds: number;
+      timeRemaining: number;
+      leaderboard: Array<{ id: string; username: string; score: number; difficulty?: DifficultyLevel }>;
+    } | null;
+    roundTimer?: RoundTimer | null;
+  }) => void;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -67,17 +122,118 @@ interface GameProviderProps {
 }
 
 /**
+ * 🟡 PHASE 3B: State Management Helper Functions
+ */
+
+/**
+ * Validate state transition
+ * @param fromState - Current state
+ * @param toState - Target state
+ * @returns true if transition is valid
+ */
+function validateStateTransition(fromState: string, toState: string): boolean {
+  const validTransitions = VALID_STATE_TRANSITIONS[fromState];
+  if (!validTransitions) {
+    console.warn(`[GameContext] Unknown state: ${fromState}`);
+    return true; // Allow unknown states for flexibility
+  }
+  
+  const isValid = validTransitions.includes(toState);
+  if (!isValid) {
+    console.error(`[GameContext] Invalid state transition: ${fromState} -> ${toState}`);
+    console.error(`[GameContext] Valid transitions from ${fromState}:`, validTransitions);
+  }
+  
+  return isValid;
+}
+
+/**
+ * Log state change for debugging
+ * @param type - Type of state change
+ * @param fromState - Previous state
+ * @param toState - New state
+ * @param triggeredBy - What triggered the change
+ */
+function logStateChange(type: string, fromState: any, toState: any, triggeredBy: string): void {
+  const logEntry: StateChangeLog = {
+    timestamp: Date.now(),
+    fromState,
+    toState,
+    type,
+    triggeredBy
+  };
+  
+  stateChangeHistory.push(logEntry);
+  
+  // Keep history size manageable
+  if (stateChangeHistory.length > MAX_HISTORY_SIZE) {
+    stateChangeHistory.shift();
+  }
+  
+  console.log(`[GameContext] State change: ${type}`, {
+    from: fromState,
+    to: toState,
+    triggeredBy,
+    timestamp: new Date(logEntry.timestamp).toISOString()
+  });
+}
+
+/**
+ * Create debounced state setter
+ * @param setter - Original state setter
+ * @param debounceMs - Debounce delay in milliseconds
+ * @param type - Type of state for logging
+ * @returns Debounced setter function
+ */
+function createDebouncedSetter<T>(
+  setter: (value: T) => void,
+  debounceMs: number,
+  type: string
+): (value: T) => void {
+  let timeoutId: NodeJS.Timeout | null = null;
+  
+  return (value: T) => {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+    
+    if (debounceMs === 0) {
+      // No debouncing for critical updates
+      setter(value);
+      return;
+    }
+    
+    timeoutId = setTimeout(() => {
+      startTransition(() => {
+        setter(value);
+      });
+    }, debounceMs);
+  };
+}
+
+/**
+ * Batch multiple state updates
+ * @param updates - Array of state updates to batch
+ */
+function batchStateUpdates(updates: (() => void)[]): void {
+  startTransition(() => {
+    updates.forEach(update => update());
+  });
+}
+
+/**
  * Game Context Provider component
  * Manages global game state including socket connection and player session
  * @param children - Child components that will have access to game context
  */
 export function GameProvider({ children }: GameProviderProps): JSX.Element {
+  // 🟡 PHASE 3B: Enhanced state management with validation and debouncing
   const [socket, setSocket] = useState<Socket<ServerToClientEvents, ClientToServerEvents> | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
-  const [playerSession, setPlayerSession] = useState<PlayerSession | null>(null);
-  const [currentRoom, setCurrentRoom] = useState<GameRoom | null>(null);
-  const [gameState, setGameState] = useState<'menu' | 'lobby' | 'match' | 'round-end' | 'match-end'>('menu');
-  const [matchData, setMatchData] = useState<{
+  const [playerSession, setPlayerSessionInternal] = useState<PlayerSession | null>(null);
+  const [currentRoom, setCurrentRoomInternal] = useState<GameRoom | null>(null);
+  const [gameState, setGameStateInternal] = useState<'menu' | 'lobby' | 'match' | 'round-end' | 'match-end'>('menu');
+  const [matchData, setMatchDataInternal] = useState<{
     currentRound: number;
     totalRounds: number;
     timeRemaining: number;
@@ -91,11 +247,67 @@ export function GameProvider({ children }: GameProviderProps): JSX.Element {
   } | null>(null);
   const [roundSummary, setRoundSummary] = useState<any>(null);
   const [matchComplete, setMatchComplete] = useState<any>(null);
-  const [roundTimer, setRoundTimer] = useState<RoundTimer | null>(null);
+  const [roundTimer, setRoundTimerInternal] = useState<RoundTimer | null>(null);
+
+  // 🟡 PHASE 3B: Enhanced setters with validation and debouncing
+  const setGameState = useCallback((newState: 'menu' | 'lobby' | 'match' | 'round-end' | 'match-end') => {
+    const currentState = gameState;
+    
+    // Validate state transition
+    if (!validateStateTransition(currentState, newState)) {
+      console.warn(`[GameContext] Blocked invalid state transition: ${currentState} -> ${newState}`);
+      return;
+    }
+    
+    // Log state change
+    logStateChange('gameState', currentState, newState, 'setGameState');
+    
+    // Update state immediately (no debounce for critical state changes)
+    startTransition(() => {
+      setGameStateInternal(newState);
+    });
+  }, [gameState]);
+
+  const setPlayerSession = useCallback(createDebouncedSetter(
+    (session: PlayerSession | null) => {
+      logStateChange('playerSession', playerSession, session, 'setPlayerSession');
+      setPlayerSessionInternal(session);
+    },
+    DEBOUNCE_CONFIG.sessionUpdates,
+    'playerSession'
+  ), [playerSession]);
+
+  const setCurrentRoom = useCallback(createDebouncedSetter(
+    (room: GameRoom | null) => {
+      logStateChange('currentRoom', currentRoom, room, 'setCurrentRoom');
+      setCurrentRoomInternal(room);
+    },
+    DEBOUNCE_CONFIG.roomUpdates,
+    'currentRoom'
+  ), [currentRoom]);
+
+  const setMatchData = useCallback(createDebouncedSetter(
+    (data: typeof matchData) => {
+      logStateChange('matchData', matchData, data, 'setMatchData');
+      setMatchDataInternal(data);
+    },
+    DEBOUNCE_CONFIG.roomUpdates,
+    'matchData'
+  ), [matchData]);
 
   // Timer optimization: Track last rendered display time to prevent unnecessary re-renders
   const lastDisplayTimeRef = useRef<string>('');
   const currentTimerRef = useRef<RoundTimer | null>(null);
+  
+  // State persistence refs to prevent resets during re-renders
+  const gameStateRef = useRef<'menu' | 'lobby' | 'match' | 'round-end' | 'match-end'>(gameState);
+  const currentRoomRef = useRef<GameRoom | null>(currentRoom);
+  const matchDataRef = useRef<typeof matchData>(matchData);
+  
+  // Update refs whenever state changes
+  gameStateRef.current = gameState;
+  currentRoomRef.current = currentRoom;
+  matchDataRef.current = matchData;
 
   /**
    * Format time remaining for display (same logic as GameHUD)
@@ -137,18 +349,85 @@ export function GameProvider({ children }: GameProviderProps): JSX.Element {
   }, [formatTime]);
 
   /**
-   * Enhanced setRoundTimer that tracks the timer reference
+   * Enhanced setRoundTimer that tracks the timer reference with Phase 3B optimizations
    */
   const setRoundTimerEnhanced = useCallback((timer: RoundTimer | null) => {
-    currentTimerRef.current = timer;
-    if (timer) {
-      lastDisplayTimeRef.current = formatTime(timer.timeRemaining);
-      timer.displayTime = lastDisplayTimeRef.current;
-    } else {
-      lastDisplayTimeRef.current = '';
+    try {
+      // 🟡 PHASE 3B: Add logging and validation
+      logStateChange('roundTimer', roundTimer, timer, 'setRoundTimerEnhanced');
+      
+      currentTimerRef.current = timer;
+      if (timer) {
+        lastDisplayTimeRef.current = formatTime(timer.timeRemaining);
+        timer.displayTime = lastDisplayTimeRef.current;
+      } else {
+        lastDisplayTimeRef.current = '';
+      }
+      
+      startTransition(() => {
+        setRoundTimerInternal(timer);
+      });
+    } catch (error) {
+      console.error('[GameContext] Timer update failed:', error);
+      // Fallback to prevent crash - provide a safe default timer
+      const fallbackTimer: RoundTimer = { 
+        timeRemaining: 90000, 
+        currentRound: 1, 
+        totalRounds: 3,
+        displayTime: '1:30'
+      };
+      currentTimerRef.current = fallbackTimer;
+      lastDisplayTimeRef.current = fallbackTimer.displayTime!;
+      startTransition(() => {
+        setRoundTimerInternal(fallbackTimer);
+      });
     }
-    setRoundTimer(timer);
-  }, [formatTime]);
+  }, [formatTime, roundTimer]);
+
+  /**
+   * Safe wrapper for setRoundTimer to prevent crashes from undefined errors
+   */
+  const safeSetRoundTimer = useCallback((timer: RoundTimer | null) => {
+    try {
+      setRoundTimerEnhanced(timer);
+    } catch (error) {
+      console.error('[GameContext] Safe timer update failed:', error);
+      // Fallback to prevent crash
+      const fallbackTimer: RoundTimer = { 
+        timeRemaining: 90000, 
+        currentRound: 1, 
+        totalRounds: 3,
+        displayTime: '1:30'
+      };
+      setRoundTimerEnhanced(fallbackTimer);
+    }
+  }, [setRoundTimerEnhanced]);
+
+  // 🟡 PHASE 3B: Batch state update helper for complex operations
+  const batchUpdateGameState = useCallback((updates: {
+    gameState?: 'menu' | 'lobby' | 'match' | 'round-end' | 'match-end';
+    currentRoom?: GameRoom | null;
+    matchData?: typeof matchData;
+    roundTimer?: RoundTimer | null;
+  }) => {
+    const updateFunctions: (() => void)[] = [];
+    
+    if (updates.gameState !== undefined) {
+      updateFunctions.push(() => setGameState(updates.gameState!));
+    }
+    if (updates.currentRoom !== undefined) {
+      updateFunctions.push(() => setCurrentRoom(updates.currentRoom!));
+    }
+    if (updates.matchData !== undefined) {
+      updateFunctions.push(() => setMatchData(updates.matchData!));
+    }
+    if (updates.roundTimer !== undefined) {
+      updateFunctions.push(() => setRoundTimerEnhanced(updates.roundTimer!));
+    }
+    
+    console.log(`[GameContext] Batching ${updateFunctions.length} state updates`);
+    batchStateUpdates(updateFunctions);
+  }, [setGameState, setCurrentRoom, setMatchData, setRoundTimerEnhanced]);
 
   const contextValue: GameContextType = {
     socket,
@@ -172,6 +451,8 @@ export function GameProvider({ children }: GameProviderProps): JSX.Element {
     setMatchComplete,
     setRoundTimer: setRoundTimerEnhanced,
     setRoundTimerOptimized,
+    safeSetRoundTimer,
+    batchUpdateGameState, // 🟡 PHASE 3B: Enhanced batch update function
   };
 
   return (

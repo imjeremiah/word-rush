@@ -108,6 +108,7 @@ export const DIFFICULTY_CONFIGS: Record<DifficultyLevel, DifficultyConfig> = {
 };
 
 // Default match settings for lobby creation
+// 🚀 PHASE 5A: Enhanced with game mode support
 export const DEFAULT_MATCH_SETTINGS: MatchSettings = {
   totalRounds: 3,
   roundDuration: 120,
@@ -115,6 +116,7 @@ export const DEFAULT_MATCH_SETTINGS: MatchSettings = {
   speedBonusMultiplier: 1.5,
   speedBonusWindow: 3,
   deadBoardThreshold: 25,
+  gameMode: 'standard' as import('./constants.js').GameMode,
 };
 
 export * from './types.js';

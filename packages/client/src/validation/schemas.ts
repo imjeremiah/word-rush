@@ -302,12 +302,17 @@ export function withServerEventValidation<T extends keyof typeof ServerEventSche
   handler: (data: ServerEventData<T>) => void
 ) {
   return (data: unknown) => {
-    const validation = validateServerEvent(eventName, data);
-    if (validation.success) {
-      handler(validation.data);
-    } else {
-      console.error(`Invalid data received for ${eventName}:`, validation.error);
-      // Could emit an error notification here
+    try {
+      const validation = validateServerEvent(eventName, data);
+      if (validation.success) {
+        handler(validation.data);
+      } else {
+        console.error(`Invalid data received for ${eventName}:`, validation.error);
+        // Could emit an error notification here
+      }
+    } catch (error) {
+      console.error(`Error in socket handler for ${eventName}:`, error);
+      // Could emit a notification about the error or fallback to lobby
     }
   };
 } 

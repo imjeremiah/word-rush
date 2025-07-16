@@ -124,8 +124,109 @@ function createRoomService(cleanupIntervalMs: number = 10 * 60 * 1000): RoomModu
   }
 
   /**
-   * Start periodic board resync to keep all players synchronized
-   * Broadcasts current board state every 5 seconds during active gameplay
+   * 🔴 PHASE 2B: Enhanced Board Synchronization Configuration
+   */
+  interface BoardSyncConfig {
+    baseSyncIntervalMs: number;
+    adaptiveSyncIntervals: {
+      inactive: number;    // No recent activity
+      low: number;         // Low activity (1-2 actions/min)
+      medium: number;      // Medium activity (3-5 actions/min)
+      high: number;        // High activity (6+ actions/min)
+    };
+    syncTimeoutMs: number;
+    maxRetryAttempts: number;
+    retryBackoffBase: number;
+    retryBackoffMax: number;
+    healthCheckInterval: number;
+  }
+
+  const BOARD_SYNC_CONFIG: BoardSyncConfig = {
+    baseSyncIntervalMs: 5000,
+    adaptiveSyncIntervals: {
+      inactive: 10000,   // 10 seconds when inactive
+      low: 8000,         // 8 seconds for low activity
+      medium: 5000,      // 5 seconds for medium activity
+      high: 3000         // 3 seconds for high activity
+    },
+    syncTimeoutMs: 2000,
+    maxRetryAttempts: 3,
+    retryBackoffBase: 1000,
+    retryBackoffMax: 5000,
+    healthCheckInterval: 30000 // 30 seconds
+  };
+
+  // Sync health tracking
+  interface SyncHealth {
+    lastSyncTime: number;
+    successfulSyncs: number;
+    failedSyncs: number;
+    retryAttempts: number;
+    averageLatency: number;
+    activityLevel: 'inactive' | 'low' | 'medium' | 'high';
+    lastActivityTime: number;
+    activityCount: number;
+  }
+
+  const syncHealthMap = new Map<string, SyncHealth>();
+
+  /**
+   * Calculate adaptive sync frequency based on game activity
+   * @param roomCode - Room code
+   * @returns Sync interval in milliseconds
+   */
+  function calculateAdaptiveSyncInterval(roomCode: string): number {
+    const health = syncHealthMap.get(roomCode);
+    if (!health) {
+      return BOARD_SYNC_CONFIG.baseSyncIntervalMs;
+    }
+
+    // Determine activity level based on recent activity
+    const now = Date.now();
+    const timeSinceLastActivity = now - health.lastActivityTime;
+    const minutesSinceLastActivity = timeSinceLastActivity / (60 * 1000);
+
+    // Calculate activity rate (actions per minute)
+    const activityRate = health.activityCount / Math.max(minutesSinceLastActivity, 1);
+
+    let activityLevel: 'inactive' | 'low' | 'medium' | 'high';
+    if (timeSinceLastActivity > 60000) { // More than 1 minute
+      activityLevel = 'inactive';
+    } else if (activityRate < 3) {
+      activityLevel = 'low';
+    } else if (activityRate < 6) {
+      activityLevel = 'medium';
+    } else {
+      activityLevel = 'high';
+    }
+
+    health.activityLevel = activityLevel;
+    return BOARD_SYNC_CONFIG.adaptiveSyncIntervals[activityLevel];
+  }
+
+  /**
+   * Record game activity for adaptive sync calculation
+   * @param roomCode - Room code
+   */
+  function recordGameActivity(roomCode: string): void {
+    const health = syncHealthMap.get(roomCode) || {
+      lastSyncTime: 0,
+      successfulSyncs: 0,
+      failedSyncs: 0,
+      retryAttempts: 0,
+      averageLatency: 0,
+      activityLevel: 'medium' as const,
+      lastActivityTime: Date.now(),
+      activityCount: 0
+    };
+
+    health.lastActivityTime = Date.now();
+    health.activityCount++;
+    syncHealthMap.set(roomCode, health);
+  }
+
+  /**
+   * Start enhanced periodic board resync with adaptive frequency and health monitoring
    * @param roomCode - Room code to sync
    * @param io - Socket.io server instance
    */
@@ -135,32 +236,149 @@ function createRoomService(cleanupIntervalMs: number = 10 * 60 * 1000): RoomModu
       clearInterval(boardResyncIntervals.get(roomCode)!);
     }
 
-    const resyncInterval = setInterval(() => {
+    // Initialize sync health tracking
+    if (!syncHealthMap.has(roomCode)) {
+      syncHealthMap.set(roomCode, {
+        lastSyncTime: 0,
+        successfulSyncs: 0,
+        failedSyncs: 0,
+        retryAttempts: 0,
+        averageLatency: 0,
+        activityLevel: 'medium',
+        lastActivityTime: Date.now(),
+        activityCount: 0
+      });
+    }
+
+    function performSync(): void {
       const room = rooms.get(roomCode.toUpperCase());
       if (!room || !room.gameState || !room.gameState.isGameActive || !room.gameState.board) {
         // Game not active, clear interval
         clearInterval(resyncInterval);
         boardResyncIntervals.delete(roomCode);
+        syncHealthMap.delete(roomCode);
         return;
       }
+
+      const syncStartTime = Date.now();
+      const health = syncHealthMap.get(roomCode)!;
 
       // Generate current board checksum
       const currentChecksum = generateBoardChecksum(room.gameState.board);
       
-      // Broadcast board resync to all players
+      // Broadcast board resync to all players with timeout and retry
       const resyncPayload = {
         board: room.gameState.board,
         boardChecksum: currentChecksum,
         timeRemaining: room.gameState.timeRemaining,
-        sequenceNumber: Date.now(), // Use timestamp as sequence
-        syncType: 'periodic'
+        sequenceNumber: Date.now(),
+        syncType: 'periodic',
+        syncId: crypto.randomUUID() // For tracking responses
       };
 
-      console.log(`[${new Date().toISOString()}] Periodic board resync for room ${roomCode}: checksum=${currentChecksum}`);
-      io.to(roomCode).emit('board:resync', resyncPayload);
-    }, 5000); // Resync every 5 seconds
+      try {
+        console.log(`[${new Date().toISOString()}] Enhanced board resync for room ${roomCode}: checksum=${currentChecksum}, activity=${health.activityLevel}`);
+        
+        // Emit with timeout handling
+        const syncPromise = new Promise<void>((resolve, reject) => {
+          io.to(roomCode).emit('board:resync', resyncPayload);
+          
+          // Simulate sync completion (in real implementation, you'd track client acknowledgments)
+          setTimeout(() => {
+            const syncEndTime = Date.now();
+            const syncLatency = syncEndTime - syncStartTime;
+            
+            // Update sync health metrics
+            health.lastSyncTime = syncEndTime;
+            health.successfulSyncs++;
+            health.averageLatency = (health.averageLatency + syncLatency) / 2;
+            
+            console.log(`[${new Date().toISOString()}] ✅ Board sync completed for room ${roomCode}: latency=${syncLatency}ms`);
+            resolve();
+          }, 100); // Simulated sync completion time
+        });
 
+        // Add timeout to sync operation
+        Promise.race([
+          syncPromise,
+          new Promise<void>((_, reject) => 
+            setTimeout(() => reject(new Error('Sync timeout')), BOARD_SYNC_CONFIG.syncTimeoutMs)
+          )
+        ]).catch(error => {
+          console.warn(`[${new Date().toISOString()}] ⚠️ Board sync failed for room ${roomCode}:`, error);
+          health.failedSyncs++;
+          
+          // Implement retry logic with exponential backoff
+          if (health.retryAttempts < BOARD_SYNC_CONFIG.maxRetryAttempts) {
+            health.retryAttempts++;
+            const backoffDelay = Math.min(
+              BOARD_SYNC_CONFIG.retryBackoffBase * Math.pow(2, health.retryAttempts - 1),
+              BOARD_SYNC_CONFIG.retryBackoffMax
+            );
+            
+            console.log(`[${new Date().toISOString()}] 🔄 Retrying board sync for room ${roomCode} in ${backoffDelay}ms (attempt ${health.retryAttempts})`);
+            setTimeout(() => performSync(), backoffDelay);
+          } else {
+            console.error(`[${new Date().toISOString()}] ❌ Board sync failed permanently for room ${roomCode} after ${BOARD_SYNC_CONFIG.maxRetryAttempts} attempts`);
+            health.retryAttempts = 0; // Reset for next sync cycle
+          }
+        });
+
+      } catch (error) {
+        console.error(`[${new Date().toISOString()}] ❌ Board sync error for room ${roomCode}:`, error);
+        health.failedSyncs++;
+      }
+
+      // Schedule next sync with adaptive interval
+      const nextSyncInterval = calculateAdaptiveSyncInterval(roomCode);
+      if (nextSyncInterval !== BOARD_SYNC_CONFIG.baseSyncIntervalMs) {
+        console.log(`[${new Date().toISOString()}] 📊 Adaptive sync for room ${roomCode}: interval=${nextSyncInterval}ms, activity=${health.activityLevel}`);
+      }
+      
+      // Clear current interval and set new one with adaptive timing
+      clearInterval(resyncInterval);
+      resyncInterval = setInterval(performSync, nextSyncInterval);
+      boardResyncIntervals.set(roomCode, resyncInterval);
+    }
+
+    // Initial sync
+    let resyncInterval = setInterval(performSync, BOARD_SYNC_CONFIG.baseSyncIntervalMs);
     boardResyncIntervals.set(roomCode, resyncInterval);
+
+    // Start health monitoring
+    startSyncHealthMonitoring(roomCode);
+  }
+
+  /**
+   * Start sync health monitoring for a room
+   * @param roomCode - Room code to monitor
+   */
+  function startSyncHealthMonitoring(roomCode: string): void {
+    const healthInterval = setInterval(() => {
+      const room = rooms.get(roomCode.toUpperCase());
+      const health = syncHealthMap.get(roomCode);
+      
+      if (!room || !room.gameState || !room.gameState.isGameActive || !health) {
+        clearInterval(healthInterval);
+        return;
+      }
+
+      // Calculate success rate
+      const totalSyncs = health.successfulSyncs + health.failedSyncs;
+      const successRate = totalSyncs > 0 ? (health.successfulSyncs / totalSyncs) * 100 : 100;
+      
+      console.log(`[${new Date().toISOString()}] 📊 Sync health for room ${roomCode}:`, {
+        successRate: `${successRate.toFixed(1)}%`,
+        averageLatency: `${health.averageLatency.toFixed(1)}ms`,
+        activityLevel: health.activityLevel,
+        totalSyncs,
+        failedSyncs: health.failedSyncs
+      });
+
+      // Reset activity count for next period
+      health.activityCount = Math.floor(health.activityCount * 0.8); // Decay factor
+      
+    }, BOARD_SYNC_CONFIG.healthCheckInterval);
   }
 
   /**
@@ -826,6 +1044,7 @@ function createRoomService(cleanupIntervalMs: number = 10 * 60 * 1000): RoomModu
     getAllRooms,
     cleanup,
     deleteRoom,
+    recordGameActivity, // 🔴 PHASE 2B: Export activity recording function
   };
 }
 

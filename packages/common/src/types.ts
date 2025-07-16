@@ -80,6 +80,7 @@ export interface Player {
 /**
  * Match configuration settings for lobby setup
  * Defines the rules and parameters for a multiplayer match
+ * 🚀 PHASE 5A: Enhanced with advanced game mode support
  */
 export interface MatchSettings {
   /** Number of rounds in the match (e.g., Best of 3) */
@@ -94,6 +95,8 @@ export interface MatchSettings {
   speedBonusWindow: number;
   /** Minimum number of possible words before a board is considered "dead" */
   deadBoardThreshold: number;
+  /** Advanced game mode for themed or special gameplay */
+  gameMode: import('./constants.js').GameMode;
 }
 
 /**
