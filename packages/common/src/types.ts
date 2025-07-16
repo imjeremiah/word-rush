@@ -4,6 +4,55 @@
  */
 
 /**
+ * Tile movement data for cascade animations
+ * Represents a single tile moving from one position to another
+ */
+export interface TileMovement {
+  /** Source position */
+  from: { x: number; y: number };
+  /** Destination position */
+  to: { x: number; y: number };
+  /** Letter content of the moving tile */
+  letter: string;
+  /** Point value of the moving tile */
+  points: number;
+  /** Unique identifier for the tile */
+  id: string;
+}
+
+/**
+ * New tile data for cascade animations
+ * Represents a new tile appearing at a position
+ */
+export interface NewTileData {
+  /** Position where the tile appears */
+  position: { x: number; y: number };
+  /** Letter content of the new tile */
+  letter: string;
+  /** Point value of the new tile */
+  points: number;
+  /** Unique identifier for the tile */
+  id: string;
+}
+
+/**
+ * Complete tile change data for incremental board updates
+ * Contains all information needed to animate board changes without full regeneration
+ */
+export interface TileChanges {
+  /** Positions of tiles that were removed */
+  removedPositions: { x: number; y: number }[];
+  /** Tiles that fell down due to gravity */
+  fallingTiles: TileMovement[];
+  /** New tiles that appeared at the top */
+  newTiles: NewTileData[];
+  /** Sequence number for synchronization */
+  sequenceNumber: number;
+  /** Timestamp when changes were calculated */
+  timestamp: number;
+}
+
+/**
  * Player representation in the game system
  * Contains all essential player data for session management and gameplay
  */
@@ -16,7 +65,46 @@ export interface Player {
   score: number;
   /** Connection status indicating if player is actively connected */
   isConnected: boolean;
+  /** Player's chosen difficulty level affecting minimum word length and score multiplier */
+  difficulty?: DifficultyLevel;
+  /** Whether the player is ready to start the match (lobby state) */
+  isReady?: boolean;
+  /** Timestamp of last valid word submission for speed bonus calculation */
+  lastWordTimestamp?: number;
+  /** Current round score (resets each round) */
+  roundScore?: number;
 }
+
+/**
+ * Match configuration settings for lobby setup
+ * Defines the rules and parameters for a multiplayer match
+ */
+export interface MatchSettings {
+  /** Number of rounds in the match (e.g., Best of 3) */
+  totalRounds: number;
+  /** Duration of each round in seconds */
+  roundDuration: number;
+  /** Cost in points to request a shuffle (when board is not dead) */
+  shuffleCost: number;
+  /** Speed bonus multiplier for rapid word submissions */
+  speedBonusMultiplier: number;
+  /** Time window in seconds for speed bonus eligibility */
+  speedBonusWindow: number;
+  /** Minimum number of possible words before a board is considered "dead" */
+  deadBoardThreshold: number;
+}
+
+/**
+ * Difficulty level configuration
+ * Each difficulty affects minimum word length and score multiplier
+ */
+export type DifficultyLevel = 'easy' | 'medium' | 'hard' | 'extreme';
+
+/**
+ * Match status enumeration
+ * Tracks the current state of a multiplayer match
+ */
+export type MatchStatus = 'lobby' | 'starting' | 'active' | 'round-end' | 'finished';
 
 /**
  * Complete game state for multiplayer matches
@@ -33,6 +121,16 @@ export interface GameState {
   timeRemaining: number;
   /** Whether the game is currently active and accepting moves */
   isGameActive: boolean;
+  /** Current match status */
+  matchStatus: MatchStatus;
+  /** Current game board state */
+  board?: GameBoard;
+  /** Match configuration settings */
+  settings: MatchSettings;
+  /** Round start timestamp for timing calculations */
+  roundStartTime?: number;
+  /** Match winner if game is finished */
+  winner?: Player;
 }
 
 /**
@@ -140,6 +238,8 @@ export interface PlayerSession {
 export interface GameRoom {
   /** Unique room identifier for joining/referencing */
   id: string;
+  /** Shareable room code for easy joining (e.g., "ABCD") */
+  roomCode: string;
   /** Player ID of the room host (has admin controls) */
   hostId: string;
   /** Array of all players currently in the room */
@@ -150,6 +250,12 @@ export interface GameRoom {
   isGameActive: boolean;
   /** Current game state if a match is in progress */
   gameState?: GameState;
+  /** Match configuration settings for this room */
+  settings: MatchSettings;
+  /** Timestamp when the room was created */
+  createdAt: number;
+  /** Timestamp of last activity for cleanup */
+  lastActivity: number;
 }
 
 /**

@@ -30,6 +30,40 @@ const GameBoardSchema = z.object({
   height: z.number().min(1),
 });
 
+const DifficultyLevelSchema = z.enum(['easy', 'medium', 'hard', 'extreme']);
+
+const PlayerSchema = z.object({
+  id: z.string(),
+  username: z.string(),
+  score: z.number(),
+  isConnected: z.boolean(),
+  difficulty: DifficultyLevelSchema.optional(),
+  isReady: z.boolean().optional(),
+  lastWordTimestamp: z.number().optional(),
+  roundScore: z.number().optional(),
+});
+
+const MatchSettingsSchema = z.object({
+  totalRounds: z.number().min(1),
+  roundDuration: z.number().min(30),
+  shuffleCost: z.number().min(0),
+  speedBonusMultiplier: z.number().min(1),
+  speedBonusWindow: z.number().min(1),
+  deadBoardThreshold: z.number().min(1),
+});
+
+const GameRoomSchema = z.object({
+  id: z.string(),
+  roomCode: z.string(),
+  hostId: z.string(),
+  players: z.array(PlayerSchema),
+  maxPlayers: z.number(),
+  isGameActive: z.boolean(),
+  settings: MatchSettingsSchema,
+  createdAt: z.number(),
+  lastActivity: z.number(),
+});
+
 
 
 // Server to client event schemas
@@ -53,6 +87,7 @@ export const ServerEventSchemas = {
     word: z.string(),
     points: z.number().min(0),
     score: z.number().min(0),
+    speedBonus: z.boolean().optional(),
   }),
 
   'word:invalid': z.object({
@@ -62,6 +97,10 @@ export const ServerEventSchemas = {
 
   'game:board-update': z.object({
     board: GameBoardSchema,
+    removedTiles: z.array(z.object({
+      x: z.number(),
+      y: z.number(),
+    })).optional(),
   }),
 
   'game:initial-board': z.object({
@@ -72,6 +111,16 @@ export const ServerEventSchemas = {
     playerId: z.string(),
     score: z.number(),
     totalScore: z.number(),
+    speedBonus: z.boolean().optional(),
+  }),
+
+  'game:leaderboard-update': z.object({
+    players: z.array(z.object({
+      id: z.string(),
+      username: z.string(),
+      score: z.number(),
+      difficulty: DifficultyLevelSchema.optional(),
+    })),
   }),
 
   'player:session-update': z.object({
@@ -85,6 +134,128 @@ export const ServerEventSchemas = {
 
   'player:reconnect-failed': z.object({
     message: z.string(),
+  }),
+
+  // Room events
+  'room:created': z.object({
+    roomId: z.string(),
+    roomCode: z.string(),
+  }),
+
+  'room:joined': z.object({
+    room: GameRoomSchema,
+  }),
+
+  'room:left': z.object({
+    message: z.string(),
+  }),
+
+  'room:player-joined': z.object({
+    player: PlayerSchema,
+    room: GameRoomSchema,
+  }),
+
+  'room:player-left': z.object({
+    playerId: z.string(),
+    room: GameRoomSchema,
+  }),
+
+  'room:player-ready': z.object({
+    playerId: z.string(),
+    isReady: z.boolean(),
+    room: GameRoomSchema,
+  }),
+
+  'room:settings-updated': z.object({
+    settings: MatchSettingsSchema,
+    room: GameRoomSchema,
+  }),
+
+  'room:not-found': z.object({
+    message: z.string(),
+  }),
+
+  // Match events
+  'match:starting': z.object({
+    countdown: z.number(),
+  }),
+
+  'match:started': z.object({
+    board: GameBoardSchema,
+    boardChecksum: z.string(),
+    timeRemaining: z.number(),
+    currentRound: z.number(),
+    totalRounds: z.number(),
+    playerCount: z.number(),
+  }),
+
+  'match:round-end': z.object({
+    roundNumber: z.number(),
+    scores: z.array(z.object({
+      playerId: z.string(),
+      playerName: z.string().optional().default('Unknown'),  // Fix: Handle missing/undefined playerName
+      roundScore: z.number().optional().default(0),
+      totalScore: z.number().optional().default(0),
+      difficulty: z.string().optional().default('medium')
+    })),
+    isMatchComplete: z.boolean(),
+  }),
+
+  'match:finished': z.object({
+    winner: z.object({
+      id: z.string(),
+      username: z.string().optional().default('Unknown'),
+      isConnected: z.boolean().optional().default(true),
+      score: z.number().optional().default(0)
+    }).nullable(),
+    finalScores: z.array(z.object({
+      rank: z.number(),
+      playerId: z.string(),
+      playerName: z.string().optional().default('Unknown'),  // Fix: Handle missing/undefined
+      roundScore: z.number().optional().default(0),
+      totalScore: z.number().optional().default(0),
+      difficulty: z.string().optional().default('medium')
+    })),
+    totalRounds: z.number(),
+  }),
+
+  'match:timer-update': z.object({
+    timeRemaining: z.number(),
+  }),
+
+  // Shuffle events
+  'shuffle:result': z.object({
+    board: GameBoardSchema,
+    costDeducted: z.number(),
+    wasDead: z.boolean(),
+  }),
+
+  'shuffle:failed': z.object({
+    reason: z.string(),
+    currentScore: z.number(),
+    costRequired: z.number(),
+  }),
+
+  'game:tile-changes': z.object({
+    removedPositions: z.array(z.object({
+      x: z.number(),
+      y: z.number(),
+    })),
+    fallingTiles: z.array(z.object({
+      from: z.object({ x: z.number(), y: z.number() }),
+      to: z.object({ x: z.number(), y: z.number() }),
+      letter: z.string(),
+      points: z.number(),
+      id: z.string(),
+    })),
+    newTiles: z.array(z.object({
+      position: z.object({ x: z.number(), y: z.number() }),
+      letter: z.string(),
+      points: z.number(),
+      id: z.string(),
+    })),
+    sequenceNumber: z.number(),
+    timestamp: z.number(),
   }),
 } as const;
 

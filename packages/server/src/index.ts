@@ -11,12 +11,27 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { socketRateLimiter } from './services/rate-limiter.js';
 import { dictionaryService } from './services/dictionary.js';
-import { generateBoard } from './services/board.js';
+import { generateBoard, preGenerateBoards, getCacheStats, clearMemoCache } from './services/board.js';
 import { sessionService } from './services/session.js';
+import { roomService } from './services/room.js';
 import { validateSocketEvent, ClientEventSchemas } from './validation/schemas.js';
 import { handleWordSubmit } from './handlers/wordHandlers.js';
 import { handlePlayerReconnect, handlePlayerJoin, handlePlayerConnect, handlePlayerDisconnect } from './handlers/playerHandlers.js';
-import { handleBoardRequest } from './handlers/gameHandlers.js';
+import { handleBoardRequest, handleShuffleRequest } from './handlers/gameHandlers.js';
+import { 
+  handleRoomCreate, 
+  handleRoomJoin, 
+  handleRoomLeave, 
+  handlePlayerSetReady, 
+  handleRoomUpdateSettings, 
+  handleMatchStart,
+  handlePlayerSetDifficulty
+} from './handlers/roomHandlers.js';
+import { 
+  handleMatchStartFirstRound,
+  handleMatchForceEndRound,
+  handleMatchStartNewMatch
+} from './handlers/matchHandlers.js';
 import { 
   ServerToClientEvents, 
   ClientToServerEvents, 
@@ -68,6 +83,7 @@ app.use(limiter);
 
 // Basic health check endpoint
 app.get('/health', (_, res) => {
+  const cacheStats = getCacheStats();
   res.json({ 
     status: 'ok', 
     timestamp: new Date().toISOString(),
@@ -75,9 +91,39 @@ app.get('/health', (_, res) => {
       loaded: dictionaryService.isReady(),
       wordCount: dictionaryService.getWordCount()
     },
-    activePlayers: sessionService.getActivePlayerCount()
+    activePlayers: sessionService.getActivePlayerCount(),
+    boardCache: {
+      size: cacheStats.cacheSize,
+      isPreGenerating: cacheStats.isPreGenerating,
+      tileBagSize: cacheStats.tileBagSize
+    }
   });
 });
+
+// Initialize board pre-generation cache after dictionary is ready
+if (dictionaryService.isReady()) {
+  preGenerateBoards(dictionaryService, 8).then(() => {
+    console.log(`[${new Date().toISOString()}] 🚀 Board cache initialization complete`);
+  }).catch(error => {
+    console.error(`[${new Date().toISOString()}] ❌ Board cache initialization failed:`, error);
+  });
+} else {
+  console.warn(`[${new Date().toISOString()}] ⚠️ Dictionary not ready, skipping board pre-generation`);
+}
+
+// Set up periodic cache maintenance
+setInterval(() => {
+  const cacheStats = getCacheStats();
+  console.log(`[${new Date().toISOString()}] 🧹 Cache maintenance: boardCache=${cacheStats.cacheSize}, tileBag=${cacheStats.tileBagSize}`);
+  
+  // Clear memo cache every 30 minutes to prevent memory bloat
+  clearMemoCache();
+  
+  // Trigger board pre-generation if cache is running low
+  if (cacheStats.cacheSize < 3 && !cacheStats.isPreGenerating && dictionaryService.isReady()) {
+    preGenerateBoards(dictionaryService, 5).catch(console.error);
+  }
+}, 30 * 60 * 1000); // Every 30 minutes
 
 
 
@@ -169,15 +215,67 @@ io.on('connection', (socket) => {
   const services = {
     dictionaryService,
     generateBoard,
-    sessionService
+    sessionService,
+    roomService
   };
+
+  // Room management handlers
+  socket.on('room:create', withErrorHandling(socket, 'room:create', (data) => {
+    handleRoomCreate(socket, data as { playerName: string; settings: import('@word-rush/common').MatchSettings }, roomService);
+  }));
+
+  socket.on('room:join', withErrorHandling(socket, 'room:join', (data) => {
+    handleRoomJoin(socket, data as { roomCode: string; playerName: string }, roomService);
+  }));
+
+  socket.on('room:leave', withErrorHandlingNoData(socket, () => {
+    handleRoomLeave(socket, roomService);
+  }));
+
+  socket.on('room:set-ready', withErrorHandling(socket, 'room:set-ready', (data) => {
+    handlePlayerSetReady(socket, data as { isReady: boolean }, roomService);
+  }));
+
+  socket.on('room:update-settings', withErrorHandling(socket, 'room:update-settings', (data) => {
+    handleRoomUpdateSettings(socket, data as { settings: import('@word-rush/common').MatchSettings }, roomService);
+  }));
+
+  socket.on('room:start-match', withErrorHandlingNoData(socket, () => {
+    handleMatchStart(socket, roomService, generateBoard, dictionaryService, io);
+  }));
+
+  socket.on('player:set-difficulty', withErrorHandling(socket, 'player:set-difficulty', (data) => {
+    handlePlayerSetDifficulty(socket, data as { difficulty: import('@word-rush/common').DifficultyLevel }, roomService);
+  }));
+
+  // Match flow handlers
+  socket.on('match:start-first-round', withErrorHandling(socket, 'match:start-first-round', (data) => {
+    handleMatchStartFirstRound(socket, data as { roomCode: string }, io, dictionaryService);
+  }));
+
+  socket.on('match:force-end-round', withErrorHandling(socket, 'match:force-end-round', (data) => {
+    handleMatchForceEndRound(socket, data as { roomCode: string }, io, dictionaryService);
+  }));
+
+  socket.on('match:start-new-match', withErrorHandling(socket, 'match:start-new-match', (data) => {
+    handleMatchStartNewMatch(socket, data as { roomCode: string }, io, dictionaryService);
+  }));
+
+  // Board synchronization handlers
+  socket.on('board:request-resync', withErrorHandlingNoData(socket, () => {
+    roomService.handlePlayerRejoin(socket.id, socket);
+  }));
+
+  socket.on('player:rejoin', withErrorHandling(socket, 'player:rejoin', (data) => {
+    roomService.handlePlayerRejoin(socket.id, socket);
+  }));
 
   // Handle player reconnection
   socket.on('player:reconnect', withErrorHandling(socket, 'player:reconnect', (data) => {
     handlePlayerReconnect(socket, data as { sessionId: string; username?: string }, sessionService);
   }));
 
-  // Handle player joining with username
+  // Handle player joining with username (legacy single-player mode)
   socket.on('game:join', withErrorHandling(socket, 'game:join', (data) => {
     handlePlayerJoin(socket, data as { playerName: string }, sessionService);
   }));
@@ -187,13 +285,34 @@ io.on('connection', (socket) => {
     handleBoardRequest(socket, dictionaryService, generateBoard);
   }));
 
+  // Handle shuffle requests
+  socket.on('game:shuffle-request', withErrorHandlingNoData(socket, () => {
+    handleShuffleRequest(socket, roomService, dictionaryService, generateBoard);
+  }));
+
   // Word submission handler
   socket.on('word:submit', withErrorHandling(socket, 'word:submit', (data) => {
     handleWordSubmit(socket, data as { word: string; tiles: LetterTile[] }, services);
   }));
 
-  // Handle disconnection
+  // Handle disconnection with room cleanup
   socket.on('disconnect', (reason) => {
+    // Handle room cleanup
+    const room = roomService.getRoomByPlayerId(socket.id);
+    if (room) {
+      socket.leave(room.roomCode);
+      const updatedRoom = roomService.leaveRoom(room.roomCode, socket.id);
+      
+      // Notify other players in the room
+      if (updatedRoom) {
+        socket.to(room.roomCode).emit('room:player-left', {
+          playerId: socket.id,
+          room: updatedRoom
+        });
+      }
+    }
+    
+    // Handle regular session cleanup
     handlePlayerDisconnect(socket, reason, sessionService);
   });
 });
@@ -224,3 +343,4 @@ server.listen(PORT, () => {
     `[${new Date().toISOString()}] Environment: ${process.env.NODE_ENV || 'development'}`
   );
 });
+

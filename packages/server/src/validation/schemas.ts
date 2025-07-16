@@ -14,13 +14,51 @@ const LetterTileSchema = z.object({
   id: z.string().min(1),
 });
 
+// Match settings schema
+const MatchSettingsSchema = z.object({
+  totalRounds: z.number().min(1).max(10),
+  roundDuration: z.number().min(30).max(300), // 30 seconds to 5 minutes
+  shuffleCost: z.number().min(0).max(50),
+  speedBonusMultiplier: z.number().min(1).max(3),
+  speedBonusWindow: z.number().min(1).max(10),
+  deadBoardThreshold: z.number().min(1).max(20),
+});
+
+// Difficulty level schema
+const DifficultyLevelSchema = z.enum(['easy', 'medium', 'hard', 'extreme']);
+
 // Client to server event schemas
 export const ClientEventSchemas = {
+  // Word submission
   'word:submit': z.object({
     word: z.string().min(2).max(20).regex(/^[A-Za-z]+$/, 'Word must contain only letters'),
     tiles: z.array(LetterTileSchema).min(2).max(20),
   }),
 
+  // Room management
+  'room:create': z.object({
+    playerName: z.string().min(1).max(50).trim(),
+    settings: MatchSettingsSchema,
+  }),
+
+  'room:join': z.object({
+    roomCode: z.string().length(4).regex(/^[A-Z0-9]+$/, 'Room code must be 4 uppercase characters or numbers'),
+    playerName: z.string().min(1).max(50).trim(),
+  }),
+
+  'room:leave': z.undefined(),
+
+  'room:set-ready': z.object({
+    isReady: z.boolean(),
+  }),
+
+  'room:update-settings': z.object({
+    settings: MatchSettingsSchema,
+  }),
+
+  'room:start-match': z.undefined(),
+
+  // Game actions
   'game:join': z.object({
     playerName: z.string().min(1).max(50).trim(),
   }),
@@ -29,9 +67,29 @@ export const ClientEventSchemas = {
 
   'game:request-board': z.undefined(),
 
+  'game:shuffle-request': z.undefined(),
+
+  // Player actions
   'player:reconnect': z.object({
     sessionId: z.string().min(1),
     username: z.string().min(1).max(50).optional(),
+  }),
+
+  'player:set-difficulty': z.object({
+    difficulty: DifficultyLevelSchema,
+  }),
+
+  // Match flow events
+  'match:start-first-round': z.object({
+    roomCode: z.string().length(4),
+  }),
+
+  'match:force-end-round': z.object({
+    roomCode: z.string().length(4),
+  }),
+
+  'match:start-new-match': z.object({
+    roomCode: z.string().length(4),
   }),
 } as const;
 

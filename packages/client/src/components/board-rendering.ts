@@ -4,7 +4,7 @@
  */
 
 import Phaser from 'phaser';
-import { GameBoard, LetterTile, COLORS, FONTS } from '@word-rush/common';
+import { GameBoard, LetterTile, COLORS, FONTS, TileChanges } from '@word-rush/common';
 
 // Types for board rendering state
 export interface BoardRenderingState {
@@ -28,47 +28,452 @@ export interface BoardRenderingState {
  * @param state.tileSprites - 2D array of Phaser Rectangle objects representing tile backgrounds
  * @param state.tileTexts - 2D array of Phaser Text objects for letter display
  * @param setupTileInteraction - Callback function to configure interaction events for each tile
+ * @param removedTiles - Optional array of tile positions that were removed (for cascade animations)
  * @returns void - Updates visual elements directly in the Phaser scene
  */
 export function updateBoardDisplay(
   scene: Phaser.Scene,
   state: BoardRenderingState,
-  setupTileInteraction: (tile: Phaser.GameObjects.Rectangle, row: number, col: number, tileData: LetterTile) => void
+  setupTileInteraction: (tile: Phaser.GameObjects.Rectangle, row: number, col: number, tileData: LetterTile) => void,
+  removedTiles?: { x: number; y: number }[]
 ): void {
   if (!state.currentBoard) return;
 
   // Check if this is an initial board setup or an update
   const isInitialSetup = state.tileSprites.length === 0;
 
-  // If not initial setup, animate out old tiles
-  if (!isInitialSetup) {
+  // If not initial setup, handle dynamic update with animations (legacy board updates)
+  if (!isInitialSetup && removedTiles) {
+    // Legacy board update with full regeneration (for shuffles, etc.)
     animateBoardUpdate(scene, state, setupTileInteraction);
     return;
   }
 
-  // Clear existing tiles
-  state.tileSprites.forEach(row => row.forEach(tile => tile?.destroy()));
-  state.tileTexts.forEach(row => row.forEach(text => text?.destroy()));
-  state.tileSprites = [];
-  state.tileTexts = [];
+  // Clear existing tiles for initial setup
+  if (isInitialSetup) {
+    state.tileSprites.forEach(row => row.forEach(tile => tile?.destroy()));
+    state.tileTexts.forEach(row => row.forEach(text => text?.destroy()));
+    state.tileSprites = [];
+    state.tileTexts = [];
 
-  const { width, height } = scene.scale.gameSize;
-  const boardWidth = state.currentBoard.width;
-  const boardHeight = state.currentBoard.height;
-  
-  // Calculate responsive tile size
-  const maxBoardWidth = width * 0.8;
-  const maxBoardHeight = height * 0.6;
-  const tileSize = Math.min(
-    Math.floor(maxBoardWidth / boardWidth),
-    Math.floor(maxBoardHeight / boardHeight),
-    80 // Maximum tile size
-  );
-  
-  const gridStartX = width / 2 - (boardWidth * tileSize) / 2;
-  const gridStartY = height / 2 - (boardHeight * tileSize) / 2;
+    const { width, height } = scene.scale.gameSize;
+    const boardWidth = state.currentBoard.width;
+    const boardHeight = state.currentBoard.height;
+    
+    // Calculate responsive tile size
+    const maxBoardWidth = width * 0.8;
+    const maxBoardHeight = height * 0.6;
+    const tileSize = Math.min(
+      Math.floor(maxBoardWidth / boardWidth),
+      Math.floor(maxBoardHeight / boardHeight),
+      80 // Maximum tile size
+    );
+    
+    const gridStartX = width / 2 - (boardWidth * tileSize) / 2;
+    const gridStartY = height / 2 - (boardHeight * tileSize) / 2;
 
-  createBoardTiles(scene, state, gridStartX, gridStartY, tileSize, setupTileInteraction);
+    createBoardTiles(scene, state, gridStartX, gridStartY, tileSize, setupTileInteraction);
+  }
+}
+
+/**
+ * Process incremental tile changes with individual animations
+ * Handles the new tile changes event from the server with proper cascading animations
+ * @param scene - The Phaser scene for animation
+ * @param state - Board rendering state 
+ * @param tileChanges - Incremental changes to apply
+ * @param setupTileInteraction - Callback to setup tile interactions
+ * @returns Promise that resolves when all animations complete
+ */
+export function processTileChanges(
+  scene: Phaser.Scene,
+  state: BoardRenderingState,
+  tileChanges: TileChanges,
+  setupTileInteraction: (tile: Phaser.GameObjects.Rectangle, row: number, col: number, tileData: LetterTile) => void
+): Promise<void> {
+  return new Promise((resolve) => {
+    const startTime = Date.now();
+    console.log(`[${new Date().toISOString()}] Starting tile change animation (seq: ${tileChanges.sequenceNumber}):`, {
+      removed: tileChanges.removedPositions.length,
+      falling: tileChanges.fallingTiles.length,
+      new: tileChanges.newTiles.length,
+      latency: startTime - tileChanges.timestamp
+    });
+
+    // Calculate layout parameters
+    const { width, height } = scene.scale.gameSize;
+    const boardWidth = state.currentBoard?.width || 4;
+    const boardHeight = state.currentBoard?.height || 4;
+    
+    const maxBoardWidth = width * 0.8;
+    const maxBoardHeight = height * 0.6;
+    const tileSize = Math.min(
+      Math.floor(maxBoardWidth / boardWidth),
+      Math.floor(maxBoardHeight / boardHeight),
+      80
+    );
+    
+    const gridStartX = width / 2 - (boardWidth * tileSize) / 2;
+    const gridStartY = height / 2 - (boardHeight * tileSize) / 2;
+
+    // Chain animations: removal → falling → new tiles
+    const removalStartTime = Date.now();
+    animateTileRemoval(scene, state, tileChanges.removedPositions)
+      .then(() => {
+        const removalEndTime = Date.now();
+        console.log(`[${new Date().toISOString()}] Tile removal completed in ${removalEndTime - removalStartTime}ms`);
+        
+        const fallingStartTime = Date.now();
+        return animateTileFalling(scene, state, tileChanges.fallingTiles, gridStartX, gridStartY, tileSize)
+          .then(() => {
+            const fallingEndTime = Date.now();
+            console.log(`[${new Date().toISOString()}] Tile falling completed in ${fallingEndTime - fallingStartTime}ms`);
+            
+            const newTileStartTime = Date.now();
+            return animateNewTileAppearance(scene, state, tileChanges.newTiles, gridStartX, gridStartY, tileSize, setupTileInteraction)
+              .then(() => {
+                const newTileEndTime = Date.now();
+                const totalTime = newTileEndTime - startTime;
+                console.log(`[${new Date().toISOString()}] New tile appearance completed in ${newTileEndTime - newTileStartTime}ms`);
+                console.log(`[${new Date().toISOString()}] Total tile change animation completed in ${totalTime}ms (seq: ${tileChanges.sequenceNumber})`);
+                
+                // Check if we're maintaining 60fps target with optimized animations
+                if (totalTime > 400) {
+                  console.warn(`[${new Date().toISOString()}] Slow tile animation detected: ${totalTime}ms (target: <400ms)`);
+                } else {
+                  console.log(`[${new Date().toISOString()}] ✅ Animation performance target met: ${totalTime}ms`);
+                }
+                
+                // Rebind all tile events after cascade completes
+                rebindTileEventsAfterCascade(scene, state, setupTileInteraction);
+                
+                resolve();
+              });
+          });
+      })
+      .catch((error) => {
+        console.error('Error processing tile changes:', error);
+        resolve(); // Continue even if animations fail
+      });
+  });
+}
+
+/**
+ * Rebind tile events after cascade animations complete
+ * Ensures all tiles have proper interactions and adjacency is validated
+ * @param scene - Phaser scene
+ * @param state - Board rendering state
+ * @param setupTileInteraction - Callback to setup tile interactions
+ */
+function rebindTileEventsAfterCascade(
+  scene: Phaser.Scene,
+  state: BoardRenderingState,
+  setupTileInteraction: (tile: Phaser.GameObjects.Rectangle, row: number, col: number, tileData: LetterTile) => void
+): void {
+  console.log(`[${new Date().toISOString()}] 🔄 Rebinding tile events after cascade...`);
+  
+  if (!state.currentBoard) {
+    console.warn('No current board to rebind events for');
+    return;
+  }
+
+  let reboundCount = 0;
+  
+  // Iterate through all tiles and ensure they have proper interactions
+  for (let row = 0; row < state.currentBoard.height; row++) {
+    for (let col = 0; col < state.currentBoard.width; col++) {
+      const tileSprite = state.tileSprites[row]?.[col];
+      const logicalTile = state.currentBoard.tiles[row]?.[col];
+      
+      if (tileSprite && logicalTile) {
+        // Ensure tile is interactive
+        if (!tileSprite.input) {
+          tileSprite.setInteractive();
+        }
+        
+        // Rebind interactions
+        setupTileInteraction(tileSprite, row, col, logicalTile);
+        reboundCount++;
+      }
+    }
+  }
+  
+  console.log(`[${new Date().toISOString()}] ✅ Rebound ${reboundCount} tile interactions`);
+  
+  // Validate adjacency mapping after cascade
+  validateAdjacencyPostCascade(state);
+}
+
+/**
+ * Validate and rebuild adjacency relationships after cascade
+ * Ensures tile selection and path validation work correctly with new positions
+ * @param state - Board rendering state
+ */
+function validateAdjacencyPostCascade(state: BoardRenderingState): void {
+  if (!state.currentBoard) return;
+  
+  console.log(`[${new Date().toISOString()}] 🔍 Validating adjacency after cascade...`);
+  
+  const { width, height } = state.currentBoard;
+  const adjacencyMap = new Map<string, Array<{ x: number; y: number }>>();
+  
+  // Rebuild adjacency map for all tiles
+  for (let row = 0; row < height; row++) {
+    for (let col = 0; col < width; col++) {
+      const tile = state.currentBoard.tiles[row][col];
+      if (tile) {
+        const neighbors: Array<{ x: number; y: number }> = [];
+        
+        // Check all 8 directions for adjacent tiles
+        const directions = [
+          [-1, -1], [-1, 0], [-1, 1],
+          [0, -1],           [0, 1],
+          [1, -1],  [1, 0],  [1, 1]
+        ];
+        
+        for (const [deltaRow, deltaCol] of directions) {
+          const newRow = row + deltaRow;
+          const newCol = col + deltaCol;
+          
+          if (newRow >= 0 && newRow < height && newCol >= 0 && newCol < width) {
+            const neighborTile = state.currentBoard.tiles[newRow][newCol];
+            if (neighborTile) {
+              neighbors.push({ x: newCol, y: newRow });
+            }
+          }
+        }
+        
+        adjacencyMap.set(`${col}-${row}`, neighbors);
+      }
+    }
+  }
+  
+  console.log(`[${new Date().toISOString()}] ✅ Adjacency validated for ${adjacencyMap.size} tiles`);
+  
+  // Store adjacency map for later use in selection validation
+  (state as any).adjacencyMap = adjacencyMap;
+}
+
+/**
+ * Animate removal of specific tiles
+ * @param scene - Phaser scene
+ * @param state - Board rendering state
+ * @param positions - Positions of tiles to remove
+ * @returns Promise that resolves when removal animations complete
+ */
+function animateTileRemoval(
+  scene: Phaser.Scene,
+  state: BoardRenderingState,
+  positions: { x: number; y: number }[]
+): Promise<void> {
+  return new Promise((resolve) => {
+    if (positions.length === 0) {
+      resolve();
+      return;
+    }
+
+    const removalPromises: Promise<void>[] = [];
+
+    for (const { x, y } of positions) {
+      const tileSprite = state.tileSprites[y]?.[x];
+      const tileText = state.tileTexts[y]?.[x];
+      
+      if (tileSprite && tileText) {
+        const removalPromise = new Promise<void>((animResolve) => {
+          // Animate tile disappearing with pop effect - optimized duration
+          scene.tweens.add({
+            targets: [tileSprite, tileText],
+            alpha: 0,
+            scaleX: 1.2,
+            scaleY: 1.2,
+            duration: 120, // Further optimized for 60fps target
+            ease: 'Cubic.easeIn', // Smoother than Back.easeIn for performance
+            onComplete: () => {
+              // Cleanup immediately
+              tileSprite.destroy();
+              tileText.destroy();
+              
+              // Clear from state arrays
+              state.tileSprites[y][x] = null as any;
+              state.tileTexts[y][x] = null as any;
+              
+              animResolve();
+            }
+          });
+        });
+        
+        removalPromises.push(removalPromise);
+      }
+    }
+
+    Promise.all(removalPromises).then(() => resolve());
+  });
+}
+
+/**
+ * Animate tiles falling to new positions
+ * @param scene - Phaser scene
+ * @param state - Board rendering state
+ * @param movements - Array of tile movements from->to
+ * @param gridStartX - Grid starting X position
+ * @param gridStartY - Grid starting Y position
+ * @param tileSize - Size of each tile
+ * @returns Promise that resolves when falling animations complete
+ */
+function animateTileFalling(
+  scene: Phaser.Scene,
+  state: BoardRenderingState,
+  movements: Array<{ from: { x: number; y: number }; to: { x: number; y: number }; letter: string; points: number; id: string }>,
+  gridStartX: number,
+  gridStartY: number,
+  tileSize: number
+): Promise<void> {
+  return new Promise((resolve) => {
+    if (movements.length === 0) {
+      resolve();
+      return;
+    }
+
+    const fallingPromises: Promise<void>[] = [];
+
+    for (const movement of movements) {
+      const { from, to } = movement;
+      const tileSprite = state.tileSprites[from.y]?.[from.x];
+      const tileText = state.tileTexts[from.y]?.[from.x];
+      
+      if (tileSprite && tileText) {
+        const fallingPromise = new Promise<void>((animResolve) => {
+          const newX = gridStartX + to.x * tileSize + tileSize / 2;
+          const newY = gridStartY + to.y * tileSize + tileSize / 2;
+          
+          // Animate tile falling to new position - optimized duration and easing
+          scene.tweens.add({
+            targets: [tileSprite, tileText],
+            x: newX,
+            y: newY,
+            duration: 180, // Further optimized for faster cascade
+            ease: 'Cubic.easeOut', // Optimized for smooth 60fps performance
+            delay: from.x * 20, // Further reduced stagger for faster completion
+            onComplete: () => {
+              // Update state arrays efficiently
+              state.tileSprites[to.y][to.x] = tileSprite;
+              state.tileTexts[to.y][to.x] = tileText;
+              
+              // Clear old position only if different
+              if (from.y !== to.y || from.x !== to.x) {
+                state.tileSprites[from.y][from.x] = null as any;
+                state.tileTexts[from.y][from.x] = null as any;
+              }
+              
+              animResolve();
+            }
+          });
+        });
+        
+        fallingPromises.push(fallingPromise);
+      }
+    }
+
+    Promise.all(fallingPromises).then(() => resolve());
+  });
+}
+
+/**
+ * Animate new tiles appearing from the top
+ * @param scene - Phaser scene
+ * @param state - Board rendering state
+ * @param newTiles - Array of new tiles to create
+ * @param gridStartX - Grid starting X position
+ * @param gridStartY - Grid starting Y position
+ * @param tileSize - Size of each tile
+ * @param setupTileInteraction - Callback to setup interactions
+ * @returns Promise that resolves when new tile animations complete
+ */
+function animateNewTileAppearance(
+  scene: Phaser.Scene,
+  state: BoardRenderingState,
+  newTiles: Array<{ position: { x: number; y: number }; letter: string; points: number; id: string }>,
+  gridStartX: number,
+  gridStartY: number,
+  tileSize: number,
+  setupTileInteraction: (tile: Phaser.GameObjects.Rectangle, row: number, col: number, tileData: LetterTile) => void
+): Promise<void> {
+  return new Promise((resolve) => {
+    if (newTiles.length === 0) {
+      resolve();
+      return;
+    }
+
+    const appearancePromises: Promise<void>[] = [];
+
+    for (const newTileData of newTiles) {
+      const { position, letter, points, id } = newTileData;
+      const appearancePromise = new Promise<void>((animResolve) => {
+        const x = gridStartX + position.x * tileSize + tileSize / 2;
+        const finalY = gridStartY + position.y * tileSize + tileSize / 2;
+        const startY = finalY - tileSize * 1.5; // Reduced fall distance for speed
+
+        // Calculate responsive text sizes
+        const letterSize = Math.max(12, Math.min(32, tileSize * 0.4));
+        const pointSize = Math.max(8, Math.min(12, tileSize * 0.15));
+
+        // Create tile background
+        const tile = scene.add.rectangle(
+          x,
+          startY,
+          tileSize - 4,
+          tileSize - 4,
+          parseInt(COLORS.tileBackground.replace('#', ''), 16)
+        );
+        tile.setStrokeStyle(2, parseInt(COLORS.border.replace('#', ''), 16));
+        tile.setInteractive();
+
+        // Create letter text
+        const letterText = scene.add
+          .text(x, startY - 4, letter, {
+            fontSize: letterSize + 'px',
+            color: COLORS.tileText,
+            fontFamily: FONTS.body,
+            fontStyle: 'bold',
+          })
+          .setOrigin(0.5);
+        
+        // Create point value text
+        const pointText = scene.add
+          .text(x + tileSize * 0.3, startY + tileSize * 0.25, points.toString(), {
+            fontSize: pointSize + 'px',
+            color: COLORS.textSubtle,
+            fontFamily: FONTS.body,
+            fontStyle: 'bold',
+          })
+          .setOrigin(0.5);
+
+        // Animate tile falling into place - optimized for performance
+        scene.tweens.add({
+          targets: [tile, letterText, pointText],
+          y: [startY, finalY, finalY - 4, finalY + tileSize * 0.25], // Different targets for different elements
+          duration: 250, // Further optimized for faster completion
+          ease: 'Cubic.easeOut', // Optimized for smooth 60fps performance
+          delay: position.x * 30, // Further reduced stagger for faster completion
+          onComplete: () => {
+            // Store in state arrays efficiently
+            state.tileSprites[position.y][position.x] = tile;
+            state.tileTexts[position.y][position.x] = letterText;
+            
+            // Setup interactions
+            const tileData: LetterTile = { letter, points, x: position.x, y: position.y, id };
+            setupTileInteraction(tile, position.y, position.x, tileData);
+            
+            animResolve();
+          }
+        });
+      });
+      
+      appearancePromises.push(appearancePromise);
+    }
+
+    Promise.all(appearancePromises).then(() => resolve());
+  });
 }
 
 /**
@@ -238,6 +643,256 @@ function createNewBoardWithAnimation(
 }
 
 /**
+ * Animate tile removal and cascading effect for dynamic gameplay
+ * Handles the complete tile removal and falling animation sequence:
+ * 1. Animate removed tiles disappearing with particle effects
+ * 2. Animate remaining tiles falling down to fill gaps
+ * 3. Animate new tiles falling from top to fill empty spaces
+ * 4. Set up interactions for all final tile positions
+ * @param scene - The Phaser scene for animation
+ * @param state - Board rendering state with current sprites and board data
+ * @param setupTileInteraction - Callback to setup tile interactions
+ * @param removedTiles - Array of tile positions that were removed from the board
+ * @returns void - Updates board visuals with smooth cascading animations
+ */
+function animateTileRemovalAndCascade(
+  scene: Phaser.Scene,
+  state: BoardRenderingState,
+  setupTileInteraction: (tile: Phaser.GameObjects.Rectangle, row: number, col: number, tileData: LetterTile) => void,
+  removedTiles: { x: number; y: number }[]
+): void {
+  if (!state.currentBoard) return;
+
+  const { width, height } = scene.scale.gameSize;
+  const boardWidth = state.currentBoard.width;
+  const boardHeight = state.currentBoard.height;
+  
+  // Calculate responsive tile size
+  const maxBoardWidth = width * 0.8;
+  const maxBoardHeight = height * 0.6;
+  const tileSize = Math.min(
+    Math.floor(maxBoardWidth / boardWidth),
+    Math.floor(maxBoardHeight / boardHeight),
+    80
+  );
+  
+  const gridStartX = width / 2 - (boardWidth * tileSize) / 2;
+  const gridStartY = height / 2 - (boardHeight * tileSize) / 2;
+
+  // Phase 1: Animate removal of tiles that formed the word
+  const removalAnimations: Promise<void>[] = [];
+  const removedPositions = new Set<string>();
+
+  for (const { x, y } of removedTiles) {
+    const tileSprite = state.tileSprites[y]?.[x];
+    const tileText = state.tileTexts[y]?.[x];
+    
+    if (tileSprite && tileText) {
+      removedPositions.add(`${x}-${y}`);
+      
+      const removalPromise = new Promise<void>((resolve) => {
+        // Create particle effect for tile removal
+        const particles = scene.add.particles(tileSprite.x, tileSprite.y, 'simple-particle', {
+          speed: { min: 50, max: 150 },
+          scale: { start: 0.3, end: 0 },
+          lifespan: 300,
+          quantity: 5
+        });
+
+        // Animate tile disappearing
+        scene.tweens.add({
+          targets: [tileSprite, tileText],
+          alpha: 0,
+          scaleX: 1.2,
+          scaleY: 1.2,
+          duration: 250,
+          ease: 'Back.easeIn',
+          onComplete: () => {
+            tileSprite.destroy();
+            tileText.destroy();
+            particles.destroy();
+            
+            // Clear from state arrays
+            state.tileSprites[y][x] = null as any;
+            state.tileTexts[y][x] = null as any;
+            
+            resolve();
+          }
+        });
+      });
+      
+      removalAnimations.push(removalPromise);
+    }
+  }
+
+  // Phase 2: After removal animations complete, animate cascading
+  Promise.all(removalAnimations).then(() => {
+    animateCascadingTilesWithRemovedPositions(scene, state, gridStartX, gridStartY, tileSize, setupTileInteraction, removedPositions);
+  });
+}
+
+/**
+ * Animate per-column cascading effect where existing tiles fall down and new tiles appear from top
+ * Implements proper column-by-column tile dropping instead of full board regeneration
+ * @param scene - The Phaser scene
+ * @param state - Board rendering state
+ * @param gridStartX - X position to start the grid
+ * @param gridStartY - Y position to start the grid
+ * @param tileSize - Size of each tile
+ * @param setupTileInteraction - Callback to setup tile interactions
+ * @param removedPositions - Set of position keys that were removed
+ */
+function animateCascadingTilesWithRemovedPositions(
+  scene: Phaser.Scene,
+  state: BoardRenderingState,
+  gridStartX: number,
+  gridStartY: number,
+  tileSize: number,
+  setupTileInteraction: (tile: Phaser.GameObjects.Rectangle, row: number, col: number, tileData: LetterTile) => void,
+  removedPositions: Set<string>
+): void {
+  if (!state.currentBoard) return;
+
+  const boardWidth = state.currentBoard.width;
+  const boardHeight = state.currentBoard.height;
+
+  // Process each column separately for per-column cascading
+  const dropAnimations: Promise<void>[] = [];
+  
+  for (let col = 0; col < boardWidth; col++) {
+    let dropCount = 0; // Count removed tiles from bottom up
+    const existingTiles: { sprite: Phaser.GameObjects.Rectangle; text: Phaser.GameObjects.Text; originalRow: number }[] = [];
+    
+    // First pass: Collect existing tiles and count gaps
+    for (let row = boardHeight - 1; row >= 0; row--) {
+      const positionKey = `${col}-${row}`;
+      
+      if (removedPositions.has(positionKey)) {
+        // This position was removed, count it as a gap
+        dropCount++;
+      } else {
+        // This tile still exists, collect it for repositioning
+        const currentTileSprite = state.tileSprites[row]?.[col];
+        const currentTileText = state.tileTexts[row]?.[col];
+        
+        if (currentTileSprite && currentTileText) {
+          existingTiles.unshift({ // Add to front so we process top-to-bottom
+            sprite: currentTileSprite,
+            text: currentTileText,
+            originalRow: row
+          });
+        }
+      }
+    }
+    
+    // Second pass: Move existing tiles to their new positions (from bottom up)
+    existingTiles.forEach((tileInfo, index) => {
+      const newRow = boardHeight - 1 - index; // Place from bottom
+      
+      if (newRow !== tileInfo.originalRow) {
+        const newY = gridStartY + newRow * tileSize + tileSize / 2;
+        
+        // Animate existing tile falling to new position
+        const dropPromise = new Promise<void>((resolve) => {
+          scene.tweens.add({
+            targets: [tileInfo.sprite, tileInfo.text],
+            y: newY,
+            duration: 300,
+            ease: 'Bounce.easeOut',
+            delay: col * 25, // Stagger columns
+            onComplete: () => {
+              // Update positions in state arrays
+              state.tileSprites[newRow][col] = tileInfo.sprite;
+              state.tileTexts[newRow][col] = tileInfo.text;
+              if (newRow !== tileInfo.originalRow) {
+                state.tileSprites[tileInfo.originalRow][col] = null as any;
+                state.tileTexts[tileInfo.originalRow][col] = null as any;
+              }
+              
+              // Re-setup interactions for new position
+              const tileData = state.currentBoard.tiles[newRow][col];
+              setupTileInteraction(tileInfo.sprite, newRow, col, tileData);
+              resolve();
+            }
+          });
+        });
+        dropAnimations.push(dropPromise);
+      }
+    });
+         
+     // Third pass: Create new tiles for empty spaces at the top
+     const newTilesNeeded = dropCount;
+     for (let i = 0; i < newTilesNeeded; i++) {
+      const newRow = i;
+      const tileData = state.currentBoard.tiles[newRow][col];
+      const x = gridStartX + col * tileSize + tileSize / 2;
+      const finalY = gridStartY + newRow * tileSize + tileSize / 2;
+      const startY = gridStartY - tileSize; // Start just above the board
+      
+      // Calculate responsive text sizes
+      const letterSize = Math.max(12, Math.min(32, tileSize * 0.4));
+      const pointSize = Math.max(8, Math.min(12, tileSize * 0.15));
+
+      // Create new tile background
+      const tile = scene.add.rectangle(
+        x,
+        startY,
+        tileSize - 4,
+        tileSize - 4,
+        parseInt(COLORS.tileBackground.replace('#', ''), 16)
+      );
+      tile.setStrokeStyle(2, parseInt(COLORS.border.replace('#', ''), 16));
+      tile.setInteractive();
+
+      // Create new tile text
+      const letterText = scene.add
+        .text(x, startY - 4, tileData.letter, {
+          fontSize: letterSize + 'px',
+          color: COLORS.tileText,
+          fontFamily: FONTS.body,
+          fontStyle: 'bold',
+        })
+        .setOrigin(0.5);
+      
+      // Create new point value text
+      const pointText = scene.add
+        .text(x + tileSize * 0.3, startY + tileSize * 0.25, tileData.points.toString(), {
+          fontSize: pointSize + 'px',
+          color: COLORS.textSubtle,
+          fontFamily: FONTS.body,
+          fontStyle: 'bold',
+        })
+        .setOrigin(0.5);
+
+      // Update state arrays
+      state.tileSprites[newRow][col] = tile;
+      state.tileTexts[newRow][col] = letterText;
+
+      // Animate new tile falling into place
+      const newTilePromise = new Promise<void>((resolve) => {
+        scene.tweens.add({
+          targets: [tile, letterText, pointText],
+          y: [startY, finalY, finalY - 4, finalY + tileSize * 0.25], // Different final positions
+          duration: 400 + (i * 50), // Stagger new tiles
+          ease: 'Bounce.easeOut',
+          delay: col * 50 + 200, // Delay after existing tiles start moving
+          onComplete: () => {
+            setupTileInteraction(tile, newRow, col, tileData);
+            resolve();
+          }
+        });
+      });
+      dropAnimations.push(newTilePromise);
+    }
+  }
+
+  // Wait for all animations to complete
+  Promise.all(dropAnimations).then(() => {
+    console.log('Per-column cascade animation complete');
+  });
+}
+
+/**
  * Create board tiles without animation for initial setup
  * @param scene - The Phaser scene
  * @param state - The board rendering state
@@ -322,4 +977,302 @@ function createBoardTiles(
   }
 
   console.log('Board display updated with', boardWidth, 'x', boardHeight, 'tiles');
+} 
+
+/**
+ * Visual State Validation and Recovery Functions
+ * Phase 3.1: Implement visual state validation and recovery mechanisms
+ */
+
+/**
+ * Compare visual tile state with logical board state
+ * @param state - Board rendering state
+ * @returns Validation result with detailed mismatch information
+ */
+export function validateVisualState(state: BoardRenderingState): {
+  isValid: boolean;
+  mismatches: Array<{
+    type: 'missing_visual' | 'missing_logical' | 'position_mismatch' | 'content_mismatch';
+    position: { x: number; y: number };
+    details: string;
+  }>;
+  summary: string;
+} {
+  const mismatches: Array<{
+    type: 'missing_visual' | 'missing_logical' | 'position_mismatch' | 'content_mismatch';
+    position: { x: number; y: number };
+    details: string;
+  }> = [];
+
+  if (!state.currentBoard) {
+    return {
+      isValid: false,
+      mismatches: [],
+      summary: 'No logical board state available'
+    };
+  }
+
+  const { currentBoard, tileSprites, tileTexts } = state;
+
+  // Check each position in the logical board
+  for (let row = 0; row < currentBoard.height; row++) {
+    for (let col = 0; col < currentBoard.width; col++) {
+      const logicalTile = currentBoard.tiles[row][col];
+      const visualSprite = tileSprites[row]?.[col];
+      const visualText = tileTexts[row]?.[col];
+
+      if (logicalTile) {
+        // Logical tile exists - check visual representation
+        if (!visualSprite || !visualText) {
+          mismatches.push({
+            type: 'missing_visual',
+            position: { x: col, y: row },
+            details: `Logical tile '${logicalTile.letter}' has no visual representation`
+          });
+        } else {
+          // Check content match
+          if (visualText.text !== logicalTile.letter) {
+            mismatches.push({
+              type: 'content_mismatch',
+              position: { x: col, y: row },
+              details: `Visual '${visualText.text}' != Logical '${logicalTile.letter}'`
+            });
+          }
+          
+          // Check position match (approximate for floating point)
+          const expectedX = logicalTile.x;
+          const expectedY = logicalTile.y;
+          if (Math.abs(expectedX - col) > 0.1 || Math.abs(expectedY - row) > 0.1) {
+            mismatches.push({
+              type: 'position_mismatch',
+              position: { x: col, y: row },
+              details: `Position mismatch: visual(${col},${row}) != logical(${expectedX},${expectedY})`
+            });
+          }
+        }
+      } else {
+        // No logical tile - check if visual exists
+        if (visualSprite || visualText) {
+          mismatches.push({
+            type: 'missing_logical',
+            position: { x: col, y: row },
+            details: `Visual tile exists but no logical tile at position`
+          });
+        }
+      }
+    }
+  }
+
+  const isValid = mismatches.length === 0;
+  const summary = isValid 
+    ? 'Visual state matches logical state perfectly'
+    : `${mismatches.length} mismatches found between visual and logical state`;
+
+  return { isValid, mismatches, summary };
+}
+
+/**
+ * Full board visual refresh from logical state
+ * @param scene - Phaser scene
+ * @param state - Board rendering state
+ * @param setupTileInteraction - Callback for tile interactions
+ * @returns Success boolean
+ */
+export function refreshVisualStateFromLogical(
+  scene: Phaser.Scene,
+  state: BoardRenderingState,
+  setupTileInteraction: (tile: Phaser.GameObjects.Rectangle, row: number, col: number, tileData: LetterTile) => void
+): boolean {
+  try {
+    console.log(`[${new Date().toISOString()}] 🔄 Starting full visual state refresh...`);
+
+    if (!state.currentBoard) {
+      console.error(`[${new Date().toISOString()}] ❌ Cannot refresh visual state - no logical board`);
+      return false;
+    }
+
+    // Clear existing visual elements
+    state.tileSprites.forEach(row => row.forEach(tile => tile?.destroy()));
+    state.tileTexts.forEach(row => row.forEach(text => text?.destroy()));
+    state.tileSprites = [];
+    state.tileTexts = [];
+
+    // Recreate board display from logical state
+    updateBoardDisplay(scene, state, setupTileInteraction);
+
+    console.log(`[${new Date().toISOString()}] ✅ Visual state refresh completed`);
+    return true;
+  } catch (error) {
+    console.error(`[${new Date().toISOString()}] ❌ Visual state refresh failed:`, error);
+    return false;
+  }
+}
+
+/**
+ * Tile-by-tile visual state correction
+ * @param scene - Phaser scene
+ * @param state - Board rendering state
+ * @param setupTileInteraction - Callback for tile interactions
+ * @returns Number of tiles corrected
+ */
+export function correctVisualStateTileByTile(
+  scene: Phaser.Scene,
+  state: BoardRenderingState,
+  setupTileInteraction: (tile: Phaser.GameObjects.Rectangle, row: number, col: number, tileData: LetterTile) => void
+): number {
+  if (!state.currentBoard) {
+    return 0;
+  }
+
+  const validation = validateVisualState(state);
+  if (validation.isValid) {
+    return 0;
+  }
+
+  console.log(`[${new Date().toISOString()}] 🔧 Correcting ${validation.mismatches.length} visual state mismatches...`);
+
+  let correctedCount = 0;
+  const { width, height } = scene.scale.gameSize;
+  const boardWidth = state.currentBoard.width;
+  const boardHeight = state.currentBoard.height;
+  
+  // Calculate tile positioning
+  const maxBoardWidth = width * 0.8;
+  const maxBoardHeight = height * 0.6;
+  const tileSize = Math.min(
+    Math.floor(maxBoardWidth / boardWidth),
+    Math.floor(maxBoardHeight / boardHeight),
+    80
+  );
+  
+  const gridStartX = width / 2 - (boardWidth * tileSize) / 2;
+  const gridStartY = height / 2 - (boardHeight * tileSize) / 2;
+
+  for (const mismatch of validation.mismatches) {
+    const { position, type } = mismatch;
+    const { x: col, y: row } = position;
+
+    try {
+      switch (type) {
+        case 'missing_visual': {
+          // Create missing visual tile
+          const logicalTile = state.currentBoard.tiles[row][col];
+          if (logicalTile) {
+            const x = gridStartX + col * tileSize + tileSize / 2;
+            const y = gridStartY + row * tileSize + tileSize / 2;
+
+            // Create tile sprite
+            const tile = scene.add.rectangle(
+              x, y,
+              tileSize - 4, tileSize - 4,
+              parseInt(COLORS.tileBackground.replace('#', ''), 16)
+            );
+            tile.setStrokeStyle(2, parseInt(COLORS.border.replace('#', ''), 16));
+            tile.setInteractive();
+
+            // Create text
+            const letterSize = Math.max(12, Math.min(32, tileSize * 0.4));
+            const letterText = scene.add.text(x, y - 4, logicalTile.letter, {
+              fontSize: letterSize + 'px',
+              color: COLORS.tileText,
+              fontFamily: FONTS.body,
+              fontStyle: 'bold',
+            }).setOrigin(0.5);
+
+            // Ensure arrays exist
+            if (!state.tileSprites[row]) state.tileSprites[row] = [];
+            if (!state.tileTexts[row]) state.tileTexts[row] = [];
+
+            state.tileSprites[row][col] = tile;
+            state.tileTexts[row][col] = letterText;
+
+            setupTileInteraction(tile, row, col, logicalTile);
+            correctedCount++;
+          }
+          break;
+        }
+
+        case 'missing_logical': {
+          // Remove extra visual tile
+          const sprite = state.tileSprites[row]?.[col];
+          const text = state.tileTexts[row]?.[col];
+          
+          if (sprite) {
+            sprite.destroy();
+            state.tileSprites[row][col] = null as any;
+          }
+          if (text) {
+            text.destroy();
+            state.tileTexts[row][col] = null as any;
+          }
+          correctedCount++;
+          break;
+        }
+
+        case 'content_mismatch': {
+          // Update visual content to match logical
+          const logicalTile = state.currentBoard.tiles[row][col];
+          const visualText = state.tileTexts[row]?.[col];
+          
+          if (logicalTile && visualText) {
+            visualText.setText(logicalTile.letter);
+            correctedCount++;
+          }
+          break;
+        }
+
+        case 'position_mismatch': {
+          // Correct visual position
+          const logicalTile = state.currentBoard.tiles[row][col];
+          const visualSprite = state.tileSprites[row]?.[col];
+          const visualText = state.tileTexts[row]?.[col];
+          
+          if (logicalTile && visualSprite && visualText) {
+            const correctX = gridStartX + col * tileSize + tileSize / 2;
+            const correctY = gridStartY + row * tileSize + tileSize / 2;
+            
+            visualSprite.setPosition(correctX, correctY);
+            visualText.setPosition(correctX, correctY - 4);
+            correctedCount++;
+          }
+          break;
+        }
+      }
+    } catch (error) {
+      console.error(`[${new Date().toISOString()}] ❌ Failed to correct tile at (${col},${row}):`, error);
+    }
+  }
+
+  console.log(`[${new Date().toISOString()}] ✅ Corrected ${correctedCount} visual state mismatches`);
+  return correctedCount;
+}
+
+/**
+ * Periodic visual state validation
+ * @param scene - Phaser scene
+ * @param state - Board rendering state
+ * @param setupTileInteraction - Callback for tile interactions
+ * @returns Validation interval ID (for cleanup)
+ */
+export function startPeriodicVisualValidation(
+  scene: Phaser.Scene,
+  state: BoardRenderingState,
+  setupTileInteraction: (tile: Phaser.GameObjects.Rectangle, row: number, col: number, tileData: LetterTile) => void
+): NodeJS.Timeout {
+  return setInterval(() => {
+    const validation = validateVisualState(state);
+    
+    if (!validation.isValid) {
+      console.warn(`[${new Date().toISOString()}] ⚠️ Visual state validation failed: ${validation.summary}`);
+      console.log(`[${new Date().toISOString()}] 🔍 Mismatches:`, validation.mismatches);
+      
+      // Attempt correction
+      const correctedCount = correctVisualStateTileByTile(scene, state, setupTileInteraction);
+      
+      if (correctedCount === 0) {
+        console.warn(`[${new Date().toISOString()}] ⚠️ Tile-by-tile correction failed, attempting full refresh...`);
+        refreshVisualStateFromLogical(scene, state, setupTileInteraction);
+      }
+    }
+  }, 5000); // Check every 5 seconds
 } 
