@@ -3,37 +3,58 @@
  * CSS for the multiplayer lobby system and main menu components
  */
 
-/* Main Menu Styles */
+/* Main Menu Styles with Premium Atmosphere */
 .main-menu {
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  /* Premium deep water gradient atmosphere */
+  background: radial-gradient(ellipse at center, #01616C 0%, #01243F 100%);
   padding: 20px;
 }
 
 .menu-container {
-  background: white;
+  background: #002643; /* Prussian Blue title background */
   border-radius: 16px;
   padding: 40px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  border: 2px solid #09637B; /* Midnight Green border */
   text-align: center;
   max-width: 500px;
   width: 100%;
 }
 
 .game-title {
-  font-size: 3rem;
-  font-weight: bold;
-  color: #4A6BFF;
+  font-size: 3.5rem;
+  font-weight: 800; /* Extra bold for premium feel */
   margin-bottom: 10px;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+  /* Premium golden gradient text effect */
+  background: linear-gradient(135deg, #FFE265 0%, #FFB92F 50%, #FF8F1D 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  /* Add subtle background for the title */
+  position: relative;
+}
+
+.game-title::before {
+  content: '';
+  position: absolute;
+  top: -15px;
+  left: -15px;
+  right: -15px;
+  bottom: -15px;
+  background: #002840; /* Darker background for title */
+  border-radius: 12px;
+  z-index: -1;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .game-subtitle {
   font-size: 1.2rem;
-  color: #718096;
+  color: #E1F5E4; /* Honeydew for subtitle */
   margin-bottom: 40px;
 }
 
@@ -54,40 +75,42 @@
   transition: all 0.3s ease;
   text-decoration: none;
   display: inline-block;
+  color: #D2E9D3; /* Nyanza button text */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .menu-button.primary {
-  background: #4A6BFF;
-  color: white;
+  background: #0C5C7E; /* Lapis Lazuli */
+  color: #D2E9D3;
 }
 
 .menu-button.primary:hover {
-  background: #3956E7;
+  background: #0e6b91;
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(74, 107, 255, 0.3);
+  box-shadow: 0 8px 25px rgba(12, 92, 126, 0.4);
 }
 
 .menu-button.secondary {
-  background: #FF7A59;
-  color: white;
+  background: #FAA827; /* Orange Web accent */
+  color: #D2E9D3;
 }
 
 .menu-button.secondary:hover {
-  background: #FF6142;
+  background: #e8951e;
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(255, 122, 89, 0.3);
+  box-shadow: 0 8px 25px rgba(250, 168, 39, 0.4);
 }
 
 .game-info {
   text-align: left;
-  background: #F7FAFC;
+  background: #002840; /* Leaderboard background */
   padding: 20px;
   border-radius: 8px;
-  border: 1px solid #E2E8F0;
+  border: 1px solid #09637B; /* Midnight Green border */
 }
 
 .game-info h3 {
-  color: #4A6BFF;
+  color: #FFE265; /* Golden highlight */
   margin-bottom: 15px;
 }
 
@@ -99,34 +122,36 @@
 
 .game-info li {
   padding: 8px 0;
-  color: #2D3748;
+  color: #E1F5E4; /* Honeydew text */
   position: relative;
   padding-left: 20px;
 }
 
 .game-info li::before {
   content: "•";
-  color: #4A6BFF;
+  color: #8CE6EC; /* Electric Blue bullets */
   position: absolute;
   left: 0;
   font-weight: bold;
 }
 
-/* Create/Join Game Screen Styles */
+/* Create/Join Game Screen Styles with Premium Atmosphere */
 .create-game-screen, .join-game-screen {
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  /* Premium deep water gradient atmosphere */
+  background: radial-gradient(ellipse at center, #01616C 0%, #01243F 100%);
   padding: 20px;
 }
 
 .screen-container {
-  background: white;
+  background: #002643; /* Prussian Blue background */
   border-radius: 16px;
   padding: 40px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  border: 2px solid #09637B; /* Midnight Green border */
   max-width: 600px;
   width: 100%;
 }
@@ -138,23 +163,23 @@
 }
 
 .back-button {
-  background: #E2E8F0;
-  border: none;
+  background: #003C53; /* Indigo Dye */
+  border: 1px solid #09637B;
   padding: 10px 20px;
   border-radius: 6px;
   cursor: pointer;
   margin-right: 20px;
   font-weight: 600;
-  color: #4A5568;
+  color: #D2E9D3; /* Nyanza text */
   transition: background 0.2s;
 }
 
 .back-button:hover {
-  background: #CBD5E0;
+  background: #0D7085; /* Caribbean Current on hover */
 }
 
 .screen-header h2 {
-  color: #2D3748;
+  color: #E1F5E4; /* Honeydew */
   margin: 0;
   font-size: 2rem;
 }
@@ -173,12 +198,14 @@
 
 .form-group label {
   font-weight: 600;
-  color: #4A5568;
+  color: #8CE6EC; /* Electric Blue labels */
 }
 
 .form-group input[type="text"] {
   padding: 12px 16px;
-  border: 2px solid #E2E8F0;
+  border: 2px solid #09637B;
+  background: #00435D; /* Empty tile background */
+  color: #E1F5E4; /* Honeydew text */
   border-radius: 6px;
   font-size: 1rem;
   transition: border-color 0.2s;
@@ -186,26 +213,27 @@
 
 .form-group input[type="text"]:focus {
   outline: none;
-  border-color: #4A6BFF;
+  border-color: #FAA827; /* Orange Web accent */
+  box-shadow: 0 0 8px rgba(250, 168, 39, 0.3);
 }
 
 .form-group input[type="range"] {
   width: 100%;
   height: 6px;
   border-radius: 3px;
-  background: #E2E8F0;
+  background: #09637B; /* Midnight Green */
   outline: none;
 }
 
 .settings-section {
-  background: #F7FAFC;
+  background: #002840; /* Leaderboard background */
   padding: 20px;
   border-radius: 8px;
-  border: 1px solid #E2E8F0;
+  border: 1px solid #09637B; /* Midnight Green border */
 }
 
 .settings-section h3 {
-  color: #4A6BFF;
+  color: #FFE265; /* Golden highlight */
   margin-bottom: 20px;
 }
 
@@ -216,52 +244,57 @@
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  background: #4A6BFF;
-  color: white;
+  background: #0C5C7E; /* Lapis Lazuli */
+  color: #D2E9D3; /* Nyanza button text */
   transition: all 0.3s ease;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .create-button:hover, .join-button:hover {
-  background: #3956E7;
+  background: #0e6b91;
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(74, 107, 255, 0.3);
+  box-shadow: 0 8px 16px rgba(14, 107, 145, 0.4);
 }
 
 .create-button:disabled, .join-button:disabled {
-  background: #A0AEC0;
+  background: #003C53; /* Indigo Dye */
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
 }
 
-/* Lobby Screen Styles */
+/* Lobby Screen Styles with Premium Atmosphere */
 .lobby-screen {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  /* Premium deep water gradient atmosphere */
+  background: radial-gradient(ellipse at center, #01616C 0%, #01243F 100%);
   padding: 20px;
 }
 
 .lobby-container {
-  background: white;
+  background: #002643; /* Prussian Blue background */
   border-radius: 16px;
   max-width: 1200px;
   margin: 0 auto;
   overflow: hidden;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  border: 2px solid #09637B; /* Midnight Green border */
 }
 
 .lobby-header {
-  background: #4A6BFF;
-  color: white;
+  background: #002840; /* Leaderboard background */
+  color: #E1F5E4; /* Honeydew */
   padding: 20px 30px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  border-bottom: 2px solid #09637B;
 }
 
 .room-info h2 {
   margin: 0 0 10px 0;
   font-size: 1.8rem;
+  color: #FFE265; /* Golden highlight */
 }
 
 .room-code-section {
@@ -272,31 +305,33 @@
 }
 
 .room-code {
-  background: rgba(255, 255, 255, 0.2);
+  background: #003C53; /* Indigo Dye */
   padding: 8px 16px;
   border-radius: 6px;
+  border: 1px solid #09637B;
   font-family: monospace;
   font-weight: bold;
   cursor: pointer;
   transition: background 0.2s;
+  color: #E1F5E4; /* Honeydew */
 }
 
 .room-code:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: #0D7085; /* Caribbean Current */
 }
 
 .copy-button {
-  background: rgba(255, 255, 255, 0.2);
+  background: #0C5C7E; /* Lapis Lazuli */
   border: none;
   padding: 8px 12px;
   border-radius: 6px;
   cursor: pointer;
-  color: white;
+  color: #D2E9D3; /* Nyanza button text */
   transition: background 0.2s;
 }
 
 .copy-button:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: #0e6b91;
 }
 
 .leave-button {
@@ -304,10 +339,11 @@
   border: none;
   padding: 12px 24px;
   border-radius: 6px;
-  color: white;
+  color: #D2E9D3; /* Nyanza button text */
   font-weight: 600;
   cursor: pointer;
   transition: background 0.2s;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .leave-button:hover {
@@ -322,14 +358,19 @@
 }
 
 .players-section, .difficulty-section, .settings-section, .ready-section {
-  background: #F7FAFC;
-  border: 1px solid #E2E8F0;
+  background: #002840; /* Leaderboard background */
+  border: 1px solid #09637B; /* Midnight Green border */
   border-radius: 8px;
   padding: 20px;
 }
 
 .players-section {
   grid-column: 1 / -1;
+}
+
+.players-section h3 {
+  color: #FFE265; /* Golden highlight */
+  margin: 0 0 15px 0;
 }
 
 .players-list {
@@ -340,8 +381,8 @@
 }
 
 .player-card {
-  background: white;
-  border: 2px solid #E2E8F0;
+  background: #00435D; /* Empty tile background */
+  border: 2px solid #09637B;
   border-radius: 8px;
   padding: 15px;
   transition: all 0.2s;
@@ -349,12 +390,60 @@
 
 .player-card.ready {
   border-color: #1DD1A1;
-  background: #F0FFF4;
+  background: rgba(29, 209, 161, 0.15);
 }
 
 .player-card.not-ready {
   border-color: #FFC107;
-  background: #FFFBF0;
+  background: rgba(255, 193, 7, 0.15);
+}
+
+.player-card.king-of-the-hill {
+  background: linear-gradient(135deg, rgba(255, 226, 101, 0.4), rgba(255, 185, 47, 0.3));
+  border: 2px solid #FFE265 !important;
+  box-shadow: 0 0 15px rgba(255, 226, 101, 0.5);
+  animation: kingGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes kingGlow {
+  from {
+    box-shadow: 0 0 15px rgba(255, 226, 101, 0.5);
+  }
+  to {
+    box-shadow: 0 0 25px rgba(255, 226, 101, 0.8);
+  }
+}
+
+.king-crown {
+  display: inline-block;
+  margin-left: 0.3rem;
+  font-size: 1.1rem;
+  animation: crownPulse 1.5s ease-in-out infinite;
+  filter: drop-shadow(0 0 4px #FFE265);
+}
+
+@keyframes crownPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.crown-count {
+  display: inline-block;
+  margin-left: 0.4rem;
+  background: linear-gradient(135deg, #FFE265 0%, #FFB92F 50%, #FF8F1D 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-size: 0.8rem;
+  font-weight: bold;
+  padding: 0.1rem 0.3rem;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 226, 101, 0.5);
+  background-color: rgba(255, 226, 101, 0.1);
 }
 
 .player-info {
@@ -366,7 +455,7 @@
 
 .player-name {
   font-weight: 600;
-  color: #2D3748;
+  color: #E1F5E4; /* Honeydew */
 }
 
 .difficulty {
@@ -378,33 +467,39 @@
 }
 
 .difficulty.easy {
-  background: #C6F6D5;
-  color: #22543D;
+  background: rgba(29, 209, 161, 0.3);
+  color: #1DD1A1;
 }
 
 .difficulty.medium {
-  background: #BEE3F8;
-  color: #2A4365;
+  background: rgba(140, 230, 236, 0.3);
+  color: #8CE6EC;
 }
 
 .difficulty.hard {
-  background: #FED7CC;
-  color: #C53030;
+  background: rgba(250, 168, 39, 0.3);
+  color: #FAA827;
 }
 
 .difficulty.extreme {
-  background: #FEB2B2;
-  color: #742A2A;
+  background: rgba(238, 110, 42, 0.3);
+  color: #EE6E2A;
 }
 
 .difficulty-not-set {
-  color: #A0AEC0;
+  color: #8CE6EC; /* Electric Blue */
   font-style: italic;
 }
 
 .player-status {
   font-size: 0.9rem;
   font-weight: 600;
+  color: #E1F5E4; /* Honeydew */
+}
+
+.difficulty-section h3 {
+  color: #FFE265; /* Golden highlight */
+  margin: 0 0 15px 0;
 }
 
 .difficulty-options {
@@ -415,8 +510,8 @@
 }
 
 .difficulty-button {
-  background: white;
-  border: 2px solid #E2E8F0;
+  background: #00435D; /* Empty tile background */
+  border: 2px solid #09637B;
   border-radius: 8px;
   padding: 15px;
   cursor: pointer;
@@ -425,23 +520,24 @@
 }
 
 .difficulty-button:hover {
-  border-color: #4A6BFF;
+  border-color: #FAA827; /* Orange Web accent */
+  background: rgba(250, 168, 39, 0.1);
 }
 
 .difficulty-button.selected {
-  border-color: #4A6BFF;
-  background: #EBF8FF;
+  border-color: #FAA827;
+  background: rgba(250, 168, 39, 0.2);
 }
 
 .difficulty-name {
   font-weight: 600;
-  color: #2D3748;
+  color: #E1F5E4; /* Honeydew */
   margin-bottom: 5px;
 }
 
 .difficulty-details {
   font-size: 0.8rem;
-  color: #718096;
+  color: #8CE6EC; /* Electric Blue */
 }
 
 .settings-header {
@@ -451,20 +547,20 @@
   margin-bottom: 20px;
 }
 
+.settings-header h3 {
+  color: #FFE265; /* Golden highlight */
+  margin: 0;
+}
+
 .toggle-settings {
-  background: #4A6BFF;
-  color: white;
+  background: #0C5C7E; /* Lapis Lazuli */
+  color: #D2E9D3; /* Nyanza button text */
   border: none;
   padding: 8px 16px;
   border-radius: 6px;
   cursor: pointer;
   font-weight: 600;
-}
-
-.settings-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .setting-group {
@@ -475,7 +571,7 @@
 
 .setting-group label {
   font-weight: 600;
-  color: #4A5568;
+  color: #8CE6EC; /* Electric Blue */
 }
 
 .ready-section {
@@ -494,48 +590,51 @@
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s ease;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .ready-button {
   background: #1DD1A1;
-  color: white;
+  color: #D2E9D3; /* Nyanza button text */
 }
 
 .ready-button:hover {
   background: #00B894;
   transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(29, 209, 161, 0.4);
 }
 
 .not-ready-button {
   background: #FFC107;
-  color: #2D3748;
+  color: #01243F; /* Deep background for contrast */
 }
 
 .not-ready-button:hover {
   background: #FFB300;
   transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(255, 193, 7, 0.4);
 }
 
 .start-match-button {
-  background: #4A6BFF;
-  color: white;
+  background: #0C5C7E; /* Lapis Lazuli */
+  color: #D2E9D3; /* Nyanza button text */
 }
 
 .start-match-button:hover:not(:disabled) {
-  background: #3956E7;
+  background: #0e6b91;
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(74, 107, 255, 0.3);
+  box-shadow: 0 8px 16px rgba(14, 107, 145, 0.4);
 }
 
 .start-match-button:disabled {
-  background: #A0AEC0;
+  background: #003C53; /* Indigo Dye */
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
 }
 
 .waiting-for-host {
-  color: #718096;
+  color: #8CE6EC; /* Electric Blue */
   font-style: italic;
   text-align: center;
 }

@@ -256,6 +256,35 @@ let visualValidationInterval: NodeJS.Timeout | null = null;
 function preload(this: Phaser.Scene, socket?: Socket<ServerToClientEvents, ClientToServerEvents>) {
   interactionState.gameSocket = socket || null;
   
+  // Create particle textures for premium effects
+  this.load.once('complete', () => {
+    // Create golden particle texture
+    const goldParticle = this.add.graphics();
+    goldParticle.fillStyle(0xFFE265); // Naples Yellow
+    goldParticle.fillCircle(8, 8, 8);
+    goldParticle.generateTexture('gold-particle', 16, 16);
+    goldParticle.destroy();
+    
+    // Create electric blue particle texture
+    const blueParticle = this.add.graphics();
+    blueParticle.fillStyle(0x74F5F6); // Electric Blue
+    blueParticle.fillCircle(6, 6, 6);
+    blueParticle.generateTexture('blue-particle', 12, 12);
+    blueParticle.destroy();
+    
+    // Create simple white particle texture (fallback)
+    const whiteParticle = this.add.graphics();
+    whiteParticle.fillStyle(0xFFFFFF);
+    whiteParticle.fillCircle(4, 4, 4);
+    whiteParticle.generateTexture('simple-particle', 8, 8);
+    whiteParticle.destroy();
+    
+    console.log(`[${new Date().toISOString()}] ✨ Premium particle textures created`);
+  });
+  
+  // Start asset loading
+  this.load.start();
+  
   // Show loading message
   loadingText = this.add.text(400, 300, 'Loading fonts and board...', {
     fontSize: '24px',

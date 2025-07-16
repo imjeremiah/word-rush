@@ -76,10 +76,10 @@ export function GameHUD({
   }
 
   /**
-   * Get progress percentage for timer bar
+   * Get progress percentage for circular timer ring
    */
   function getTimeProgress(milliseconds: number): number {
-    const totalTime = 90000; // 90 seconds total
+    const totalTime = 120000; // 120 seconds total for 7x7 board
     return Math.max(0, Math.min(100, (milliseconds / totalTime) * 100));
   }
 
@@ -101,6 +101,14 @@ export function GameHUD({
    */
   const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
 
+  /**
+   * Find the King of the Hill (player with most crowns)
+   */
+  const kingOfTheHill = players.length > 0 
+    ? players.reduce((prev, current) => ((current.crowns || 0) > (prev.crowns || 0)) ? current : prev)
+    : null;
+  const isKingOfTheHill = (player: Player) => kingOfTheHill && player.id === kingOfTheHill.id && (kingOfTheHill.crowns || 0) > 0;
+
   return (
     <div className="game-hud">
       
@@ -117,27 +125,49 @@ export function GameHUD({
           </div>
         </div>
 
-        {/* Timer Display */}
+        {/* Timer Display with Circular SVG Progress */}
         <div className="timer-section">
           <div className="timer-container">
             
-            {/* Timer Bar */}
-            <div className="timer-bar-container">
-              <div 
-                className="timer-bar"
-                style={{
-                  width: `${getTimeProgress(timer.timeRemaining)}%`,
-                  backgroundColor: getTimeColor(timer.timeRemaining)
-                }}
-              />
-            </div>
-            
-            {/* Timer Text */}
-            <div 
-              className="timer-text"
-              style={{ color: getTimeColor(timer.timeRemaining) }}
-            >
-              {formatTime(timer.timeRemaining)}
+            {/* Circular Timer Ring */}
+            <div className="circular-timer">
+              <svg className="timer-ring" width="120" height="120" viewBox="0 0 120 120">
+                {/* Background ring */}
+                <circle
+                  cx="60" cy="60" r="50"
+                  stroke="#038BB0" strokeWidth="8" fill="none"
+                  className="timer-ring-background"
+                />
+                {/* Progress ring */}
+                <circle
+                  cx="60" cy="60" r="50"
+                  stroke="#2CFFFF" strokeWidth="8" fill="none"
+                  strokeDasharray={`${(getTimeProgress(timer.timeRemaining) / 100) * 314} 314`}
+                  strokeDashoffset="0"
+                  transform="rotate(-90 60 60)"
+                  className="timer-ring-progress"
+                  style={{ 
+                    filter: 'drop-shadow(0 0 4px #2CFFFF)',
+                    stroke: getTimeColor(timer.timeRemaining),
+                    transition: 'stroke-dasharray 1s ease-out, stroke 0.3s ease'
+                  }}
+                />
+                {/* Timer text in center */}
+                <text
+                  x="60" y="60"
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  className="timer-text-svg"
+                  style={{ 
+                    fill: '#E2EEDD',
+                    fontSize: '18px',
+                    fontWeight: 'bold',
+                    fontFamily: 'Inter, monospace'
+                  }}
+                >
+                  {formatTime(timer.timeRemaining)}
+                </text>
+              </svg>
             </div>
             
             {/* Timer Label */}
@@ -183,11 +213,13 @@ export function GameHUD({
             {sortedPlayers.map((player, index) => {
               const rank = index + 1;
               const isCurrentPlayer = player.id === currentPlayerId;
+              const isKing = isKingOfTheHill(player);
+              const hasCrowns = (player.crowns || 0) > 0;
               
               return (
                 <div 
                   key={player.id}
-                  className={`leaderboard-item ${isCurrentPlayer ? 'current-player' : ''} rank-${rank}`}
+                  className={`leaderboard-item ${isCurrentPlayer ? 'current-player' : ''} ${isKing ? 'king-of-the-hill' : ''} rank-${rank}`}
                 >
                   
                   {/* Rank Badge */}
@@ -203,6 +235,14 @@ export function GameHUD({
                     <div className="player-name">
                       {player.username || 'Unknown'}
                       {isCurrentPlayer && <span className="you-tag">You</span>}
+                      {/* Crown indicator for King of the Hill */}
+                      {isKing && <span className="king-crown">👑</span>}
+                      {/* Crown count display */}
+                      {hasCrowns && !isKing && (
+                        <span className="crown-count">
+                          👑 {player.crowns}
+                        </span>
+                      )}
                     </div>
                     <div 
                       className="player-difficulty"

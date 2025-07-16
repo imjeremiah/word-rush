@@ -6,24 +6,57 @@
 /* Import Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&family=Inter:wght@400;600;700&display=swap');
 
-/* Theme CSS Custom Properties */
+/* Premium Theme CSS Custom Properties - Phase 4 */
 :root {
-  --color-primary: #4A6BFF;
-  --color-accent: #FF7A59;
-  --color-text: #2D3748;
-  --color-text-subtle: #718096;
-  --color-disabled: #A0AEC0;
-  --color-border: #E2E8F0;
-  --color-background: #F7FAFC;
-  --color-card-bg: #FFFFFF;
+  /* Deep Water Gradient Atmosphere */
+  --bg-deep: #01243F;
+  --bg-light: #01616C;
+  --bg-title: #002643;
+  --bg-leaderboard: #002840;
+  --bg-bottom-bar: #003C53;
+  --bg-board-outline: #09637B;
+  --bg-empty-tile: #00435D;
+  
+  /* Golden Title Gradient */
+  --gold-light: #FFE265;
+  --gold-mid: #FFB92F;
+  --gold-deep: #FF8F1D;
+  
+  /* Interactive Elements */
+  --ui-shuffle: #0C5C7E;
+  --ui-timer-ring: #038BB0;
+  --ui-timer-progress: #2CFFFF;
+  --ui-selected: #FAA827;
+  --ui-hover: #0D7085;
+  
+  /* Text Colors */
+  --text-tile-letters: #F9F0C6;
+  --text-player-names: #E1F5E4;
+  --text-player-scores: #8CE6EC;
+  --text-button: #D2E9D3;
+  --text-timer: #E2EEDD;
+  --text-gold-highlight: #FFE265;
+  
+  /* Legacy compatibility */
+  --color-primary: #1599BB;
+  --color-accent: #FAA827;
+  --color-text: var(--text-player-names);
+  --color-text-subtle: var(--text-player-scores);
+  --color-border: var(--bg-board-outline);
+  --color-background: var(--bg-light);
+  --color-card-bg: var(--bg-leaderboard);
   --color-success: #1DD1A1;
   --color-error: #FF5252;
   --color-warning: #FFC107;
+  
   --font-heading: 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   --border-radius: 8px;
   --shadow-standard: 0px 4px 6px -1px rgba(0, 0, 0, 0.1), 0px 2px 4px -1px rgba(0, 0, 0, 0.06);
   --shadow-large: 0px 10px 15px -3px rgba(0, 0, 0, 0.1), 0px 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-tile: 0 4px 8px rgba(0, 0, 0, 0.2);
+  --shadow-glow: 0 0 12px;
+  --shadow-golden: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
 .app {
@@ -31,9 +64,11 @@
   flex-direction: column;
   width: 100%;
   height: 100vh;
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
-  color: var(--color-text);
+  /* Premium deep water gradient atmosphere */
+  background: radial-gradient(ellipse at center, var(--bg-light) 0%, var(--bg-deep) 100%);
+  color: var(--text-player-names);
   font-family: var(--font-body);
+  min-height: 100vh;
 }
 
 .app-header {
@@ -41,22 +76,36 @@
   justify-content: space-between;
   align-items: center;
   padding: 1rem 2rem;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--bg-title);
+  border-bottom: 2px solid var(--bg-board-outline);
 }
 
 .app-header h1 {
-  color: white;
+  color: var(--text-gold-highlight);
   font-size: 2rem;
-  font-weight: 700;
+  font-weight: 800;
   font-family: var(--font-heading);
   margin: 0;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  /* Premium golden gradient text effect */
+  background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold-mid) 50%, var(--gold-deep) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: var(--shadow-golden);
+}
+
+.room-indicator {
+  color: var(--text-player-names);
+  font-size: 1rem;
+  font-weight: 600;
+  background: var(--bg-leaderboard);
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  border: 1px solid var(--bg-board-outline);
 }
 
 .connection-status {
-  color: white;
+  color: var(--text-player-names);
   font-size: 0.9rem;
   display: flex;
   align-items: center;
@@ -64,15 +113,15 @@
 }
 
 .status-connecting {
-  color: #ffd700;
+  color: var(--gold-mid);
 }
 
 .status-connected {
-  color: #90ee90;
+  color: var(--color-success);
 }
 
 .status-disconnected {
-  color: #ff6b6b;
+  color: var(--color-error);
 }
 
 .app-main {
@@ -106,35 +155,36 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--bg-leaderboard);
   border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border: 2px solid var(--bg-board-outline);
+  box-shadow: var(--shadow-tile);
   overflow: hidden;
 }
 
-/* Card Components */
+/* Card Components with Premium Styling */
 .player-info-card,
 .game-controls-card,
 .game-info-card,
 .word-result-card {
-  background: var(--color-card-bg);
+  background: var(--bg-leaderboard);
   padding: 1.5rem;
   border-radius: var(--border-radius);
-  box-shadow: var(--shadow-standard);
-  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-tile);
+  border: 1px solid var(--bg-board-outline);
 }
 
 .player-info-card h2,
 .game-controls-card h2,
 .game-info-card h2 {
   margin: 0 0 1rem 0;
-  color: var(--color-text);
+  color: var(--text-player-names);
   font-size: 1.3rem;
   font-weight: 600;
   font-family: var(--font-heading);
 }
 
-/* Player Stats */
+/* Player Stats with Premium Colors */
 .stats-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -146,29 +196,30 @@
   justify-content: space-between;
   align-items: center;
   padding: 0.5rem;
-  background: rgba(45, 55, 72, 0.05);
+  background: var(--bg-empty-tile);
   border-radius: 6px;
+  border: 1px solid var(--bg-board-outline);
 }
 
 .stat-item label {
   font-weight: 500;
-  color: var(--color-text-subtle);
+  color: var(--text-player-scores);
   font-size: 0.9rem;
   font-family: var(--font-body);
 }
 
 .stat-item span {
   font-weight: 600;
-  color: var(--color-text);
+  color: var(--text-player-names);
   font-family: var(--font-body);
 }
 
 .score-value {
-  color: var(--color-success) !important;
+  color: var(--text-gold-highlight) !important;
   font-size: 1.1rem !important;
 }
 
-/* Word Result Card */
+/* Word Result Card with Premium Styling */
 .word-result-card {
   border-left: 4px solid transparent;
   margin-bottom: 1rem;
@@ -177,17 +228,18 @@
 
 .word-result-card.valid {
   border-left-color: var(--color-success);
-  background: rgba(29, 209, 161, 0.1);
+  background: rgba(29, 209, 161, 0.15);
 }
 
 .word-result-card.invalid {
   border-left-color: var(--color-error);
-  background: rgba(255, 82, 82, 0.1);
+  background: rgba(255, 82, 82, 0.15);
 }
 
 .word-result-card h3 {
   margin: 0 0 0.5rem 0;
   font-size: 1.1rem;
+  color: var(--text-player-names);
 }
 
 .word-details {
@@ -199,18 +251,19 @@
 .word-text {
   font-size: 1.2rem;
   font-weight: 600;
-  color: var(--color-text);
+  color: var(--text-player-names);
   font-family: var(--font-heading);
 }
 
 .points-text {
   font-size: 1rem;
   font-weight: 500;
-  color: var(--color-success);
+  color: var(--text-gold-highlight);
   font-family: var(--font-body);
 }
 
 /* Game Controls */
+/* Premium Game Controls */
 .control-button {
   padding: 0.75rem 1.5rem;
   border: none;
@@ -221,30 +274,34 @@
   transition: all 0.2s ease;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  color: var(--text-button);
+  box-shadow: var(--shadow-tile);
 }
 
 .control-button.new-board {
-  background: var(--color-success);
-  color: white;
+  background: var(--ui-shuffle);
+  color: var(--text-button);
   width: 100%;
   margin-bottom: 1rem;
   font-family: var(--font-body);
 }
 
 .control-button.new-board:hover:not(:disabled) {
-  background: #17a085;
+  background: #0e6b91;
   transform: translateY(-2px);
+  box-shadow: var(--shadow-large);
 }
 
 .control-button.test-word {
   background: var(--color-primary);
-  color: white;
+  color: var(--text-button);
   flex-shrink: 0;
   font-family: var(--font-body);
 }
 
 .control-button.test-word:hover:not(:disabled) {
-  background: #3b5bff;
+  background: #18a3d1;
+  box-shadow: var(--shadow-large);
 }
 
 .control-button:disabled {
@@ -258,10 +315,11 @@
   margin-top: 1rem;
 }
 
+/* Premium Form Elements */
 .test-section h3 {
   margin: 0 0 0.75rem 0;
   font-size: 1rem;
-  color: var(--color-text-subtle);
+  color: var(--text-player-scores);
   font-family: var(--font-heading);
 }
 
@@ -274,7 +332,9 @@
 .test-input {
   flex: 1;
   padding: 0.75rem;
-  border: 2px solid var(--color-border);
+  border: 2px solid var(--bg-board-outline);
+  background: var(--bg-empty-tile);
+  color: var(--text-player-names);
   border-radius: 6px;
   font-size: 0.9rem;
   font-family: var(--font-body);
@@ -283,22 +343,23 @@
 
 .test-input:focus {
   outline: none;
-  border-color: var(--color-primary);
+  border-color: var(--ui-selected);
+  box-shadow: 0 0 8px rgba(250, 168, 39, 0.3);
 }
 
 .test-hint {
   font-size: 0.8rem;
-  color: var(--color-text-subtle);
+  color: var(--text-player-scores);
   font-family: var(--font-body);
   margin: 0;
   font-style: italic;
 }
 
-/* Instructions */
+/* Instructions with Premium Colors */
 .instructions {
   margin: 0;
   padding-left: 1.5rem;
-  color: var(--color-text-subtle);
+  color: var(--text-player-scores);
   font-family: var(--font-body);
   line-height: 1.6;
 }

@@ -73,6 +73,8 @@ export interface Player {
   lastWordTimestamp?: number;
   /** Current round score (resets each round) */
   roundScore?: number;
+  /** Number of crowns earned (match wins) during this session for King of the Hill progression */
+  crowns?: number;
 }
 
 /**
@@ -229,6 +231,8 @@ export interface PlayerSession {
   score: number;
   /** Total number of words submitted (valid and invalid) */
   wordsSubmitted: number;
+  /** Number of crowns earned (match wins) during this session for King of the Hill progression */
+  crowns: number;
 }
 
 /**

@@ -7,6 +7,7 @@
 import { GameRoom, Player, MatchSettings, DEFAULT_MATCH_SETTINGS, MatchStatus } from '@word-rush/common';
 import { generateBoard } from './board.js';
 import type { DictionaryModule } from './dictionary.js';
+import { sessionService } from './session.js';
 import crypto from 'crypto';
 
 /**
@@ -265,6 +266,11 @@ function createRoomService(cleanupIntervalMs: number = 10 * 60 * 1000): RoomModu
     if (existingPlayer) {
       existingPlayer.isConnected = true;
       existingPlayer.username = username;
+      
+      // Sync crown count from session service
+      const session = sessionService.getPlayerSession(playerId);
+      existingPlayer.crowns = session?.crowns || 0;
+      
       room.lastActivity = Date.now();
       return { success: true, room };
     }
@@ -275,6 +281,10 @@ function createRoomService(cleanupIntervalMs: number = 10 * 60 * 1000): RoomModu
       leaveRoom(currentRoom, playerId);
     }
 
+    // Get crown count from session service
+    const session = sessionService.getPlayerSession(playerId);
+    const crownCount = session?.crowns || 0;
+
     const newPlayer: Player = {
       id: playerId,
       username,
@@ -282,6 +292,7 @@ function createRoomService(cleanupIntervalMs: number = 10 * 60 * 1000): RoomModu
       isConnected: true,
       isReady: false,
       roundScore: 0,
+      crowns: crownCount,
     };
 
     room.players.push(newPlayer);
@@ -687,6 +698,14 @@ function createRoomService(cleanupIntervalMs: number = 10 * 60 * 1000): RoomModu
       })),
       totalRounds: room.gameState.totalRounds
     };
+
+    // Award crown to the winner using session service
+    if (matchWinner) {
+      const updatedSession = sessionService.awardCrown(matchWinner.id);
+      if (updatedSession) {
+        console.log(`[${new Date().toISOString()}] 👑 Crown awarded to match winner: ${matchWinner.username} (Total crowns: ${updatedSession.crowns})`);
+      }
+    }
 
     // Broadcast match complete
     io.to(roomCode).emit('match:finished', matchSummary);

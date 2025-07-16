@@ -21,7 +21,7 @@ const MatchSettingsSchema = z.object({
   shuffleCost: z.number().min(0).max(50),
   speedBonusMultiplier: z.number().min(1).max(3),
   speedBonusWindow: z.number().min(1).max(10),
-  deadBoardThreshold: z.number().min(1).max(20),
+  deadBoardThreshold: z.number().min(1).max(30),
 });
 
 // Difficulty level schema

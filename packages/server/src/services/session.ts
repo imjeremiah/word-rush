@@ -16,6 +16,7 @@ interface SessionModule {
   markPlayerDisconnected: (socketId: string) => void;
   findSessionForReconnection: (sessionId: string, username?: string) => { session: PlayerSession; oldSocketId: string } | undefined;
   migrateSession: (oldSocketId: string, newSocketId: string) => PlayerSession | undefined;
+  awardCrown: (socketId: string) => PlayerSession | undefined;
   getActivePlayerCount: () => number;
   cleanup: () => void;
 }
@@ -62,6 +63,7 @@ function createSessionService(cleanupIntervalMs: number = 5 * 60 * 1000): Sessio
         lastActivity: Date.now(),
         score: 0,
         wordsSubmitted: 0,
+        crowns: 0, // Initialize crowns
       };
       playerSessions.set(socketId, session);
     } else {
@@ -163,6 +165,22 @@ function createSessionService(cleanupIntervalMs: number = 5 * 60 * 1000): Sessio
   }
 
   /**
+   * Award crown to a player session
+   * @param socketId - Socket ID of the player to award the crown to
+   * @returns The updated player session or undefined if not found
+   */
+  function awardCrown(socketId: string): PlayerSession | undefined {
+    const session = playerSessions.get(socketId);
+    if (session) {
+      session.crowns += 1;
+      session.lastActivity = Date.now();
+      console.log(`[${new Date().toISOString()}] 👑 Crown awarded to ${session.username}, total crowns: ${session.crowns}`);
+      return session;
+    }
+    return undefined;
+  }
+
+  /**
    * Get total number of active players
    * @returns Number of player sessions
    */
@@ -192,6 +210,7 @@ function createSessionService(cleanupIntervalMs: number = 5 * 60 * 1000): Sessio
     markPlayerDisconnected,
     findSessionForReconnection,
     migrateSession,
+    awardCrown,
     getActivePlayerCount,
     cleanup,
   };

@@ -518,7 +518,7 @@
   font-size: 0.9rem;
 }
 
-/* Game HUD Styles */
+/* Game HUD Styles with Premium Circular Timer */
 .game-hud {
   position: relative;
   height: 100%;
@@ -530,18 +530,19 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: #002840; /* Premium leaderboard background */
+  border: 2px solid #09637B; /* Midnight Green border */
   padding: 1rem;
   border-radius: 15px;
   margin-bottom: 1rem;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .round-info {
   display: flex;
   flex-direction: column;
   align-items: center;
-  color: white;
+  color: #E1F5E4; /* Honeydew text */
 }
 
 .round-display {
@@ -554,11 +555,13 @@
 .round-label {
   font-size: 0.9rem;
   opacity: 0.8;
+  color: #8CE6EC; /* Electric Blue */
 }
 
 .round-numbers {
   font-size: 1.5rem;
   font-weight: bold;
+  color: #FFE265; /* Golden highlight */
 }
 
 .timer-section {
@@ -574,29 +577,45 @@
   gap: 0.5rem;
 }
 
-.timer-bar-container {
-  width: 200px;
-  height: 8px;
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 4px;
-  overflow: hidden;
+/* Premium Circular Timer Styles */
+.circular-timer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.timer-bar {
-  height: 100%;
-  transition: width 1s ease-out;
-  border-radius: 4px;
+.timer-ring {
+  transform: scale(1);
+  transition: transform 0.3s ease;
 }
 
-.timer-text {
-  font-size: 2rem;
+.timer-ring:hover {
+  transform: scale(1.05);
+}
+
+.timer-ring-background {
+  stroke: #038BB0; /* Bondi Blue background */
+  opacity: 0.3;
+}
+
+.timer-ring-progress {
+  stroke: #2CFFFF; /* Aqua progress */
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 8px #2CFFFF);
+}
+
+.timer-text-svg {
+  fill: #E2EEDD; /* Honeydew timer numbers */
+  font-family: 'Inter', monospace;
   font-weight: bold;
-  font-family: 'Courier New', monospace;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .timer-label {
   font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: #8CE6EC; /* Electric Blue */
+  text-align: center;
 }
 
 .shuffle-control {
@@ -608,24 +627,25 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: linear-gradient(135deg, #ff6b6b, #ee5a24);
-  color: white;
+  background: #0C5C7E; /* Lapis Lazuli */
+  color: #D2E9D3; /* Nyanza button text */
   border: none;
   padding: 0.8rem 1.2rem;
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.3s ease;
   font-weight: bold;
-  box-shadow: 0 3px 10px rgba(255, 107, 107, 0.3);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .shuffle-button:hover:not(:disabled) {
+  background: #0e6b91;
   transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+  box-shadow: 0 6px 12px rgba(14, 107, 145, 0.4);
 }
 
 .shuffle-button:disabled {
-  background: linear-gradient(135deg, #999, #666);
+  background: #003C53; /* Indigo Dye */
   cursor: not-allowed;
   opacity: 0.6;
 }
@@ -650,17 +670,17 @@
 }
 
 .hud-leaderboard {
-  background: rgba(255, 255, 255, 0.1);
+  background: #002840; /* Premium leaderboard background */
+  border: 2px solid #09637B; /* Midnight Green border */
   border-radius: 15px;
   padding: 1rem;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .leaderboard-header h3 {
   margin: 0 0 1rem 0;
   text-align: center;
-  color: white;
+  color: #E1F5E4; /* Honeydew */
   font-size: 1.3rem;
 }
 
@@ -674,19 +694,21 @@
 .leaderboard-item {
   display: flex;
   align-items: center;
-  background: rgba(255, 255, 255, 0.15);
+  background: #00435D; /* Empty tile background */
+  border: 1px solid #09637B;
   border-radius: 10px;
   padding: 0.8rem;
   transition: all 0.3s ease;
 }
 
 .leaderboard-item.current-player {
-  background: rgba(255, 215, 0, 0.3);
-  border: 2px solid rgba(255, 215, 0, 0.6);
+  background: rgba(250, 168, 39, 0.2); /* Orange Web accent */
+  border: 2px solid #FAA827;
 }
 
 .leaderboard-item.rank-1 {
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 237, 78, 0.2));
+  background: linear-gradient(135deg, rgba(255, 226, 101, 0.3), rgba(255, 185, 47, 0.2));
+  border: 2px solid #FFE265;
 }
 
 .rank-badge {
@@ -699,8 +721,8 @@
   font-weight: bold;
   margin-right: 0.8rem;
   font-size: 1rem;
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
+  background: #09637B; /* Midnight Green */
+  color: #E1F5E4; /* Honeydew */
 }
 
 .leaderboard-item .player-info {
@@ -711,23 +733,25 @@
 }
 
 .leaderboard-item .player-name {
-  color: white;
+  color: #E1F5E4; /* Honeydew */
   font-weight: bold;
   font-size: 0.95rem;
 }
 
 .you-tag {
-  background: rgba(255, 215, 0, 0.8);
-  color: #333;
+  background: #FFE265; /* Golden highlight */
+  color: #01243F; /* Deep background contrast */
   padding: 0.1rem 0.4rem;
   border-radius: 6px;
   font-size: 0.7rem;
   margin-left: 0.3rem;
+  font-weight: bold;
 }
 
 .leaderboard-item .player-difficulty {
   font-size: 0.8rem;
   font-weight: bold;
+  color: #8CE6EC; /* Electric Blue */
 }
 
 .leaderboard-item .player-score {
@@ -737,18 +761,18 @@
 }
 
 .leaderboard-item .score-value {
-  color: white;
+  color: #FFE265; /* Golden highlight */
   font-weight: bold;
   font-size: 1.1rem;
 }
 
 .leaderboard-item .score-label {
-  color: rgba(255, 255, 255, 0.7);
+  color: #8CE6EC; /* Electric Blue */
   font-size: 0.8rem;
 }
 
 .current-player-stats {
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  border-top: 1px solid #09637B; /* Midnight Green */
   padding-top: 1rem;
 }
 
@@ -766,13 +790,13 @@
 }
 
 .current-player-stats .stat-label {
-  color: rgba(255, 255, 255, 0.8);
+  color: #8CE6EC; /* Electric Blue */
   font-size: 0.8rem;
   margin-bottom: 0.25rem;
 }
 
 .current-player-stats .stat-value {
-  color: white;
+  color: #FFE265; /* Golden highlight */
   font-weight: bold;
   font-size: 1.1rem;
 }
@@ -963,4 +987,53 @@
   .timer-bar-container {
     width: 150px;
   }
+} 
+
+/* King of the Hill and Crown System Styles */
+.leaderboard-item.king-of-the-hill {
+  background: linear-gradient(135deg, rgba(255, 226, 101, 0.4), rgba(255, 185, 47, 0.3));
+  border: 2px solid #FFE265;
+  box-shadow: 0 0 15px rgba(255, 226, 101, 0.5);
+  animation: kingGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes kingGlow {
+  from {
+    box-shadow: 0 0 15px rgba(255, 226, 101, 0.5);
+  }
+  to {
+    box-shadow: 0 0 25px rgba(255, 226, 101, 0.8);
+  }
+}
+
+.king-crown {
+  display: inline-block;
+  margin-left: 0.5rem;
+  font-size: 1.2rem;
+  animation: crownPulse 1.5s ease-in-out infinite;
+  filter: drop-shadow(0 0 4px #FFE265);
+}
+
+@keyframes crownPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.crown-count {
+  display: inline-block;
+  margin-left: 0.5rem;
+  background: linear-gradient(135deg, #FFE265 0%, #FFB92F 50%, #FF8F1D 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-size: 0.8rem;
+  font-weight: bold;
+  padding: 0.1rem 0.3rem;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 226, 101, 0.5);
+  background-color: rgba(255, 226, 101, 0.1);
 } 

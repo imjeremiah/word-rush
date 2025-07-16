@@ -135,32 +135,52 @@ function LobbyScreen(): JSX.Element {
           <div className="players-section">
             <h3>Players ({currentRoom.players.length}/{currentRoom.maxPlayers})</h3>
             <div className="players-list">
-              {currentRoom.players.map((player) => (
-                <div 
-                  key={player.id} 
-                  className={`player-card ${player.isReady ? 'ready' : 'not-ready'}`}
-                >
-                  <div className="player-info">
-                    <span className="player-name">
-                      {player.username}
-                      {player.id === currentRoom.hostId && ' 👑'}
-                      {player.id === playerSession.id && ' (You)'}
-                    </span>
-                    <span className="player-difficulty">
-                      {player.difficulty ? (
-                        <span className={`difficulty ${player.difficulty}`}>
-                          {player.difficulty}
-                        </span>
-                      ) : (
-                        <span className="difficulty-not-set">No difficulty set</span>
-                      )}
-                    </span>
+              {currentRoom.players.map((player) => {
+                const isHost = player.id === currentRoom.hostId;
+                const isCurrentPlayer = player.id === playerSession.id;
+                const hasCrowns = (player.crowns || 0) > 0;
+                
+                // Find King of the Hill (most crowns)
+                const kingOfTheHill = currentRoom.players.reduce((prev, current) => 
+                  ((current.crowns || 0) > (prev.crowns || 0)) ? current : prev
+                );
+                const isKingOfTheHill = kingOfTheHill && player.id === kingOfTheHill.id && (kingOfTheHill.crowns || 0) > 0;
+                
+                return (
+                  <div 
+                    key={player.id} 
+                    className={`player-card ${player.isReady ? 'ready' : 'not-ready'} ${isKingOfTheHill ? 'king-of-the-hill' : ''}`}
+                  >
+                    <div className="player-info">
+                      <span className="player-name">
+                        {player.username}
+                        {isHost && ' 👑'}
+                        {isCurrentPlayer && ' (You)'}
+                        {/* King of the Hill crown indicator */}
+                        {isKingOfTheHill && <span className="king-crown"> 🏆</span>}
+                        {/* Crown count display */}
+                        {hasCrowns && !isKingOfTheHill && (
+                          <span className="crown-count">
+                            👑 {player.crowns}
+                          </span>
+                        )}
+                      </span>
+                      <span className="player-difficulty">
+                        {player.difficulty ? (
+                          <span className={`difficulty ${player.difficulty}`}>
+                            {player.difficulty}
+                          </span>
+                        ) : (
+                          <span className="difficulty-not-set">No difficulty set</span>
+                        )}
+                      </span>
+                    </div>
+                    <div className="player-status">
+                      {player.isReady ? '✅ Ready' : '⏳ Not Ready'}
+                    </div>
                   </div>
-                  <div className="player-status">
-                    {player.isReady ? '✅ Ready' : '⏳ Not Ready'}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 

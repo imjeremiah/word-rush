@@ -67,7 +67,7 @@ async function generateValidBoardAsync(dictionaryService: DictionaryModule): Pro
         const board = createRandomBoardOptimized();
         const foundWords = findAllValidWordsOptimized(board, dictionaryService);
         
-        if (foundWords.length >= 10) {
+        if (foundWords.length >= 35) {
           const endTime = Date.now();
           console.log(`[${new Date().toISOString()}] 🎯 Generated valid board with ${foundWords.length} words in ${attempts} attempts (${endTime - startTime}ms)`);
           resolve(board);
@@ -460,9 +460,9 @@ export function generateBoard(
     console.timeEnd('generateBoard');
     console.log(`[${new Date().toISOString()}] 🚀 Served board from cache (${boardCache.length} remaining)`);
     
-    // Trigger background cache refill if running low
-    if (boardCache.length < 3 && !isPreGenerating) {
-      preGenerateBoards(dictionaryService, 5).catch(console.error);
+    // If cache is low, pre-generate more boards asynchronously
+    if (boardCache.length < 3 && !isPreGenerating && dictionaryService.isReady()) {
+      preGenerateBoards(dictionaryService, 8).catch(console.error);
     }
     
     return cachedBoard;

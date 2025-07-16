@@ -4,7 +4,18 @@
  */
 
 import Phaser from 'phaser';
-import { GameBoard, LetterTile, COLORS, FONTS, TileChanges } from '@word-rush/common';
+import { 
+  GameBoard, 
+  LetterTile, 
+  COLORS, 
+  FONTS, 
+  TileChanges,
+  TILE_COLORS,
+  BACKGROUNDS,
+  TEXT_COLORS,
+  PARTICLE_COLORS,
+  getTileColorByPoints
+} from '@word-rush/common';
 
 // Types for board rendering state
 export interface BoardRenderingState {
@@ -280,7 +291,10 @@ function animateTileRemoval(
       
       if (tileSprite && tileText) {
         const removalPromise = new Promise<void>((animResolve) => {
-          // Animate tile disappearing with pop effect - optimized duration
+          // Create premium particle effect for tile removal
+          const particles = createTileRemovalEffect(scene, tileSprite.x, tileSprite.y, selected.tile.points);
+
+          // Animate tile disappearing
           scene.tweens.add({
             targets: [tileSprite, tileText],
             alpha: 0,
@@ -292,6 +306,8 @@ function animateTileRemoval(
               // Cleanup immediately
               tileSprite.destroy();
               tileText.destroy();
+              
+              // particles will auto-destroy via setTimeout in createTileRemovalEffect
               
               // Clear from state arrays
               state.tileSprites[y][x] = null as any;
@@ -345,6 +361,9 @@ function animateTileFalling(
         const fallingPromise = new Promise<void>((animResolve) => {
           const newX = gridStartX + to.x * tileSize + tileSize / 2;
           const newY = gridStartY + to.y * tileSize + tileSize / 2;
+          
+          // Create cascade trail effect for falling tiles
+          createCascadeTrailEffect(scene, tileSprite.x, tileSprite.y, newX, newY);
           
           // Animate tile falling to new position - optimized duration and easing
           scene.tweens.add({
@@ -417,32 +436,44 @@ function animateNewTileAppearance(
         const letterSize = Math.max(12, Math.min(32, tileSize * 0.4));
         const pointSize = Math.max(8, Math.min(12, tileSize * 0.15));
 
-        // Create tile background
+        // Get premium color based on Scrabble point value
+        const tileColor = getTileColorByPoints(points);
+
+        // Create tile background with premium point-based coloring
         const tile = scene.add.rectangle(
           x,
           startY,
-          tileSize - 4,
-          tileSize - 4,
-          parseInt(COLORS.tileBackground.replace('#', ''), 16)
+          tileSize - 6, // Consistent with createBoardTiles spacing
+          tileSize - 6,
+          parseInt(tileColor.replace('#', ''), 16)
         );
-        tile.setStrokeStyle(2, parseInt(COLORS.border.replace('#', ''), 16));
+        tile.setStrokeStyle(2, parseInt(BACKGROUNDS.boardOutline.replace('#', ''), 16));
         tile.setInteractive();
 
-        // Create letter text
+        // Add subtle depth shadow effect
+        const shadowTile = scene.add.rectangle(
+          x + 2, startY + 2,
+          tileSize - 6, tileSize - 6,
+          0x000000
+        );
+        shadowTile.setAlpha(0.2);
+        shadowTile.setDepth(-1);
+
+        // Create letter text with premium colors
         const letterText = scene.add
           .text(x, startY - 4, letter, {
             fontSize: letterSize + 'px',
-            color: COLORS.tileText,
+            color: TEXT_COLORS.tileLetters,
             fontFamily: FONTS.body,
             fontStyle: 'bold',
           })
           .setOrigin(0.5);
         
-        // Create point value text
+        // Create point value text with premium electric blue
         const pointText = scene.add
           .text(x + tileSize * 0.3, startY + tileSize * 0.25, points.toString(), {
             fontSize: pointSize + 'px',
-            color: COLORS.textSubtle,
+            color: TEXT_COLORS.playerScores,
             fontFamily: FONTS.body,
             fontStyle: 'bold',
           })
@@ -591,39 +622,50 @@ function createNewBoardWithAnimation(
       const letterSize = Math.max(12, Math.min(32, tileSize * 0.4));
       const pointSize = Math.max(8, Math.min(12, tileSize * 0.15));
 
-      // Create tile background using theme colors
+      // Get premium color based on Scrabble point value
+      const tileColor = getTileColorByPoints(tileData.points);
+
+      // Create new tile background with premium coloring
       const tile = scene.add.rectangle(
         x,
         startY,
-        tileSize - 4,
-        tileSize - 4,
-        parseInt(COLORS.tileBackground.replace('#', ''), 16)
+        tileSize - 6, // Consistent spacing
+        tileSize - 6,
+        parseInt(tileColor.replace('#', ''), 16)
       );
-      tile.setStrokeStyle(2, parseInt(COLORS.border.replace('#', ''), 16));
+      tile.setStrokeStyle(2, parseInt(BACKGROUNDS.boardOutline.replace('#', ''), 16));
       tile.setInteractive();
-      state.tileSprites[row][col] = tile;
 
-      // Add letter text
+      // Add subtle depth shadow effect
+      const shadowTile = scene.add.rectangle(
+        x + 2, startY + 2,
+        tileSize - 6, tileSize - 6,
+        0x000000
+      );
+      shadowTile.setAlpha(0.2);
+      shadowTile.setDepth(-1);
+
+      // Create new tile text with premium colors
       const letterText = scene.add
         .text(x, startY - 4, tileData.letter, {
           fontSize: letterSize + 'px',
-          color: COLORS.tileText,
+          color: TEXT_COLORS.tileLetters,
           fontFamily: FONTS.body,
           fontStyle: 'bold',
         })
         .setOrigin(0.5);
       
-      // Add point value in corner
+      // Add point value in corner with premium electric blue
       const pointText = scene.add
         .text(x + tileSize * 0.3, startY + tileSize * 0.25, tileData.points.toString(), {
           fontSize: pointSize + 'px',
-          color: COLORS.textSubtle,
+          color: TEXT_COLORS.playerScores,
           fontFamily: FONTS.body,
           fontStyle: 'bold',
         })
         .setOrigin(0.5);
 
-      state.tileTexts[row][col] = letterText;
+      state.tileSprites[row][col] = tile;
 
       // Animate tiles falling into place
       scene.tweens.add({
@@ -692,12 +734,7 @@ function animateTileRemovalAndCascade(
       
       const removalPromise = new Promise<void>((resolve) => {
         // Create particle effect for tile removal
-        const particles = scene.add.particles(tileSprite.x, tileSprite.y, 'simple-particle', {
-          speed: { min: 50, max: 150 },
-          scale: { start: 0.3, end: 0 },
-          lifespan: 300,
-          quantity: 5
-        });
+        const particles = createTileRemovalEffect(scene, tileSprite.x, tileSprite.y, selected.tile.points);
 
         // Animate tile disappearing
         scene.tweens.add({
@@ -705,8 +742,8 @@ function animateTileRemovalAndCascade(
           alpha: 0,
           scaleX: 1.2,
           scaleY: 1.2,
-          duration: 250,
-          ease: 'Back.easeIn',
+          duration: 120, // Further optimized for 60fps target
+          ease: 'Cubic.easeIn', // Smoother than Back.easeIn for performance
           onComplete: () => {
             tileSprite.destroy();
             tileText.destroy();
@@ -833,32 +870,44 @@ function animateCascadingTilesWithRemovedPositions(
       const letterSize = Math.max(12, Math.min(32, tileSize * 0.4));
       const pointSize = Math.max(8, Math.min(12, tileSize * 0.15));
 
-      // Create new tile background
+      // Get premium color based on Scrabble point value
+      const tileColor = getTileColorByPoints(tileData.points);
+
+      // Create new tile background with premium coloring
       const tile = scene.add.rectangle(
         x,
         startY,
-        tileSize - 4,
-        tileSize - 4,
-        parseInt(COLORS.tileBackground.replace('#', ''), 16)
+        tileSize - 6, // Consistent spacing
+        tileSize - 6,
+        parseInt(tileColor.replace('#', ''), 16)
       );
-      tile.setStrokeStyle(2, parseInt(COLORS.border.replace('#', ''), 16));
+      tile.setStrokeStyle(2, parseInt(BACKGROUNDS.boardOutline.replace('#', ''), 16));
       tile.setInteractive();
 
-      // Create new tile text
+      // Add subtle depth shadow effect
+      const shadowTile = scene.add.rectangle(
+        x + 2, startY + 2,
+        tileSize - 6, tileSize - 6,
+        0x000000
+      );
+      shadowTile.setAlpha(0.2);
+      shadowTile.setDepth(-1);
+
+      // Create new tile text with premium colors
       const letterText = scene.add
         .text(x, startY - 4, tileData.letter, {
           fontSize: letterSize + 'px',
-          color: COLORS.tileText,
+          color: TEXT_COLORS.tileLetters,
           fontFamily: FONTS.body,
           fontStyle: 'bold',
         })
         .setOrigin(0.5);
       
-      // Create new point value text
+      // Add point value in corner with premium electric blue
       const pointText = scene.add
         .text(x + tileSize * 0.3, startY + tileSize * 0.25, tileData.points.toString(), {
           fontSize: pointSize + 'px',
-          color: COLORS.textSubtle,
+          color: TEXT_COLORS.playerScores,
           fontFamily: FONTS.body,
           fontStyle: 'bold',
         })
@@ -915,16 +964,17 @@ function createBoardTiles(
   const boardWidth = state.currentBoard.width;
   const boardHeight = state.currentBoard.height;
 
-  // Create grid background
-  scene.add.rectangle(
+  // Create premium grid background with atmospheric styling
+  const gridBackground = scene.add.rectangle(
     width / 2,
     gridStartY + (boardHeight * tileSize) / 2,
     boardWidth * tileSize + 20,
     boardHeight * tileSize + 20,
-    0x34495e
+    parseInt(BACKGROUNDS.boardOutline.replace('#', ''), 16)
   );
+  gridBackground.setStrokeStyle(3, parseInt(BACKGROUNDS.boardOutline.replace('#', ''), 16));
 
-  // Create letter tiles from server data
+  // Create letter tiles from server data with premium colors
   for (let row = 0; row < boardHeight; row++) {
     state.tileSprites[row] = [];
     state.tileTexts[row] = [];
@@ -934,36 +984,51 @@ function createBoardTiles(
       const y = gridStartY + row * tileSize + tileSize / 2;
       const tileData = state.currentBoard.tiles[row][col];
 
-      // Create tile background using theme colors
+      // Get premium color based on Scrabble point value
+      const tileColor = getTileColorByPoints(tileData.points);
+
+      // Create tile background with premium point-based coloring and depth
       const tile = scene.add.rectangle(
         x,
         y,
-        tileSize - 4,
-        tileSize - 4,
-        parseInt(COLORS.tileBackground.replace('#', ''), 16)
+        tileSize - 6, // Slightly smaller for better spacing
+        tileSize - 6,
+        parseInt(tileColor.replace('#', ''), 16)
       );
-      tile.setStrokeStyle(2, parseInt(COLORS.border.replace('#', ''), 16));
+      
+      // Add premium border and depth styling
+      tile.setStrokeStyle(2, parseInt(BACKGROUNDS.boardOutline.replace('#', ''), 16));
       tile.setInteractive();
+      
+      // Add subtle depth shadow effect (simulated with darker stroke)
+      const shadowTile = scene.add.rectangle(
+        x + 2, y + 2,
+        tileSize - 6, tileSize - 6,
+        0x000000
+      );
+      shadowTile.setAlpha(0.2);
+      shadowTile.setDepth(-1); // Place shadow behind main tile
+      
       state.tileSprites[row][col] = tile;
 
-      // Add letter and point value
+      // Add letter and point value with premium typography
       const letterSize = Math.max(12, Math.min(32, tileSize * 0.4));
       const pointSize = Math.max(8, Math.min(12, tileSize * 0.15));
       
       const letterText = scene.add
         .text(x, y - 4, tileData.letter, {
           fontSize: letterSize + 'px',
-          color: COLORS.tileText,
+          color: TEXT_COLORS.tileLetters,
           fontFamily: FONTS.body,
           fontStyle: 'bold',
         })
         .setOrigin(0.5);
       
-      // Add point value in corner
+      // Add point value in corner with premium text color
       scene.add
         .text(x + tileSize * 0.3, y + tileSize * 0.25, tileData.points.toString(), {
           fontSize: pointSize + 'px',
-          color: COLORS.textSubtle,
+          color: TEXT_COLORS.playerScores, // Use electric blue for point values
           fontFamily: FONTS.body,
           fontStyle: 'bold',
         })
@@ -976,7 +1041,7 @@ function createBoardTiles(
     }
   }
 
-  console.log('Board display updated with', boardWidth, 'x', boardHeight, 'tiles');
+  console.log('Premium board display created with', boardWidth, 'x', boardHeight, 'point-colored tiles');
 } 
 
 /**
@@ -1161,20 +1226,32 @@ export function correctVisualStateTileByTile(
             const x = gridStartX + col * tileSize + tileSize / 2;
             const y = gridStartY + row * tileSize + tileSize / 2;
 
-            // Create tile sprite
+            // Get premium color based on Scrabble point value
+            const tileColor = getTileColorByPoints(logicalTile.points);
+
+            // Create tile sprite with premium coloring
             const tile = scene.add.rectangle(
               x, y,
-              tileSize - 4, tileSize - 4,
-              parseInt(COLORS.tileBackground.replace('#', ''), 16)
+              tileSize - 6, tileSize - 6, // Consistent spacing
+              parseInt(tileColor.replace('#', ''), 16)
             );
-            tile.setStrokeStyle(2, parseInt(COLORS.border.replace('#', ''), 16));
+            tile.setStrokeStyle(2, parseInt(BACKGROUNDS.boardOutline.replace('#', ''), 16));
             tile.setInteractive();
 
-            // Create text
+            // Add subtle depth shadow effect
+            const shadowTile = scene.add.rectangle(
+              x + 2, y + 2,
+              tileSize - 6, tileSize - 6,
+              0x000000
+            );
+            shadowTile.setAlpha(0.2);
+            shadowTile.setDepth(-1);
+
+            // Create text with premium colors
             const letterSize = Math.max(12, Math.min(32, tileSize * 0.4));
             const letterText = scene.add.text(x, y - 4, logicalTile.letter, {
               fontSize: letterSize + 'px',
-              color: COLORS.tileText,
+              color: TEXT_COLORS.tileLetters,
               fontFamily: FONTS.body,
               fontStyle: 'bold',
             }).setOrigin(0.5);
@@ -1275,4 +1352,208 @@ export function startPeriodicVisualValidation(
       }
     }
   }, 5000); // Check every 5 seconds
+} 
+
+/**
+ * Generate CSS background for main app
+ * @returns CSS radial-gradient string
+ */
+export function getMainBackground(): string {
+  return `radial-gradient(ellipse at center, ${BACKGROUNDS.main.light} 0%, ${BACKGROUNDS.main.deep} 100%)`;
+}
+
+/**
+ * Premium Particle Effects System
+ * Enhanced visual feedback for game events using the premium color system
+ */
+
+/**
+ * Create golden burst particle effect for valid words
+ * @param scene - Phaser scene
+ * @param x - X position for the effect
+ * @param y - Y position for the effect  
+ * @param intensity - Effect intensity (1-3, higher = more particles)
+ * @returns Particle emitter for chaining or manual destruction
+ */
+export function createGoldenBurstEffect(
+  scene: Phaser.Scene, 
+  x: number, 
+  y: number, 
+  intensity: number = 2
+): Phaser.GameObjects.Particles.ParticleEmitter | null {
+  try {
+    const particles = scene.add.particles(x, y, 'gold-particle', {
+      speed: { min: 80, max: 200 },
+      scale: { start: 0.8, end: 0.1 },
+      lifespan: { min: 400, max: 800 },
+      quantity: 8 * intensity,
+      blendMode: 'ADD',
+      emitZone: {
+        type: 'edge',
+        source: new Phaser.Geom.Circle(0, 0, 20),
+        quantity: 12
+      }
+    });
+    
+    // Auto-destroy after emission
+    setTimeout(() => {
+      if (particles && !particles.scene.game.destroyed) {
+        particles.destroy();
+      }
+    }, 1000);
+    
+    return particles;
+  } catch (error) {
+    console.warn('Failed to create golden burst effect:', error);
+    return null;
+  }
+}
+
+/**
+ * Create electric blue shimmer effect for cascade events
+ * @param scene - Phaser scene
+ * @param x - X position for the effect
+ * @param y - Y position for the effect
+ * @returns Particle emitter for chaining or manual destruction
+ */
+export function createElectricShimmerEffect(
+  scene: Phaser.Scene,
+  x: number,
+  y: number
+): Phaser.GameObjects.Particles.ParticleEmitter | null {
+  try {
+    const particles = scene.add.particles(x, y, 'blue-particle', {
+      speed: { min: 30, max: 80 },
+      scale: { start: 0.5, end: 0 },
+      lifespan: 600,
+      quantity: 5,
+      alpha: { start: 0.8, end: 0 },
+      blendMode: 'ADD'
+    });
+    
+    // Auto-destroy after emission
+    setTimeout(() => {
+      if (particles && !particles.scene.game.destroyed) {
+        particles.destroy();
+      }
+    }, 800);
+    
+    return particles;
+  } catch (error) {
+    console.warn('Failed to create electric shimmer effect:', error);
+    return null;
+  }
+}
+
+/**
+ * Create speed bonus mixed particle effect
+ * @param scene - Phaser scene
+ * @param x - X position for the effect
+ * @param y - Y position for the effect
+ * @returns Array of particle emitters
+ */
+export function createSpeedBonusEffect(
+  scene: Phaser.Scene,
+  x: number,
+  y: number
+): (Phaser.GameObjects.Particles.ParticleEmitter | null)[] {
+  const effects = [];
+  
+  // Golden particles
+  const goldEffect = createGoldenBurstEffect(scene, x, y, 3);
+  effects.push(goldEffect);
+  
+  // Electric blue accent particles
+  const blueEffect = createElectricShimmerEffect(scene, x, y);
+  effects.push(blueEffect);
+  
+  return effects;
+}
+
+/**
+ * Create tile removal particle effect with point-based colors
+ * @param scene - Phaser scene
+ * @param x - X position for the effect
+ * @param y - Y position for the effect
+ * @param points - Tile point value for color selection
+ * @returns Particle emitter for chaining or manual destruction
+ */
+export function createTileRemovalEffect(
+  scene: Phaser.Scene,
+  x: number,
+  y: number,
+  points: number
+): Phaser.GameObjects.Particles.ParticleEmitter | null {
+  try {
+    // Use different particle types based on tile value
+    const particleTexture = points >= 5 ? 'gold-particle' : 'blue-particle';
+    
+    const particles = scene.add.particles(x, y, particleTexture, {
+      speed: { min: 50, max: 120 },
+      scale: { start: 0.6, end: 0 },
+      lifespan: 400,
+      quantity: 6,
+      blendMode: 'NORMAL',
+      alpha: { start: 0.9, end: 0 }
+    });
+    
+    // Auto-destroy after emission
+    setTimeout(() => {
+      if (particles && !particles.scene.game.destroyed) {
+        particles.destroy();
+      }
+    }, 500);
+    
+    return particles;
+  } catch (error) {
+    console.warn('Failed to create tile removal effect:', error);
+    return null;
+  }
+}
+
+/**
+ * Create cascade trail effect for falling tiles
+ * @param scene - Phaser scene
+ * @param startX - Starting X position
+ * @param startY - Starting Y position
+ * @param endX - Ending X position 
+ * @param endY - Ending Y position
+ * @returns Particle emitter for the trail effect
+ */
+export function createCascadeTrailEffect(
+  scene: Phaser.Scene,
+  startX: number,
+  startY: number,
+  endX: number,
+  endY: number
+): Phaser.GameObjects.Particles.ParticleEmitter | null {
+  try {
+    const particles = scene.add.particles(startX, startY, 'blue-particle', {
+      speed: { min: 20, max: 50 },
+      scale: { start: 0.3, end: 0 },
+      lifespan: 300,
+      quantity: 3,
+      alpha: { start: 0.6, end: 0 },
+      blendMode: 'ADD'
+    });
+    
+    // Move the emitter along the path
+    scene.tweens.add({
+      targets: particles,
+      x: endX,
+      y: endY,
+      duration: 200,
+      ease: 'Cubic.easeOut',
+      onComplete: () => {
+        if (particles && !particles.scene.game.destroyed) {
+          particles.destroy();
+        }
+      }
+    });
+    
+    return particles;
+  } catch (error) {
+    console.warn('Failed to create cascade trail effect:', error);
+    return null;
+  }
 } 

@@ -110,11 +110,11 @@ export const DIFFICULTY_CONFIGS: Record<DifficultyLevel, DifficultyConfig> = {
 // Default match settings for lobby creation
 export const DEFAULT_MATCH_SETTINGS: MatchSettings = {
   totalRounds: 3,
-  roundDuration: 90,
+  roundDuration: 120,
   shuffleCost: 10,
   speedBonusMultiplier: 1.5,
   speedBonusWindow: 3,
-  deadBoardThreshold: 5,
+  deadBoardThreshold: 25,
 };
 
 export * from './types.js';

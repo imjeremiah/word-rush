@@ -5,7 +5,14 @@
 
 import Phaser from 'phaser';
 import { Socket } from 'socket.io-client';
-import { ServerToClientEvents, ClientToServerEvents, LetterTile, COLORS } from '@word-rush/common';
+import { 
+  ServerToClientEvents, 
+  ClientToServerEvents, 
+  LetterTile, 
+  COLORS,
+  UI_ELEMENTS,
+  getTileColorByPoints
+} from '@word-rush/common';
 import { BoardRenderingState } from './board-rendering.js';
 
 // Types for interaction state
@@ -82,9 +89,13 @@ export function onTilePointerDown(
   interactionState.isSelecting = true;
   interactionState.selectedTiles = [{ row, col, tile: tileData }];
   
-  // Highlight the selected tile
+  // Highlight the selected tile with premium glow effect
   if (boardState.tileSprites[row] && boardState.tileSprites[row][col]) {
-    boardState.tileSprites[row][col].setFillStyle(parseInt(COLORS.tileSelected.replace('#', ''), 16));
+    const tile = boardState.tileSprites[row][col];
+    // Apply orange glow selection color
+    tile.setFillStyle(parseInt(UI_ELEMENTS.tileSelected.replace('#', ''), 16));
+    // Add glowing effect using Phaser's post effects (if available) or stroke
+    tile.setStrokeStyle(4, parseInt(UI_ELEMENTS.tileSelected.replace('#', ''), 16));
   }
 
   // Update word display
@@ -136,9 +147,13 @@ export function onTilePointerOver(
       // Add this tile to selection
       interactionState.selectedTiles.push({ row, col, tile: tileData });
       
-      // Highlight the tile
+      // Highlight the tile with premium glow effect
       if (boardState.tileSprites[row] && boardState.tileSprites[row][col]) {
-        boardState.tileSprites[row][col].setFillStyle(parseInt(COLORS.tileSelected.replace('#', ''), 16));
+        const tile = boardState.tileSprites[row][col];
+        // Apply orange glow selection color
+        tile.setFillStyle(parseInt(UI_ELEMENTS.tileSelected.replace('#', ''), 16));
+        // Add glowing effect stroke
+        tile.setStrokeStyle(4, parseInt(UI_ELEMENTS.tileSelected.replace('#', ''), 16));
       }
 
       // Update word display
@@ -190,10 +205,18 @@ export function clearSelection(
   boardState: BoardRenderingState,
   interactionState: InteractionState
 ): void {
-  // Reset tile colors
+  // Reset tile colors to their original point-based colors
   interactionState.selectedTiles.forEach(selected => {
     if (boardState.tileSprites[selected.row] && boardState.tileSprites[selected.row][selected.col]) {
-      boardState.tileSprites[selected.row][selected.col].setFillStyle(parseInt(COLORS.tileBackground.replace('#', ''), 16));
+      const tile = boardState.tileSprites[selected.row][selected.col];
+      const tileData = selected.tile;
+      
+      // Restore original point-based color
+      const originalColor = getTileColorByPoints(tileData.points);
+      tile.setFillStyle(parseInt(originalColor.replace('#', ''), 16));
+      
+      // Remove glow effect by resetting stroke to original border
+      tile.setStrokeStyle(2, parseInt(COLORS.border.replace('#', ''), 16));
     }
   });
 
