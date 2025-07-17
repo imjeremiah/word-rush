@@ -17,11 +17,16 @@ import {
   getTileColorByPoints
 } from '@word-rush/common';
 
+// Debug flag to control bypass transition logging verbosity
+// Set to false in production to reduce console noise during scene transitions
+const DEBUG_SCENE_TRANSITIONS = false; // Toggle for production deployment
+
 // Types for board rendering state
 export interface BoardRenderingState {
   currentBoard: GameBoard | null;
   tileSprites: Phaser.GameObjects.Rectangle[][];
   tileTexts: Phaser.GameObjects.Text[][];
+  shadowSprites: Phaser.GameObjects.Rectangle[][]; // Track shadow tiles for proper cleanup
 }
 
 /**
@@ -45,17 +50,17 @@ interface CircuitBreakerState {
   };
 }
 
-// Circuit breaker configuration
+// Circuit breaker configuration - reduced frequency to prevent excessive interventions
 const CIRCUIT_BREAKER_CONFIG = {
-  MAX_RECOVERY_ATTEMPTS: 5,
-  RECOVERY_WINDOW_MS: 10000, // 10 seconds
+  MAX_RECOVERY_ATTEMPTS: 2, // Reduced from 5 to 2 attempts
+  RECOVERY_WINDOW_MS: 30000, // Increased from 10s to 30s
   MAX_FAILURES_BEFORE_OPEN: 3,
-  OPEN_CIRCUIT_DURATION_MS: 30000, // 30 seconds
-  VALIDATION_DEBOUNCE_MS: 500,
-  MIN_VALIDATION_INTERVAL_MS: 1000,
+  OPEN_CIRCUIT_DURATION_MS: 60000, // Increased from 30s to 60s for longer cooldown
+  VALIDATION_DEBOUNCE_MS: 1000, // Increased from 500ms to 1s
+  MIN_VALIDATION_INTERVAL_MS: 2000, // Increased from 1s to 2s
   MAX_CONCURRENT_VALIDATIONS: 1,
-  EXPONENTIAL_BACKOFF_BASE: 1000, // Base delay in ms
-  EXPONENTIAL_BACKOFF_MAX: 10000, // Max delay in ms
+  EXPONENTIAL_BACKOFF_BASE: 2000, // Increased from 1s to 2s base delay
+  EXPONENTIAL_BACKOFF_MAX: 15000, // Increased from 10s to 15s max delay
 };
 
 // Global circuit breaker state
@@ -127,47 +132,16 @@ function triggerCircuitBreaker(reason: string): void {
  * @returns true if validation should be bypassed
  */
 function shouldBypassValidation(scene?: Phaser.Scene): boolean {
-  // Critical bypass conditions only (tightened to reduce over-bypassing)
-  
-  // Only bypass during scene destruction (most critical)
-  if (scene && (!scene.sys || scene.scene.isDestroying)) {
+  // Tightened: Only bypass if destroying or inactive > 2s
+  if (scene && scene.scene.isDestroying) {
     return true;
   }
   
-  // Tightened scene activity check - only bypass if completely inactive
-  if (scene && !scene.sys.isActive()) {
-    // Add tolerance for temporarily inactive scenes during rapid transitions
-    const inactiveThreshold = Date.now() - 1000; // 1 second tolerance
-    if (circuitBreakerState.lastValidationTime < inactiveThreshold) {
-      return true;
-    }
-  }
-  
-  // Reduced frequency check - only bypass if very recent validation (reduced from general interval)
-  const now = Date.now();
-  if ((now - circuitBreakerState.lastValidationTime) < (CIRCUIT_BREAKER_CONFIG.MIN_VALIDATION_INTERVAL_MS / 2)) {
+  if (scene && !scene.sys.isActive() && (Date.now() - circuitBreakerState.lastValidationTime > 2000)) {
     return true;
   }
   
-  // More restrictive concurrent validation check
-  if (circuitBreakerState.isValidationInProgress) {
-    circuitBreakerState.validationQueue++;
-    // Reduced tolerance for concurrent validations
-    if (circuitBreakerState.validationQueue > Math.max(1, CIRCUIT_BREAKER_CONFIG.MAX_CONCURRENT_VALIDATIONS / 2)) {
-      console.warn(`[${new Date().toISOString()}] ⚠️ Validation queue overflow (tightened), bypassing`);
-      return true;
-    }
-  }
-  
-  // Only bypass bypass conditions in extreme circumstances
-  if (circuitBreakerState.bypassConditions.duringSceneTransition && 
-      circuitBreakerState.bypassConditions.duringTileAnimation &&
-      circuitBreakerState.bypassConditions.gameInactive) {
-    // Only bypass if ALL conditions are true simultaneously (much more restrictive)
-    return true;
-  }
-  
-  return false;
+  return false; // Remove other conditions
 }
 
 /**
@@ -189,10 +163,14 @@ function calculateBackoffDelay(): number {
  */
 export function setSceneTransitionBypass(bypassing: boolean): void {
   circuitBreakerState.bypassConditions.duringSceneTransition = bypassing;
-  if (bypassing) {
-    console.log(`[${new Date().toISOString()}] 🔄 Scene transition bypass ENABLED`);
-  } else {
-    console.log(`[${new Date().toISOString()}] 🔄 Scene transition bypass DISABLED`);
+  
+  // Only log bypass transitions when debug flag is enabled
+  if (DEBUG_SCENE_TRANSITIONS) {
+    if (bypassing) {
+      console.log(`[${new Date().toISOString()}] 🔄 Scene transition bypass ENABLED`);
+    } else {
+      console.log(`[${new Date().toISOString()}] 🔄 Scene transition bypass DISABLED`);
+    }
   }
 }
 
@@ -202,10 +180,14 @@ export function setSceneTransitionBypass(bypassing: boolean): void {
  */
 export function setTileAnimationBypass(bypassing: boolean): void {
   circuitBreakerState.bypassConditions.duringTileAnimation = bypassing;
-  if (bypassing) {
-    console.log(`[${new Date().toISOString()}] 🎬 Tile animation bypass ENABLED`);
-  } else {
-    console.log(`[${new Date().toISOString()}] 🎬 Tile animation bypass DISABLED`);
+  
+  // Only log bypass transitions when debug flag is enabled
+  if (DEBUG_SCENE_TRANSITIONS) {
+    if (bypassing) {
+      console.log(`[${new Date().toISOString()}] 🎬 Tile animation bypass ENABLED`);
+    } else {
+      console.log(`[${new Date().toISOString()}] 🎬 Tile animation bypass DISABLED`);
+    }
   }
 }
 
@@ -215,11 +197,140 @@ export function setTileAnimationBypass(bypassing: boolean): void {
  */
 export function setGameInactiveBypass(bypassing: boolean): void {
   circuitBreakerState.bypassConditions.gameInactive = bypassing;
-  if (bypassing) {
-    console.log(`[${new Date().toISOString()}] ⏸️ Game inactive bypass ENABLED`);
-  } else {
-    console.log(`[${new Date().toISOString()}] ⏸️ Game inactive bypass DISABLED`);
+  
+  // Only log bypass transitions when debug flag is enabled
+  if (DEBUG_SCENE_TRANSITIONS) {
+    if (bypassing) {
+      console.log(`[${new Date().toISOString()}] ⏸️ Game inactive bypass ENABLED`);
+    } else {
+      console.log(`[${new Date().toISOString()}] ⏸️ Game inactive bypass DISABLED`);
+    }
   }
+}
+
+/**
+ * Update existing tiles efficiently without recreation
+ * Reuses existing tile sprites and text objects, only updating their properties
+ * @param scene - The Phaser scene
+ * @param state - Board rendering state
+ * @param gridStartX - X position to start the grid
+ * @param gridStartY - Y position to start the grid
+ * @param tileSize - Size of each tile
+ * @param setupTileInteraction - Callback to setup tile interactions
+ */
+function updateExistingTiles(
+  scene: Phaser.Scene,
+  state: BoardRenderingState,
+  gridStartX: number,
+  gridStartY: number,
+  tileSize: number,
+  setupTileInteraction: (tile: Phaser.GameObjects.Rectangle, row: number, col: number, tileData: LetterTile) => void
+): void {
+  if (!state.currentBoard) return;
+
+  const boardWidth = state.currentBoard.width;
+  const boardHeight = state.currentBoard.height;
+  let tilesReused = 0;
+  let tilesCreated = 0;
+
+  console.log(`[${new Date().toISOString()}] 🔄 Optimizing tile update: reusing existing tiles where possible`);
+
+  // Ensure arrays are properly sized
+  while (state.tileSprites.length < boardHeight) {
+    state.tileSprites.push([]);
+    state.tileTexts.push([]);
+    state.shadowSprites.push([]);
+  }
+
+  for (let row = 0; row < boardHeight; row++) {
+    // Ensure row arrays exist
+    if (!state.tileSprites[row]) state.tileSprites[row] = [];
+    if (!state.tileTexts[row]) state.tileTexts[row] = [];
+    if (!state.shadowSprites[row]) state.shadowSprites[row] = [];
+
+    for (let col = 0; col < boardWidth; col++) {
+      const tileData = state.currentBoard.tiles[row][col];
+      const existingSprite = state.tileSprites[row]?.[col];
+      const existingText = state.tileTexts[row]?.[col];
+
+      const x = gridStartX + col * tileSize + tileSize / 2;
+      const y = gridStartY + row * tileSize + tileSize / 2;
+
+      if (existingSprite && existingText) {
+        // Reuse existing tile - update properties instead of recreating
+        const tileColor = getTileColorByPoints(tileData.points);
+        const letterSize = Math.max(12, Math.min(32, tileSize * 0.4));
+
+        // Update sprite properties
+        existingSprite.setPosition(x, y);
+        existingSprite.setSize(tileSize - 6, tileSize - 6);
+        existingSprite.setFillStyle(parseInt(tileColor.replace('#', ''), 16));
+        existingSprite.setStrokeStyle(2, parseInt(BACKGROUNDS.boardOutline.replace('#', ''), 16));
+
+        // Update text properties
+        existingText.setPosition(x, y - 4);
+        existingText.setText(tileData.letter);
+        existingText.setFontSize(letterSize);
+        existingText.setColor(TEXT_COLORS.tileLetters);
+
+        // Re-setup interactions for updated tile
+        setupTileInteraction(existingSprite, row, col, tileData);
+        tilesReused++;
+      } else {
+        // Create new tile only if needed
+        const tileColor = getTileColorByPoints(tileData.points);
+        const letterSize = Math.max(12, Math.min(32, tileSize * 0.4));
+        const pointSize = Math.max(8, Math.min(12, tileSize * 0.15));
+
+        // Create new tile background
+        const tile = scene.add.rectangle(
+          x, y,
+          tileSize - 6, tileSize - 6,
+          parseInt(tileColor.replace('#', ''), 16)
+        );
+        tile.setStrokeStyle(2, parseInt(BACKGROUNDS.boardOutline.replace('#', ''), 16));
+        tile.setInteractive();
+
+        // Add subtle depth shadow effect
+        const shadowTile = scene.add.rectangle(
+          x + 2, y + 2,
+          tileSize - 6, tileSize - 6,
+          0x000000
+        );
+        shadowTile.setAlpha(0.2);
+        shadowTile.setDepth(-1);
+
+        // Create new text
+        const letterText = scene.add.text(x, y - 4, tileData.letter, {
+          fontSize: letterSize + 'px',
+          color: TEXT_COLORS.tileLetters,
+          fontFamily: FONTS.body,
+          fontStyle: 'bold',
+        }).setOrigin(0.5);
+
+        // Add point value
+        scene.add.text(x + tileSize * 0.3, y + tileSize * 0.25, tileData.points.toString(), {
+          fontSize: pointSize + 'px',
+          color: TEXT_COLORS.playerScores,
+          fontFamily: FONTS.body,
+          fontStyle: 'bold',
+        }).setOrigin(0.5);
+
+        // Store sprites and track shadow tiles (prevents artifacts)
+        state.tileSprites[row][col] = tile;
+        state.tileTexts[row][col] = letterText;
+        
+        // Ensure shadow array exists and store shadow tile
+        if (!state.shadowSprites[row]) state.shadowSprites[row] = [];
+        state.shadowSprites[row][col] = shadowTile;
+
+        setupTileInteraction(tile, row, col, tileData);
+        tilesCreated++;
+      }
+    }
+  }
+
+  console.log(`[${new Date().toISOString()}] ✅ Tile update optimized: ${tilesReused} reused, ${tilesCreated} created (${Math.round((tilesReused / (tilesReused + tilesCreated)) * 100)}% reuse rate)`);
 }
 
 /**
@@ -248,6 +359,9 @@ export function updateBoardDisplay(
 ): void {
   if (!state.currentBoard) return;
 
+  // 🧹 PHASE 26: Comprehensive cleanup to prevent shadow artifacts
+  cleanupAllVisualElements(scene, state);
+
   // Check if this is an initial board setup or an update
   const isInitialSetup = state.tileSprites.length === 0;
 
@@ -258,30 +372,34 @@ export function updateBoardDisplay(
     return;
   }
 
-  // Clear existing tiles for initial setup
+  // Optimize tile creation/update based on existing state
+  const { width, height } = scene.scale.gameSize;
+  const boardWidth = state.currentBoard.width;
+  const boardHeight = state.currentBoard.height;
+  
+  // Calculate responsive tile size
+  const maxBoardWidth = width * 0.8;
+  const maxBoardHeight = height * 0.6;
+  const tileSize = Math.min(
+    Math.floor(maxBoardWidth / boardWidth),
+    Math.floor(maxBoardHeight / boardHeight),
+    80 // Maximum tile size
+  );
+  
+  const gridStartX = width / 2 - (boardWidth * tileSize) / 2;
+  const gridStartY = height / 2 - (boardHeight * tileSize) / 2;
+
   if (isInitialSetup) {
+    // True initial setup - create everything from scratch
     state.tileSprites.forEach(row => row.forEach(tile => tile?.destroy()));
     state.tileTexts.forEach(row => row.forEach(text => text?.destroy()));
     state.tileSprites = [];
     state.tileTexts = [];
 
-    const { width, height } = scene.scale.gameSize;
-    const boardWidth = state.currentBoard.width;
-    const boardHeight = state.currentBoard.height;
-    
-    // Calculate responsive tile size
-    const maxBoardWidth = width * 0.8;
-    const maxBoardHeight = height * 0.6;
-    const tileSize = Math.min(
-      Math.floor(maxBoardWidth / boardWidth),
-      Math.floor(maxBoardHeight / boardHeight),
-      80 // Maximum tile size
-    );
-    
-    const gridStartX = width / 2 - (boardWidth * tileSize) / 2;
-    const gridStartY = height / 2 - (boardHeight * tileSize) / 2;
-
     createBoardTiles(scene, state, gridStartX, gridStartY, tileSize, setupTileInteraction);
+  } else {
+    // Update existing tiles efficiently - reuse instead of recreate
+    updateExistingTiles(scene, state, gridStartX, gridStartY, tileSize, setupTileInteraction);
   }
 }
 
@@ -356,13 +474,16 @@ export function processTileChanges(
                   console.log(`[${new Date().toISOString()}] ✅ Animation performance target met: ${totalTime}ms`);
                 }
                 
-                // Rebind all tile events after cascade completes
-                rebindTileEventsAfterCascade(scene, state, setupTileInteraction);
-                
-                // 🎬 PHASE 1A: Disable tile animation bypass after cascade completes
-                setTileAnimationBypass(false);
-                
-                resolve();
+                        // Rebind all tile events after cascade completes
+        rebindTileEventsAfterCascade(scene, state, setupTileInteraction);
+        
+        // 🔧 PHASE 25: Force position synchronization after cascade completes
+        forceSyncVisualToLogicalPositions(scene, state);
+        
+        // 🎬 PHASE 1A: Disable tile animation bypass after cascade completes
+        setTileAnimationBypass(false);
+        
+        resolve();
               });
           });
       })
@@ -591,14 +712,14 @@ function animateTileFalling(
           // Create cascade trail effect for falling tiles
           createCascadeTrailEffect(scene, tileSprite.x, tileSprite.y, newX, newY);
           
-          // Animate tile falling to new position - optimized duration and easing
+          // Animate tile falling to new position - optimized for <400ms target
           scene.tweens.add({
             targets: [tileSprite, tileText],
             x: newX,
             y: newY,
-            duration: 180, // Further optimized for faster cascade
+            duration: 150, // Reduced from 180ms to 150ms for faster cascade
             ease: 'Cubic.easeOut', // Optimized for smooth 60fps performance
-            delay: from.x * 20, // Further reduced stagger for faster completion
+            delay: from.x * 10, // Reduced stagger from 20ms to 10ms for faster completion
             onComplete: () => {
               // Update state arrays efficiently
               state.tileSprites[to.y][to.x] = tileSprite;
@@ -705,17 +826,21 @@ function animateNewTileAppearance(
           })
           .setOrigin(0.5);
 
-        // Animate tile falling into place - optimized for performance
+        // Animate tile falling into place - optimized for <400ms performance
         scene.tweens.add({
-          targets: [tile, letterText, pointText],
-          y: [startY, finalY, finalY - 4, finalY + tileSize * 0.25], // Different targets for different elements
-          duration: 250, // Further optimized for faster completion
+          targets: [tile, letterText, pointText, shadowTile], // Include shadow in animation
+          y: [startY, finalY, finalY - 4, finalY + tileSize * 0.25, finalY + 2], // Different targets for different elements
+          duration: 120, // Reduced from 150ms to 120ms for faster completion
           ease: 'Cubic.easeOut', // Optimized for smooth 60fps performance
-          delay: position.x * 30, // Further reduced stagger for faster completion
+          delay: position.x * 10, // Reduced stagger from 20ms to 10ms for faster completion
           onComplete: () => {
-            // Store in state arrays efficiently
+            // Store in state arrays efficiently (includes shadow tracking)
             state.tileSprites[position.y][position.x] = tile;
             state.tileTexts[position.y][position.x] = letterText;
+            
+            // Ensure shadow array exists and store shadow tile
+            if (!state.shadowSprites[position.y]) state.shadowSprites[position.y] = [];
+            state.shadowSprites[position.y][position.x] = shadowTile;
             
             // Setup interactions
             const tileData: LetterTile = { letter, points, x: position.x, y: position.y, id };
@@ -776,9 +901,9 @@ function animateBoardUpdate(
             targets: [tile, text],
             y: height + 100,
             alpha: 0,
-            duration: 300,
+            duration: 150, // Optimized from 300ms
             ease: 'Cubic.easeIn',
-            delay: (row * 50) + (col * 25), // Stagger the animation
+            delay: (row * 30) + (col * 15), // Reduced stagger delays
             onComplete: () => {
               tile.destroy();
               if (text) text.destroy();
@@ -892,14 +1017,18 @@ function createNewBoardWithAnimation(
         .setOrigin(0.5);
 
       state.tileSprites[row][col] = tile;
+      
+      // Ensure shadow array exists and store shadow tile
+      if (!state.shadowSprites[row]) state.shadowSprites[row] = [];
+      state.shadowSprites[row][col] = shadowTile;
 
-      // Animate tiles falling into place
+      // Animate tiles falling into place (optimized)
       scene.tweens.add({
-        targets: [tile, letterText, pointText],
-        y: [startY, y, y - 4, y + tileSize * 0.25], // Different final positions for different elements
-        duration: 300 + (row * 50),
-        ease: 'Bounce.easeOut',
-        delay: col * 50, // Stagger columns
+        targets: [tile, letterText, pointText, shadowTile], // Include shadow in animation
+        y: [startY, y, y - 4, y + tileSize * 0.25, y + 2], // Different final positions for different elements
+        duration: 150 + (row * 25), // Reduced from 300+50ms to 150+25ms
+        ease: 'Cubic.easeOut', // Faster than Bounce.easeOut
+        delay: col * 30, // Reduced stagger for faster completion
       });
 
       // Add hover effects and interactions
@@ -1016,6 +1145,10 @@ function animateCascadingTilesWithRemovedPositions(
 ): void {
   if (!state.currentBoard) return;
 
+  // Start timing for performance tracking
+  const animationStartTime = performance.now();
+  console.log(`[${new Date().toISOString()}] 🎬 Starting cascade animation with ${removedPositions.size} removed tiles`);
+
   const boardWidth = state.currentBoard.width;
   const boardHeight = state.currentBoard.height;
 
@@ -1055,14 +1188,14 @@ function animateCascadingTilesWithRemovedPositions(
       if (newRow !== tileInfo.originalRow) {
         const newY = gridStartY + newRow * tileSize + tileSize / 2;
         
-        // Animate existing tile falling to new position
+        // Animate existing tile falling to new position (optimized for <400ms total)
         const dropPromise = new Promise<void>((resolve) => {
           scene.tweens.add({
             targets: [tileInfo.sprite, tileInfo.text],
             y: newY,
-            duration: 300,
-            ease: 'Bounce.easeOut',
-            delay: col * 25, // Stagger columns
+            duration: 150, // Reduced from 300ms for speed
+            ease: 'Cubic.easeOut', // Faster than Bounce.easeOut
+            delay: col * 15, // Reduced stagger for faster completion
             onComplete: () => {
               // Update positions in state arrays
               state.tileSprites[newRow][col] = tileInfo.sprite;
@@ -1139,18 +1272,22 @@ function animateCascadingTilesWithRemovedPositions(
         })
         .setOrigin(0.5);
 
-      // Update state arrays
+      // Update state arrays (includes shadow tracking)
       state.tileSprites[newRow][col] = tile;
       state.tileTexts[newRow][col] = letterText;
+      
+      // Ensure shadow array exists and store shadow tile
+      if (!state.shadowSprites[newRow]) state.shadowSprites[newRow] = [];
+      state.shadowSprites[newRow][col] = shadowTile;
 
-      // Animate new tile falling into place
+      // Animate new tile falling into place (optimized)
       const newTilePromise = new Promise<void>((resolve) => {
         scene.tweens.add({
-          targets: [tile, letterText, pointText],
-          y: [startY, finalY, finalY - 4, finalY + tileSize * 0.25], // Different final positions
-          duration: 400 + (i * 50), // Stagger new tiles
-          ease: 'Bounce.easeOut',
-          delay: col * 50 + 200, // Delay after existing tiles start moving
+          targets: [tile, letterText, pointText, shadowTile], // Include shadow in animation
+          y: [startY, finalY, finalY - 4, finalY + tileSize * 0.25, finalY + 2], // Different final positions
+          duration: 120 + (i * 20), // Reduced from 400+50ms to 120+20ms
+          ease: 'Cubic.easeOut', // Faster than Bounce.easeOut
+          delay: col * 25 + 100, // Reduced delays for faster completion
           onComplete: () => {
             setupTileInteraction(tile, newRow, col, tileData);
             resolve();
@@ -1161,9 +1298,64 @@ function animateCascadingTilesWithRemovedPositions(
     }
   }
 
-  // Wait for all animations to complete
+  // Wait for all animations to complete with performance tracking
   Promise.all(dropAnimations).then(() => {
-    console.log('Per-column cascade animation complete');
+    const animationEndTime = performance.now();
+    const totalDuration = animationEndTime - animationStartTime;
+    const isOptimal = totalDuration < 400;
+    
+    console.log(`[${new Date().toISOString()}] ✅ Cascade animation complete: ${Math.round(totalDuration)}ms ${isOptimal ? '🟢' : '🔴'} (target: <400ms)`);
+    
+    if (!isOptimal) {
+      console.warn(`[${new Date().toISOString()}] ⚠️ Slow animation detected: ${Math.round(totalDuration)}ms exceeds 400ms target`);
+    }
+  });
+}
+
+/**
+ * Create batched animation timeline for better performance
+ * @param scene - Phaser scene
+ * @param animationGroups - Array of animation groups to batch
+ * @returns Promise that resolves when all animations complete
+ */
+function createBatchedAnimationTimeline(
+  scene: Phaser.Scene,
+  animationGroups: Array<{
+    targets: any[];
+    props: any;
+    duration: number;
+    delay?: number;
+  }>
+): Promise<void> {
+  return new Promise((resolve) => {
+    if (animationGroups.length === 0) {
+      resolve();
+      return;
+    }
+
+    // Create timeline for better performance than individual tweens
+    const timeline = scene.tweens.createTimeline();
+    
+    let maxDuration = 0;
+    
+    animationGroups.forEach(group => {
+      const totalTime = (group.delay || 0) + group.duration;
+      maxDuration = Math.max(maxDuration, totalTime);
+      
+      timeline.add({
+        targets: group.targets,
+        ...group.props,
+        duration: group.duration,
+        delay: group.delay || 0,
+      });
+    });
+
+    // Set a single completion callback for the entire timeline
+    timeline.setCallback('onComplete', () => {
+      resolve();
+    });
+
+    timeline.play();
   });
 }
 
@@ -1236,6 +1428,10 @@ function createBoardTiles(
       shadowTile.setDepth(-1); // Place shadow behind main tile
       
       state.tileSprites[row][col] = tile;
+      
+      // Ensure shadow array exists and store shadow tile
+      if (!state.shadowSprites[row]) state.shadowSprites[row] = [];
+      state.shadowSprites[row][col] = shadowTile;
 
       // Add letter and point value with premium typography
       const letterSize = Math.max(12, Math.min(32, tileSize * 0.4));
@@ -1375,23 +1571,34 @@ export function refreshVisualStateFromLogical(
   setupTileInteraction: (tile: Phaser.GameObjects.Rectangle, row: number, col: number, tileData: LetterTile) => void
 ): boolean {
   try {
-    console.log(`[${new Date().toISOString()}] 🔄 Starting full visual state refresh...`);
+    console.log(`[${new Date().toISOString()}] 🔄 Starting optimized visual state refresh...`);
 
     if (!state.currentBoard) {
       console.error(`[${new Date().toISOString()}] ❌ Cannot refresh visual state - no logical board`);
       return false;
     }
 
-    // Clear existing visual elements
-    state.tileSprites.forEach(row => row.forEach(tile => tile?.destroy()));
-    state.tileTexts.forEach(row => row.forEach(text => text?.destroy()));
-    state.tileSprites = [];
-    state.tileTexts = [];
+    // Use efficient tile update instead of destroying everything
+    const { width, height } = scene.scale.gameSize;
+    const boardWidth = state.currentBoard.width;
+    const boardHeight = state.currentBoard.height;
+    
+    // Calculate responsive tile size
+    const maxBoardWidth = width * 0.8;
+    const maxBoardHeight = height * 0.6;
+    const tileSize = Math.min(
+      Math.floor(maxBoardWidth / boardWidth),
+      Math.floor(maxBoardHeight / boardHeight),
+      80 // Maximum tile size
+    );
+    
+    const gridStartX = width / 2 - (boardWidth * tileSize) / 2;
+    const gridStartY = height / 2 - (boardHeight * tileSize) / 2;
 
-    // Recreate board display from logical state
-    updateBoardDisplay(scene, state, setupTileInteraction);
+    // Use efficient update function that reuses existing tiles
+    updateExistingTiles(scene, state, gridStartX, gridStartY, tileSize, setupTileInteraction);
 
-    console.log(`[${new Date().toISOString()}] ✅ Visual state refresh completed`);
+    console.log(`[${new Date().toISOString()}] ✅ Optimized visual state refresh completed`);
     return true;
   } catch (error) {
     console.error(`[${new Date().toISOString()}] ❌ Visual state refresh failed:`, error);
@@ -1485,9 +1692,11 @@ export function correctVisualStateTileByTile(
             // Ensure arrays exist
             if (!state.tileSprites[row]) state.tileSprites[row] = [];
             if (!state.tileTexts[row]) state.tileTexts[row] = [];
+            if (!state.shadowSprites[row]) state.shadowSprites[row] = [];
 
             state.tileSprites[row][col] = tile;
             state.tileTexts[row][col] = letterText;
+            state.shadowSprites[row][col] = shadowTile;
 
             setupTileInteraction(tile, row, col, logicalTile);
             correctedCount++;
@@ -1915,4 +2124,140 @@ export function createCascadeTrailEffect(
     console.warn('Failed to create cascade trail effect:', error);
     return null;
   }
+}
+
+/**
+ * Force synchronization of visual sprite positions to match logical board positions
+ * Ensures visual sprites are positioned exactly where they should be after cascade animations
+ * @param scene - Phaser scene
+ * @param state - Board rendering state
+ */
+function forceSyncVisualToLogicalPositions(scene: Phaser.Scene, state: BoardRenderingState): void {
+  if (!state.currentBoard) return;
+  
+  const { width, height } = scene.scale.gameSize;
+  const boardWidth = state.currentBoard.width;
+  const boardHeight = state.currentBoard.height;
+  const tileSize = Math.min(Math.floor(width * 0.8 / boardWidth), Math.floor(height * 0.6 / boardHeight), 80);
+  const gridStartX = width / 2 - (boardWidth * tileSize) / 2;
+  const gridStartY = height / 2 - (boardHeight * tileSize) / 2;
+  
+  let syncedCount = 0;
+  
+  for (let row = 0; row < boardHeight; row++) {
+    for (let col = 0; col < boardWidth; col++) {
+      const logicalTile = state.currentBoard.tiles[row][col];
+      const visualSprite = state.tileSprites[row]?.[col];
+      const visualText = state.tileTexts[row]?.[col];
+      
+      if (logicalTile && visualSprite && visualText) {
+        const correctX = gridStartX + col * tileSize + tileSize / 2;
+        const correctY = gridStartY + row * tileSize + tileSize / 2;
+        
+        // Check if position correction is needed (tolerance for floating point precision)
+        const deltaX = Math.abs(visualSprite.x - correctX);
+        const deltaY = Math.abs(visualSprite.y - correctY);
+        
+        if (deltaX > 1 || deltaY > 1) {
+          visualSprite.setPosition(correctX, correctY);
+          visualText.setPosition(correctX, correctY - 4);
+          syncedCount++;
+          console.log(`[${new Date().toISOString()}] 🔧 Synced tile [${row}][${col}] from (${visualSprite.x.toFixed(1)}, ${visualSprite.y.toFixed(1)}) to (${correctX}, ${correctY})`);
+        }
+      }
+    }
+  }
+  
+  if (syncedCount > 0) {
+    console.log(`[${new Date().toISOString()}] ✅ Position sync complete: corrected ${syncedCount} tile positions`);
+  } else {
+    console.log(`[${new Date().toISOString()}] ✅ Position sync complete: all tiles already correctly positioned`);
+  }
 } 
+
+/**
+ * Comprehensive cleanup of all visual elements to prevent shadow artifacts
+ * Removes all existing sprites, shadows, particles, and visual remnants
+ * @param scene - Phaser scene to clean
+ * @param state - Board rendering state to reset
+ */
+function cleanupAllVisualElements(scene: Phaser.Scene, state: BoardRenderingState): void {
+  console.log(`[${new Date().toISOString()}] 🧹 Starting comprehensive visual cleanup...`);
+  
+  let cleanedTiles = 0;
+  let cleanedShadows = 0;
+  let cleanedTexts = 0;
+  let cleanedParticles = 0;
+  
+  try {
+    // Destroy all existing tile sprites
+    state.tileSprites.forEach(row => {
+      if (row) {
+        row.forEach(tile => {
+          if (tile && tile.scene && !tile.scene.game.isDestroyed) {
+            tile.destroy();
+            cleanedTiles++;
+          }
+        });
+      }
+    });
+    
+    // Destroy all existing text objects
+    state.tileTexts.forEach(row => {
+      if (row) {
+        row.forEach(text => {
+          if (text && text.scene && !text.scene.game.isDestroyed) {
+            text.destroy();
+            cleanedTexts++;
+          }
+        });
+      }
+    });
+    
+    // Destroy all existing shadow sprites (NEW - fixes shadow artifacts)
+    if (state.shadowSprites) {
+      state.shadowSprites.forEach(row => {
+        if (row) {
+          row.forEach(shadow => {
+            if (shadow && shadow.scene && !shadow.scene.game.isDestroyed) {
+              shadow.destroy();
+              cleanedShadows++;
+            }
+          });
+        }
+      });
+    }
+    
+    // Clean up particle effects and any stray visual elements
+    scene.children.list.forEach(child => {
+      try {
+        // Remove particle emitters
+        if (child.type === 'ParticleEmitter') {
+          child.destroy();
+          cleanedParticles++;
+        }
+        // Remove any orphaned rectangles or texts with depth -1 (shadows)
+        else if ((child.type === 'Rectangle' || child.type === 'Text') && child.depth === -1) {
+          child.destroy();
+          cleanedShadows++;
+        }
+      } catch (error) {
+        console.warn('Failed to clean child element:', error);
+      }
+    });
+    
+    // Reset all state arrays
+    state.tileSprites = [];
+    state.tileTexts = [];
+    state.shadowSprites = [];
+    
+    console.log(`[${new Date().toISOString()}] ✅ Cleanup completed: ${cleanedTiles} tiles, ${cleanedShadows} shadows, ${cleanedTexts} texts, ${cleanedParticles} particles`);
+    
+  } catch (error) {
+    console.error('Error during visual cleanup:', error);
+    // Force reset arrays even if cleanup failed
+    state.tileSprites = [];
+    state.tileTexts = [];
+    state.shadowSprites = [];
+  }
+}

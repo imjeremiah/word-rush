@@ -17,7 +17,7 @@ const LetterTileSchema = z.object({
 // Match settings schema
 const MatchSettingsSchema = z.object({
   totalRounds: z.number().min(1).max(10),
-  roundDuration: z.number().min(30).max(300), // 30 seconds to 5 minutes
+  roundDuration: z.number().min(15).max(300), // 15 seconds to 5 minutes for flexible game durations
   shuffleCost: z.number().min(0).max(50),
   speedBonusMultiplier: z.number().min(1).max(3),
   speedBonusWindow: z.number().min(1).max(10),

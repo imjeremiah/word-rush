@@ -4,7 +4,7 @@
  * Provides the primary navigation for multiplayer game flow
  */
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useGameContext } from '../context/GameContext';
 
 /**
@@ -13,7 +13,6 @@ import { useGameContext } from '../context/GameContext';
  * @returns JSX element containing the main menu interface
  */
 function MainMenu(): JSX.Element {
-  const { setGameState } = useGameContext();
   const [showCreateGame, setShowCreateGame] = useState(false);
   const [showJoinGame, setShowJoinGame] = useState(false);
 

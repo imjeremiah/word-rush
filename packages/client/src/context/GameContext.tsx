@@ -4,16 +4,16 @@
  * 🟡 PHASE 3B: Enhanced with state batching, validation, and debouncing
  */
 
-import { createContext, useContext, useState, useRef, useCallback, ReactNode, useReducer, startTransition } from 'react';
+import { createContext, useContext, useState, useRef, useCallback, ReactNode, startTransition } from 'react';
 import { Socket } from 'socket.io-client';
 import { 
   ServerToClientEvents, 
   ClientToServerEvents, 
   PlayerSession, 
-  GameRoom, 
-  MatchSettings,
+  GameRoom,
   DifficultyLevel 
 } from '@word-rush/common';
+import { notifications } from '../services/notifications';
 
 interface RoundTimer {
   timeRemaining: number;
@@ -26,22 +26,15 @@ interface RoundTimer {
  * 🟡 PHASE 3B: Enhanced State Management Types
  */
 
-// Valid game state transitions - expanded to allow more flexible flow
+// Valid game state transitions - expanded to allow more flexible flow including same-state transitions
 const VALID_STATE_TRANSITIONS: Record<string, string[]> = {
-  'menu': ['lobby', 'match', 'round-end'], // Add round-end for direct transitions
-  'lobby': ['menu', 'match', 'round-end', 'match-end'], // Add more transitions for reconnect scenarios
-  'match': ['round-end', 'match-end', 'lobby', 'menu'], // Allow direct menu transition for error recovery
-  'round-end': ['match', 'match-end', 'lobby', 'menu'], // Allow menu transition and ensure match continuation
-  'match-end': ['lobby', 'menu', 'match'] // Allow returning to match for error recovery
+  'menu': ['menu', 'lobby', 'countdown', 'match', 'round-end', 'match-end'], // Add self-transition for state updates
+  'lobby': ['lobby', 'menu', 'countdown', 'match', 'round-end', 'match-end'], // Add countdown transition from lobby
+  'countdown': ['countdown', 'match', 'lobby', 'menu'], // New countdown state transitions
+  'match': ['match', 'round-end', 'match-end', 'lobby', 'menu'], // Add self-transition for match data updates
+  'round-end': ['round-end', 'match', 'match-end', 'lobby', 'menu'], // Add self-transition for summary updates
+  'match-end': ['match-end', 'lobby', 'menu', 'match'] // Add self-transition for final data updates
 };
-
-// State update queue for batching
-interface StateUpdate {
-  type: 'gameState' | 'currentRoom' | 'roundTimer' | 'matchData' | 'playerSession';
-  value: any;
-  timestamp: number;
-  priority: 'low' | 'medium' | 'high';
-}
 
 // Debouncing configuration
 const DEBOUNCE_CONFIG = {
@@ -56,7 +49,6 @@ interface StateChangeLog {
   timestamp: number;
   fromState: any;
   toState: any;
-  type: string;
   triggeredBy: string;
 }
 
@@ -68,7 +60,7 @@ interface GameContextType {
   connectionStatus: 'connecting' | 'connected' | 'disconnected';
   playerSession: PlayerSession | null;
   currentRoom: GameRoom | null;
-  gameState: 'menu' | 'lobby' | 'match' | 'round-end' | 'match-end';
+  gameState: 'menu' | 'lobby' | 'countdown' | 'match' | 'round-end' | 'match-end';
   matchData: {
     currentRound: number;
     totalRounds: number;
@@ -88,7 +80,7 @@ interface GameContextType {
   setConnectionStatus: (status: 'connecting' | 'connected' | 'disconnected') => void;
   setPlayerSession: (session: PlayerSession | null) => void;
   setCurrentRoom: (room: GameRoom | null) => void;
-  setGameState: (state: 'menu' | 'lobby' | 'match' | 'round-end' | 'match-end') => void;
+  setGameState: (state: 'menu' | 'lobby' | 'countdown' | 'match' | 'round-end' | 'match-end') => void;
   setMatchData: (data: {
     currentRound: number;
     totalRounds: number;
@@ -103,7 +95,7 @@ interface GameContextType {
   safeSetRoundTimer: (timer: RoundTimer | null) => void; // Safe wrapper to prevent crashes
   // 🟡 PHASE 3B: Batch update function for complex state operations
   batchUpdateGameState: (updates: {
-    gameState?: 'menu' | 'lobby' | 'match' | 'round-end' | 'match-end';
+    gameState?: 'menu' | 'lobby' | 'countdown' | 'match' | 'round-end' | 'match-end';
     currentRoom?: GameRoom | null;
     matchData?: {
       currentRound: number;
@@ -159,7 +151,6 @@ function logStateChange(type: string, fromState: any, toState: any, triggeredBy:
     timestamp: Date.now(),
     fromState,
     toState,
-    type,
     triggeredBy
   };
   
@@ -232,7 +223,7 @@ export function GameProvider({ children }: GameProviderProps): JSX.Element {
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
   const [playerSession, setPlayerSessionInternal] = useState<PlayerSession | null>(null);
   const [currentRoom, setCurrentRoomInternal] = useState<GameRoom | null>(null);
-  const [gameState, setGameStateInternal] = useState<'menu' | 'lobby' | 'match' | 'round-end' | 'match-end'>('menu');
+  const [gameState, setGameStateInternal] = useState<'menu' | 'lobby' | 'countdown' | 'match' | 'round-end' | 'match-end'>('menu');
   const [matchData, setMatchDataInternal] = useState<{
     currentRound: number;
     totalRounds: number;
@@ -250,12 +241,35 @@ export function GameProvider({ children }: GameProviderProps): JSX.Element {
   const [roundTimer, setRoundTimerInternal] = useState<RoundTimer | null>(null);
 
   // 🟡 PHASE 3B: Enhanced setters with validation and debouncing
-  const setGameState = useCallback((newState: 'menu' | 'lobby' | 'match' | 'round-end' | 'match-end') => {
+  const setGameState = useCallback((newState: 'menu' | 'lobby' | 'countdown' | 'match' | 'round-end' | 'match-end') => {
     const currentState = gameState;
     
     // Validate state transition
     if (!validateStateTransition(currentState, newState)) {
-      console.warn(`[GameContext] Blocked invalid state transition: ${currentState} -> ${newState}`);
+      console.error(`[GameContext] Invalid state transition: ${currentState} -> ${newState}`);
+      
+      // Smart recovery: Choose contextually appropriate fallback
+      let fallbackState: 'menu' | 'lobby' | 'match' | 'round-end' | 'match-end' = 'lobby';
+      
+      // More intelligent fallback logic
+      if (newState === 'match' || newState === 'round-end') {
+        fallbackState = 'lobby'; // Match-related states fallback to lobby
+      } else if (newState === 'match-end') {
+        fallbackState = currentState === 'match' ? 'match' : 'lobby'; // Stay in match if possible
+      } else {
+        fallbackState = 'menu'; // General fallback to menu for other cases
+      }
+      
+      console.warn(`[GameContext] Recovering from invalid transition: ${currentState} -> ${newState}, using fallback: ${fallbackState}`);
+      notifications.error(`Invalid game state transition - recovering to ${fallbackState}`, 3000);
+      
+      // Log the recovery action
+      logStateChange('gameState', currentState, fallbackState, 'setGameState-smart-recovery');
+      
+      // Set to contextual fallback
+      startTransition(() => {
+        setGameStateInternal(fallbackState);
+      });
       return;
     }
     
@@ -338,7 +352,11 @@ export function GameProvider({ children }: GameProviderProps): JSX.Element {
       };
       
       currentTimerRef.current = updatedTimer;
-      setRoundTimer(updatedTimer);
+      
+      // Call internal setter directly to avoid circular dependency
+      startTransition(() => {
+        setRoundTimerInternal(updatedTimer);
+      });
     } else {
       // Just update the ref without triggering re-render
       currentTimerRef.current = {

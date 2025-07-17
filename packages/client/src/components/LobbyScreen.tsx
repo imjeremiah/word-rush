@@ -4,9 +4,9 @@
  * Shows player list, ready states, room settings, and host controls
  */
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useGameContext } from '../context/GameContext';
-import { DifficultyLevel, DIFFICULTY_CONFIGS } from '@word-rush/common';
+import { DifficultyLevel, DIFFICULTY_CONFIGS, MatchSettings } from '@word-rush/common';
 
 /**
  * Lobby Screen component for multiplayer room management
@@ -23,7 +23,6 @@ function LobbyScreen(): JSX.Element {
   } = useGameContext();
   
   const [showSettings, setShowSettings] = useState(false);
-  const [selectedDifficulty, setSelectedDifficulty] = useState<DifficultyLevel>('medium');
 
   if (!currentRoom || !playerSession) {
     return <div>Loading lobby...</div>;
@@ -68,7 +67,7 @@ function LobbyScreen(): JSX.Element {
   /**
    * Update room settings (host only)
    */
-  const handleUpdateSettings = (newSettings: typeof currentRoom.settings): void => {
+  const handleUpdateSettings = (newSettings: MatchSettings): void => {
     if (!socket || !isHost) return;
     
     socket.emit('room:update-settings', {
@@ -82,7 +81,7 @@ function LobbyScreen(): JSX.Element {
   const handleSetDifficulty = (difficulty: DifficultyLevel): void => {
     if (!socket) return;
     
-    setSelectedDifficulty(difficulty);
+    // setSelectedDifficulty(difficulty); // This line was removed from imports
     socket.emit('player:set-difficulty', {
       difficulty
     });
@@ -225,6 +224,7 @@ function LobbyScreen(): JSX.Element {
                 <SettingsPanel 
                   settings={currentRoom.settings}
                   onUpdate={handleUpdateSettings}
+                  onClose={() => setShowSettings(false)}
                 />
               )}
             </div>
@@ -276,21 +276,15 @@ function LobbyScreen(): JSX.Element {
 }
 
 /**
- * Settings Panel component for host match configuration
+ * Settings Panel component for configuring match parameters
  */
 interface SettingsPanelProps {
-  settings: {
-    totalRounds: number;
-    roundDuration: number;
-    shuffleCost: number;
-    speedBonusMultiplier: number;
-    speedBonusWindow: number;
-    deadBoardThreshold: number;
-  };
-  onUpdate: (settings: typeof settings) => void;
+  settings: MatchSettings;
+  onUpdate: (settings: MatchSettings) => void;
+  onClose: () => void;
 }
 
-function SettingsPanel({ settings, onUpdate }: SettingsPanelProps): JSX.Element {
+function SettingsPanel({ settings, onUpdate, onClose }: SettingsPanelProps): JSX.Element {
   const [localSettings, setLocalSettings] = useState(settings);
 
   /**
@@ -320,14 +314,17 @@ function SettingsPanel({ settings, onUpdate }: SettingsPanelProps): JSX.Element 
 
       <div className="setting-group">
         <label>Round Duration: {localSettings.roundDuration}s</label>
-        <input
-          type="range"
-          min="60"
-          max="180"
-          step="30"
-          value={localSettings.roundDuration}
-          onChange={(e) => handleChange('roundDuration', parseInt(e.target.value))}
-        />
+        <div className="duration-selector">
+          {[15, 30, 60, 90].map(duration => (
+            <button 
+              key={duration}
+              className={`duration-button ${localSettings.roundDuration === duration ? 'selected' : ''}`}
+              onClick={() => handleChange('roundDuration', duration)}
+            >
+              {duration}s
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="setting-group">
@@ -364,6 +361,7 @@ function SettingsPanel({ settings, onUpdate }: SettingsPanelProps): JSX.Element 
           onChange={(e) => handleChange('speedBonusWindow', parseInt(e.target.value))}
         />
       </div>
+      <button onClick={onClose}>Close Settings</button>
     </div>
   );
 }

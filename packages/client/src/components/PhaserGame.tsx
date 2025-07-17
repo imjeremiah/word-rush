@@ -4,6 +4,7 @@
  */
 
 import React, { useEffect, useRef } from 'react';
+import { useGameContext } from '../context/GameContext';
 import Phaser from 'phaser';
 import { Socket } from 'socket.io-client';
 import WebFont from 'webfontloader';
@@ -13,7 +14,8 @@ import {
   GameBoard,
   LetterTile,
   FONTS,
-  TileChanges 
+  TileChanges,
+  DifficultyLevel 
 } from '@word-rush/common';
 import { 
   BoardRenderingState, 
@@ -46,6 +48,23 @@ const PhaserGame: React.FC<PhaserGameProps> = React.memo(({ socket, gameState })
   const containerRef = useRef<HTMLDivElement>(null);
   const instanceIdRef = useRef<string>(`phaser-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
   const isCleanupRef = useRef<boolean>(false); // Track cleanup state for Strict Mode
+  const timeoutsRef = useRef<NodeJS.Timeout[]>([]); // Track particle effect timeouts for cleanup
+
+  // 🕰️ PHASE 28: Access game context for difficulty-based validation
+  const { currentRoom, playerSession } = useGameContext();
+
+  /**
+   * Get current player's difficulty setting for word validation
+   * @returns Current player's difficulty level or 'medium' as default
+   */
+  const getCurrentDifficulty = (): DifficultyLevel => {
+    if (!currentRoom || !playerSession) {
+      return 'medium'; // Default fallback
+    }
+    
+    const currentPlayer = currentRoom.players.find(p => p.id === playerSession.id);
+    return currentPlayer?.difficulty || 'medium';
+  };
 
   // Add component lifecycle logging
   useEffect(() => {
@@ -121,7 +140,7 @@ const PhaserGame: React.FC<PhaserGameProps> = React.memo(({ socket, gameState })
           },
           create: function(this: Phaser.Scene) {
             console.log(`[${new Date().toISOString()}] 🎬 Phaser scene CREATE - Instance: ${instanceIdRef.current}`);
-            create.call(this, socket, gameState);
+            create.call(this, socket, gameState, getCurrentDifficulty);
           },
           update: function(this: Phaser.Scene) {
             update.call(this);
@@ -169,6 +188,22 @@ const PhaserGame: React.FC<PhaserGameProps> = React.memo(({ socket, gameState })
         visualValidationInterval = null;
       }
       
+      // Clear all pending particle effect timeouts
+      console.log(`[${new Date().toISOString()}] 🧹 Clearing ${timeoutsRef.current.length} component-level timeouts`);
+      timeoutsRef.current.forEach(clearTimeout);
+      timeoutsRef.current = [];
+      
+      // Clear global particle effect timeouts
+      console.log(`[${new Date().toISOString()}] 🧹 Clearing ${globalTimeoutTracker.length} global particle effect timeouts`);
+      clearAllTrackedTimeouts();
+      
+      // Clear module-level timeouts from board-rendering
+      import('./board-rendering.js').then(({ clearModuleTimeouts }) => {
+        clearModuleTimeouts();
+      }).catch((error) => {
+        console.warn('Failed to clear module timeouts:', error);
+      });
+      
       // Clean up Phaser game instance
       if (gameRef.current) {
         try {
@@ -213,11 +248,15 @@ const PhaserGame: React.FC<PhaserGameProps> = React.memo(({ socket, gameState })
 // Set display name for debugging
 PhaserGame.displayName = 'PhaserGame';
 
+// Export timeout tracking function for particle effects
+export { trackTimeout };
+
 // Game state variables
 const boardState: BoardRenderingState = {
   currentBoard: null,
   tileSprites: [],
-  tileTexts: []
+  tileTexts: [],
+  shadowSprites: []
 };
 
 const interactionState: InteractionState = {
@@ -233,6 +272,9 @@ const layoutState: LayoutState = {
 };
 
 // 🚀 PHASE 5B: Audio and Particle System State
+// Global audio disable flag to prevent buzzing sounds until proper audio system is implemented
+const AUDIO_ENABLED = false; // Disable audio globally to eliminate buzzing issues
+
 interface AudioSystem {
   tileSelect?: Phaser.Sound.BaseSound;
   wordValid?: Phaser.Sound.BaseSound;
@@ -245,22 +287,25 @@ interface AudioSystem {
   volume: number;
   musicVolume: number;
   isEnabled: boolean;
+  isInitialized: boolean;
 }
 
 interface ParticleSystem {
-  wordValidEmitter?: Phaser.GameObjects.Particles.ParticleEmitter;
-  cascadeEmitter?: Phaser.GameObjects.Particles.ParticleEmitter;
-  speedBonusEmitter?: Phaser.GameObjects.Particles.ParticleEmitter;
-  manager?: Phaser.GameObjects.Particles.ParticleEmitterManager;
+  emitters: Map<string, Phaser.GameObjects.Particles.ParticleEmitter>;
+  isInitialized: boolean;
 }
 
 let audioSystem: AudioSystem = {
   volume: 0.7,
   musicVolume: 0.3,
-  isEnabled: true
+  isEnabled: true,
+  isInitialized: false
 };
 
-let particleSystem: ParticleSystem = {};
+let particleSystem: ParticleSystem = {
+  emitters: new Map(),
+  isInitialized: false
+};
 
 let loadingText: Phaser.GameObjects.Text | null = null;
 
@@ -271,6 +316,28 @@ let isProcessingTileChanges = false;
 const queuedTileChanges: TileChanges[] = []; // Queue for when scene is not ready
 let sceneReadinessCheckInterval: NodeJS.Timeout | null = null;
 let visualValidationInterval: NodeJS.Timeout | null = null;
+
+// Retry tracking for timeout handling
+let retryingSequence: number | null = null;
+
+// Global timeout tracking for particle effects
+let globalTimeoutTracker: NodeJS.Timeout[] = [];
+
+/**
+ * Track a timeout for cleanup on unmount
+ * @param timeoutId - The timeout ID to track
+ */
+function trackTimeout(timeoutId: NodeJS.Timeout): void {
+  globalTimeoutTracker.push(timeoutId);
+}
+
+/**
+ * Clear all tracked timeouts
+ */
+function clearAllTrackedTimeouts(): void {
+  globalTimeoutTracker.forEach(clearTimeout);
+  globalTimeoutTracker = [];
+}
 
 /**
  * Phaser preload function - loads game assets and initializes font loading
@@ -337,43 +404,68 @@ function preload(this: Phaser.Scene, socket?: Socket<ServerToClientEvents, Clien
     color: '#ffffff',
   }).setOrigin(0.5);
 
-  // Optimized font loading with preload hint and fallback
+  // Enhanced font loading with preload hints and faster initialization
   const fontPromise = new Promise<void>((resolve) => {
-    // Check if fonts are already loaded
-    if (document.fonts) {
-      document.fonts.ready.then(() => {
-        console.log('System fonts ready');
-        resolve();
+    console.log(`[${new Date().toISOString()}] 🔤 Starting optimized font loading...`);
+    
+    // Add preload hint using document.fonts.load() for immediate loading
+    if (document.fonts && document.fonts.load) {
+      // Preload critical font weights used in the game
+      Promise.all([
+        document.fonts.load('400 16px Inter'),
+        document.fonts.load('500 16px Inter'),
+        document.fonts.load('600 16px Inter'),
+        document.fonts.load('700 16px Inter')
+      ]).then(() => {
+        console.log(`[${new Date().toISOString()}] ✅ Font preload hints processed successfully`);
+      }).catch((error) => {
+        console.warn(`[${new Date().toISOString()}] ⚠️ Font preload hints failed:`, error);
       });
     }
     
-    // Load Google Fonts with optimized configuration
-    WebFont.load({
-      google: {
-        families: [`${FONTS.heading}:400,600,700`, `${FONTS.body}:400,600,700`],
-        display: 'swap' // Optimize for performance
-      },
-      timeout: 2000, // Prevent hanging on slow connections
-      active: () => {
-        console.log('Fonts loaded successfully');
+    // Check if fonts are already loaded (from HTML preload)
+    if (document.fonts) {
+      document.fonts.ready.then(() => {
+        console.log(`[${new Date().toISOString()}] ✅ System fonts ready from preload`);
         if (loadingText) {
-          loadingText.setText('Ready to play!');
+          loadingText.setText('Fonts ready!');
         }
         resolve();
-      },
-      inactive: () => {
-        console.warn('Font loading failed, using fallback fonts');
-        if (loadingText) {
-          loadingText.setText('Using fallback fonts - Ready to play!');
-        }
+      }).catch(() => {
+        console.warn(`[${new Date().toISOString()}] ⚠️ System fonts ready check failed, continuing...`);
         resolve();
-      }
-    });
+      });
+    } else {
+      // Fallback for browsers without document.fonts support
+      console.warn(`[${new Date().toISOString()}] ⚠️ document.fonts not supported, using WebFont fallback`);
+      
+      // Load Google Fonts with optimized configuration as fallback
+      WebFont.load({
+        google: {
+          families: ['Inter:300,400,500,600,700']
+        },
+        timeout: 1500, // Reduced timeout since fonts should be preloaded
+        active: () => {
+          console.log(`[${new Date().toISOString()}] ✅ WebFont fallback loaded successfully`);
+          if (loadingText) {
+            loadingText.setText('Ready to play!');
+          }
+          resolve();
+        },
+        inactive: () => {
+          console.warn(`[${new Date().toISOString()}] ⚠️ WebFont fallback failed, using system fonts`);
+          if (loadingText) {
+            loadingText.setText('Using system fonts - Ready to play!');
+          }
+          resolve();
+        }
+      });
+    }
   });
 
-  // Don't block scene creation on font loading
+  // Don't block scene creation on font loading - faster startup
   fontPromise.catch(() => {
-    console.warn('Font loading promise rejected, continuing with fallbacks');
+    console.warn(`[${new Date().toISOString()}] ⚠️ Font loading promise rejected, continuing with system fonts`);
   });
 
   // Set up socket event listeners if socket is provided
@@ -441,12 +533,16 @@ function preload(this: Phaser.Scene, socket?: Socket<ServerToClientEvents, Clien
  */
 function isSceneReady(scene: Phaser.Scene): boolean {
   try {
+    // Enhanced readiness checks including pause state
     return scene.sys && 
            scene.sys.isActive() && 
            scene.sys.displayList && 
            scene.sys.updateList && 
            !scene.scene.isDestroying &&
-           scene.scene.isVisible();
+           scene.scene.isVisible() &&
+           !scene.scene.isPaused() &&
+           scene.sys.game && // Ensure game object exists
+           !scene.sys.game.isPaused; // Ensure game isn't globally paused
   } catch (error) {
     console.error(`[${new Date().toISOString()}] ❌ Error checking scene readiness:`, error);
     return false;
@@ -475,14 +571,14 @@ interface RecoveryAttempt {
 let currentRecoveryState = RecoveryState.NONE;
 let recoveryHistory: RecoveryAttempt[] = [];
 let lastRecoveryTime = 0;
-const RECOVERY_COOLDOWN_MS = 5000; // 5 second cooldown between recovery attempts
+const RECOVERY_COOLDOWN_MS = 10000; // 10 second cooldown between recovery attempts (reduced frequency)
 
 /**
  * Progressive recovery mechanism with state tracking and cooldown
  * @param scene - Phaser scene to recover
  * @returns Boolean indicating if recovery was successful
  */
-function recoverSceneState(scene: Phaser.Scene): boolean {
+async function recoverSceneState(scene: Phaser.Scene): Promise<boolean> {
   const now = Date.now();
   
   // Check recovery cooldown
@@ -492,24 +588,50 @@ function recoverSceneState(scene: Phaser.Scene): boolean {
   }
   
   lastRecoveryTime = now;
-  console.log(`[${new Date().toISOString()}] 🔄 Starting progressive scene recovery...`);
+  console.log(`[${new Date().toISOString()}] 🔄 Starting progressive scene recovery with enhanced retries...`);
   
-  // Step 1: Try refreshing only affected tiles
-  if (attemptTileRefresh(scene)) {
-    return true;
+  // Enhanced escalation with MORE retries for lighter recovery steps before full restart
+  // Prioritize less disruptive methods with increased persistence
+  
+  // Step 1: Try refreshing only affected tiles (increased retries)
+  for (let retry = 0; retry < 3; retry++) {
+    if (attemptTileRefresh(scene)) {
+      console.log(`[${new Date().toISOString()}] ✅ Tile refresh succeeded on attempt ${retry + 1}`);
+      return true;
+    }
+    if (retry < 2) {
+      console.log(`[${new Date().toISOString()}] ⏱️ Tile refresh failed, retrying in 500ms... (${retry + 1}/3)`);
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
   }
   
-  // Step 2: Try refreshing entire board if tile refresh failed
-  if (attemptBoardRefresh(scene)) {
-    return true;
+  // Step 2: Try refreshing entire board (increased retries)
+  for (let retry = 0; retry < 3; retry++) {
+    if (attemptBoardRefresh(scene)) {
+      console.log(`[${new Date().toISOString()}] ✅ Board refresh succeeded on attempt ${retry + 1}`);
+      return true;
+    }
+    if (retry < 2) {
+      console.log(`[${new Date().toISOString()}] ⏱️ Board refresh failed, retrying in 1000ms... (${retry + 1}/3)`);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
   }
   
-  // Step 3: Try full scene restart if board refresh failed
-  if (attemptSceneRestart(scene)) {
-    return true;
+  // Step 3: Try scene restart (with retries before full restart)
+  for (let retry = 0; retry < 2; retry++) {
+    if (attemptSceneRestart(scene)) {
+      console.log(`[${new Date().toISOString()}] ✅ Scene restart succeeded on attempt ${retry + 1}`);
+      return true;
+    }
+    if (retry === 0) {
+      console.log(`[${new Date().toISOString()}] ⏱️ Scene restart failed, retrying in 1500ms... (${retry + 1}/2)`);
+      await new Promise(resolve => setTimeout(resolve, 1500));
+    }
   }
   
-  // Step 4: Complete Phaser instance restart (last resort)
+  // Step 4: Complete Phaser instance restart (last resort - only after all lighter methods exhausted)
+  console.warn(`[${new Date().toISOString()}] ⚠️ All lighter recovery methods exhausted - escalating to full restart as last resort`);
+  console.warn(`[${new Date().toISOString()}] 🚨 Recovery attempts completed: Tile(3), Board(3), Scene(2) - Full restart required`);
   return attemptFullRestart();
 }
 
@@ -639,6 +761,7 @@ function attemptSceneRestart(scene: Phaser.Scene): boolean {
         // Clear existing state
         boardState.tileSprites = [];
         boardState.tileTexts = [];
+        boardState.shadowSprites = [];
         
         // Recreate layout elements
         createGameLayout(scene, layoutState, interactionState);
@@ -776,7 +899,7 @@ function getRecoveryMetrics(): {
  * @param socket - Optional Socket.io connection for server communication and board requests
  * @returns void - Establishes complete interactive game scene ready for player input
  */
-function create(this: Phaser.Scene, socket?: Socket<ServerToClientEvents, ClientToServerEvents>, gameState?: 'menu' | 'lobby' | 'match' | 'round-end' | 'match-end') {
+function create(this: Phaser.Scene, socket?: Socket<ServerToClientEvents, ClientToServerEvents>, gameState?: 'menu' | 'lobby' | 'match' | 'round-end' | 'match-end', getCurrentDifficulty?: () => DifficultyLevel) {
   console.log(`[${new Date().toISOString()}] 🎬 Scene CREATE started - optimized initialization...`);
   
   // Force scene readiness for faster startup
@@ -792,13 +915,16 @@ function create(this: Phaser.Scene, socket?: Socket<ServerToClientEvents, Client
     loadingText = null;
   }
 
-  // 🚀 PHASE 5B: Initialize Audio and Particle Systems
+  // 🚀 PHASE 5B: Initialize Audio System (independent of other systems)
   initializeAudioSystem(this);
+  
+  // 🚀 PHASE 5B: Initialize Particle System (independent fallback on failure)
   initializeParticleSystem(this);
 
   // Initialize tile arrays
   boardState.tileSprites = [];
   boardState.tileTexts = [];
+  boardState.shadowSprites = [];
 
   // Create initial layout
   createGameLayout(this, layoutState, interactionState);
@@ -807,7 +933,7 @@ function create(this: Phaser.Scene, socket?: Socket<ServerToClientEvents, Client
   initializeResizeHandler(this, layoutState, interactionState, boardState, updateBoardDisplayWrapper.bind(this));
 
   // Initialize global pointer events
-  initializeGlobalPointerEvents(this, boardState, interactionState, () => gameState || 'menu');
+  initializeGlobalPointerEvents(this, boardState, interactionState, () => gameState || 'menu', getCurrentDifficulty || (() => 'medium'));
 
   // Render the board if we already have data
   if (boardState.currentBoard) {
@@ -843,13 +969,48 @@ function create(this: Phaser.Scene, socket?: Socket<ServerToClientEvents, Client
 function updateBoardDisplayWrapper(this: Phaser.Scene) {
   console.log(`[${new Date().toISOString()}] 🎯 Updating board display with validation...`);
   
-  // Validate scene readiness before update
+  // Enhanced readiness check with polling before escalating to recovery
   if (!isSceneReady(this)) {
-    console.warn(`[${new Date().toISOString()}] ⚠️ Scene not ready for board update - attempting recovery`);
-    if (!recoverSceneState(this)) {
-      console.error(`[${new Date().toISOString()}] ❌ Scene recovery failed - board update cancelled`);
-      return;
-    }
+    console.log(`[${new Date().toISOString()}] ⏱️ Scene not ready - polling for readiness before recovery`);
+    
+    let pollAttempts = 0;
+    const maxPollAttempts = 50; // Increased to 5 seconds of polling (50 * 100ms) - more patience before recovery
+    const scene = this;
+    
+    const pollInterval = setInterval(() => {
+      pollAttempts++;
+      
+      if (isSceneReady(scene)) {
+        clearInterval(pollInterval);
+        console.log(`[${new Date().toISOString()}] ✅ Scene became ready after ${pollAttempts * 100}ms - proceeding with update`);
+        
+        try {
+          updateBoardDisplayModule(scene, boardState, setupTileInteractionWrapper.bind(scene));
+          console.log(`[${new Date().toISOString()}] ✅ Board display updated successfully after polling`);
+        } catch (error) {
+          console.error(`[${new Date().toISOString()}] ❌ Board update failed after polling:`, error);
+        }
+        return;
+      }
+      
+             if (pollAttempts >= maxPollAttempts) {
+         clearInterval(pollInterval);
+         console.warn(`[${new Date().toISOString()}] ⏰ Scene readiness polling timed out after 5s - attempting recovery as last resort`);
+         
+         recoverSceneState(scene).then(success => {
+           if (!success) {
+             console.error(`[${new Date().toISOString()}] ❌ Scene recovery failed - board update cancelled`);
+           } else {
+             console.log(`[${new Date().toISOString()}] ✅ Scene recovery successful - retrying board update`);
+             updateBoardDisplayWrapper.call(scene);
+           }
+         }).catch(error => {
+           console.error(`[${new Date().toISOString()}] ❌ Scene recovery error:`, error);
+         });
+       }
+    }, 100); // Poll every 100ms
+    
+    return; // Exit early, polling will handle the update
   }
 
   try {
@@ -988,14 +1149,19 @@ function processQueuedTileChanges(this: Phaser.Scene) {
   if (!isSceneReady(this)) {
     console.warn(`[${new Date().toISOString()}] ⚠️ Scene not ready for tile changes - checking for recovery`);
     
-    // Attempt scene recovery
-    if (recoverSceneState(this)) {
-      console.log(`[${new Date().toISOString()}] ✅ Scene recovered - retrying tile changes`);
-      // Retry after brief delay
-      setTimeout(() => processQueuedTileChanges.call(this), 50);
-    } else {
-      console.error(`[${new Date().toISOString()}] ❌ Scene recovery failed - tile changes will be dropped`);
-    }
+    // Attempt scene recovery (async)
+    const scene = this;
+    recoverSceneState(scene).then(success => {
+      if (success) {
+        console.log(`[${new Date().toISOString()}] ✅ Scene recovered - retrying tile changes`);
+        // Retry after brief delay
+        setTimeout(() => processQueuedTileChanges.call(scene), 50);
+      } else {
+        console.error(`[${new Date().toISOString()}] ❌ Scene recovery failed - tile changes will be dropped`);
+      }
+    }).catch(error => {
+      console.error(`[${new Date().toISOString()}] ❌ Scene recovery error:`, error);
+    });
     return;
   }
 
@@ -1058,9 +1224,12 @@ function processQueuedTileChanges(this: Phaser.Scene) {
   // Process animations if the scene is ready
   if (this.sys && this.sys.isActive()) {
     try {
-      // Add 5s timeout to prevent stuck processing as per checklist
+      // Dynamic timeout based on animation complexity
+      const dynamicTimeoutMs = Math.max(5000, pending.removedPositions.length * 500 + 2000); // Base on removed tiles
+      console.log(`[${new Date().toISOString()}] ⏱️ Using dynamic timeout: ${dynamicTimeoutMs}ms for ${pending.removedPositions.length} tiles`);
+      
       const timeout = new Promise<void>((_, reject) => 
-        setTimeout(() => reject(new Error('Processing timeout after 5 seconds')), 5000)
+        setTimeout(() => reject(new Error('Processing timeout')), dynamicTimeoutMs)
       );
       
       const processingPromise = processTileChanges(this, boardState, pending, setupTileInteractionWrapper.bind(this));
@@ -1072,16 +1241,38 @@ function processQueuedTileChanges(this: Phaser.Scene) {
           pendingTileChanges.delete(currentSequence);
         })
         .catch((error) => {
-          console.error(`Error processing tile changes (seq: ${currentSequence}):`, error);
-          // Clear queue on error to prevent blocking as per checklist
-          pendingTileChanges.clear();
-          lastProcessedSequence = currentSequence;
+          if (error.message.includes('timeout')) {
+            console.warn(`[${new Date().toISOString()}] ⏰ Tile processing timeout - retrying once`);
+            
+            // Only retry once per sequence
+            if (retryingSequence !== currentSequence) {
+              retryingSequence = currentSequence;
+              setTimeout(() => {
+                retryingSequence = null; // Reset retry state
+                processQueuedTileChanges.call(this);
+              }, 1000); // Retry after 1s
+            } else {
+              console.error(`[${new Date().toISOString()}] ❌ Tile processing failed after retry - clearing queue`);
+              pendingTileChanges.clear();
+              lastProcessedSequence = currentSequence;
+              retryingSequence = null;
+            }
+          } else {
+            console.error(`Error processing tile changes (seq: ${currentSequence}):`, error);
+            // Clear queue on non-timeout error to prevent blocking
+            pendingTileChanges.clear();
+            lastProcessedSequence = currentSequence;
+          }
         })
         .finally(() => {
-          isProcessingTileChanges = false;
-          // If there are still pending changes, process the next one
-          if (pendingTileChanges.has(lastProcessedSequence + 1)) {
-            processQueuedTileChanges.call(this);
+          // Only reset processing flag if not retrying
+          if (retryingSequence !== currentSequence) {
+            isProcessingTileChanges = false;
+            
+            // If there are still pending changes, process the next one
+            if (pendingTileChanges.has(lastProcessedSequence + 1)) {
+              processQueuedTileChanges.call(this);
+            }
           }
         });
     } catch (error) {
@@ -1103,10 +1294,23 @@ function processQueuedTileChanges(this: Phaser.Scene) {
 /**
  * 🚀 PHASE 5B: Audio System Initialization and Management
  * Initialize premium audio system with volume controls and background music
+ * Completely independent of particle system - handles its own success/failure
  * @param scene - Phaser scene for audio context
  */
 function initializeAudioSystem(scene: Phaser.Scene): void {
-  console.log(`[${new Date().toISOString()}] 🎵 Initializing audio system...`);
+  console.log(`[${new Date().toISOString()}] 🎵 Initializing audio system (independent)...`);
+  
+  // Check global audio disable flag first
+  if (!AUDIO_ENABLED) {
+    console.log(`[${new Date().toISOString()}] 🔇 Audio disabled globally - skipping initialization to prevent buzzing sounds`);
+    audioSystem.isEnabled = false;
+    audioSystem.isInitialized = false;
+    return;
+  }
+  
+  // Reset audio state for clean initialization
+  audioSystem.isInitialized = false;
+  audioSystem.isEnabled = true;
   
   try {
     // Initialize sound effects with volume control
@@ -1129,52 +1333,93 @@ function initializeAudioSystem(scene: Phaser.Scene): void {
       audioSystem.backgroundMusic.play();
     }
 
-    console.log(`[${new Date().toISOString()}] ✅ Audio system initialized successfully`);
+    // Mark as successfully initialized
+    audioSystem.isInitialized = true;
+    console.log(`[${new Date().toISOString()}] ✅ Audio system initialized successfully (independent of other systems)`);
+    
   } catch (error) {
-    console.warn(`[${new Date().toISOString()}] ⚠️ Audio system initialization failed:`, error);
+    console.error(`[${new Date().toISOString()}] ❌ Audio system initialization failed:`, error);
+    
+    // Enhanced graceful audio-only fallback with complete cleanup
     audioSystem.isEnabled = false;
+    audioSystem.isInitialized = false;
+    
+    // Stop any playing sounds to prevent buzzing
+    try {
+      if (scene.sound) {
+        scene.sound.stopAll();
+        scene.sound.pauseOnBlur = false;
+      }
+    } catch (stopError) {
+      console.warn('Failed to stop existing sounds:', stopError);
+    }
+    
+    // Clear any partially initialized audio objects safely
+    Object.keys(audioSystem).forEach(key => {
+      if (key !== 'volume' && key !== 'musicVolume' && key !== 'isEnabled' && key !== 'isInitialized') {
+        try {
+          const audioObject = audioSystem[key as keyof AudioSystem];
+          if (audioObject && typeof (audioObject as any).destroy === 'function') {
+            (audioObject as any).destroy();
+          }
+          // Use type assertion to safely set to undefined
+          (audioSystem as any)[key] = undefined;
+        } catch (cleanupError) {
+          console.warn(`Failed to cleanup audio object ${key}:`, cleanupError);
+        }
+      }
+    });
+    
+    console.warn(`[${new Date().toISOString()}] 🔇 Audio disabled due to initialization failure - game will continue silently without buzzing sounds`);
   }
 }
 
 /**
  * 🚀 PHASE 5B: Particle System Initialization
  * Initialize premium particle effects for game events
+ * Completely independent of audio system - graceful fallback on failure
  * @param scene - Phaser scene for particle context
  */
 function initializeParticleSystem(scene: Phaser.Scene): void {
-  console.log(`[${new Date().toISOString()}] ✨ Initializing particle system...`);
+  console.log(`[${new Date().toISOString()}] ✨ Initializing particle system (independent)...`);
+  
+  // Reset particle state for clean initialization
+  particleSystem.isInitialized = false;
+  particleSystem.emitters.clear();
   
   try {
-    // Create particle emitter manager (updated to new API)
-    particleSystem.manager = scene.add.particles(0, 0, 'simple-particle');
+    // Verify particle texture exists before creating emitters
+    if (!scene.textures.exists('simple-particle')) {
+      throw new Error('Required particle texture "simple-particle" not found');
+    }
 
     // Word validation success particles (golden burst)
-    particleSystem.wordValidEmitter = particleSystem.manager.addEmitter({
-      texture: 'gold-particle',
+    const wordValidEmitter = scene.add.particles(0, 0, 'simple-particle', {
       speed: { min: 50, max: 150 },
       scale: { start: 0.8, end: 0 },
       alpha: { start: 1, end: 0 },
       lifespan: 800,
       quantity: 8,
       blendMode: 'ADD',
-      on: false
+      emitting: false
     });
+    particleSystem.emitters.set('wordValidEmitter', wordValidEmitter);
 
-    // Tile cascade particles (electric blue)
-    particleSystem.cascadeEmitter = particleSystem.manager.addEmitter({
-      texture: 'blue-particle',
+    // Tile cascade particles (electric blue) 
+    const cascadeEmitter = scene.add.particles(0, 0, 'simple-particle', {
       speed: { min: 30, max: 100 },
       scale: { start: 0.6, end: 0 },
       alpha: { start: 0.8, end: 0 },
       lifespan: 600,
       quantity: 5,
       blendMode: 'ADD',
-      on: false
+      tint: 0x74F5F6, // Blue tint
+      emitting: false
     });
+    particleSystem.emitters.set('cascadeEmitter', cascadeEmitter);
 
     // Speed bonus particles (rainbow burst)
-    particleSystem.speedBonusEmitter = particleSystem.manager.createEmitter({
-      texture: 'simple-particle',
+    const speedBonusEmitter = scene.add.particles(0, 0, 'simple-particle', {
       speed: { min: 80, max: 200 },
       scale: { start: 1.2, end: 0 },
       alpha: { start: 1, end: 0 },
@@ -1182,30 +1427,46 @@ function initializeParticleSystem(scene: Phaser.Scene): void {
       quantity: 12,
       blendMode: 'ADD',
       tint: [0xFFE265, 0x74F5F6, 0xFF6B6B, 0x4ECDC4],
-      on: false
+      emitting: false
     });
+    particleSystem.emitters.set('speedBonusEmitter', speedBonusEmitter);
 
-    console.log(`[${new Date().toISOString()}] ✅ Particle system initialized successfully`);
+    // Mark as successfully initialized
+    particleSystem.isInitialized = true;
+    console.log(`[${new Date().toISOString()}] ✅ Particle system initialized successfully with ${particleSystem.emitters.size} emitters (independent of audio system)`);
+    
   } catch (error) {
-    console.warn(`[${new Date().toISOString()}] ⚠️ Particle system initialization failed:`, error);
+    console.error(`[${new Date().toISOString()}] ❌ Particle system initialization failed:`, error);
+    
+    // Graceful particle-only fallback - don't affect other systems
+    particleSystem.isInitialized = false;
+    particleSystem.emitters.clear();
+    
+    console.warn(`[${new Date().toISOString()}] ✨ Particle effects disabled due to initialization failure - game will continue without visual effects`);
   }
 }
 
 /**
- * 🚀 PHASE 5B: Play sound effect with performance optimization
- * @param soundName - Name of the sound to play
- * @param scene - Optional scene for context
+ * Play sound effect through the audio system with enhanced validation
+ * @param soundName - Name of the sound to play from AudioSystem keys
+ * @param options - Optional sound configuration (volume, etc.)
  */
-function playSound(soundName: keyof AudioSystem, scene?: Phaser.Scene): void {
-  if (!audioSystem.isEnabled) return;
+function playSound(soundName: keyof AudioSystem, options?: { volume?: number }): void {
+  // Check global audio disable flag first
+  if (!AUDIO_ENABLED || !audioSystem.isEnabled || !audioSystem.isInitialized) {
+    // Silent return when audio disabled - prevents buzzing sounds
+    return;
+  }
   
-  try {
-    const sound = audioSystem[soundName];
-    if (sound && typeof sound.play === 'function') {
-      sound.play();
+  const sound = audioSystem[soundName];
+  if (sound && typeof (sound as any).play === 'function') {
+    // Apply volume if specified
+    if (options?.volume && typeof (sound as any).setVolume === 'function') {
+      (sound as any).setVolume(options.volume);
     }
-  } catch (error) {
-    console.warn(`[${new Date().toISOString()}] ⚠️ Failed to play sound '${soundName}':`, error);
+    (sound as any).play();
+  } else {
+    console.warn(`[Audio] Sound ${soundName} not found or not playable`);
   }
 }
 
@@ -1222,8 +1483,18 @@ function triggerParticleEffect(
   y: number,
   intensity: number = 1
 ): void {
-  const emitter = particleSystem[`${effectName}Emitter`];
-  if (!emitter) return;
+  // Map effect names to emitter names
+  const emitterNameMap = {
+    'wordValid': 'wordValidEmitter',
+    'cascade': 'cascadeEmitter', 
+    'speedBonus': 'speedBonusEmitter'
+  };
+  
+  const emitter = particleSystem.emitters.get(emitterNameMap[effectName]);
+  if (!emitter || !particleSystem.isInitialized) {
+    console.warn(`[${new Date().toISOString()}] ⚠️ Particle emitter '${effectName}' not available or system not initialized`);
+    return;
+  }
   
   try {
     // Adjust particle count based on intensity

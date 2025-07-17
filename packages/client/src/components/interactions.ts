@@ -11,7 +11,9 @@ import {
   LetterTile, 
   COLORS,
   UI_ELEMENTS,
-  getTileColorByPoints
+  getTileColorByPoints,
+  DIFFICULTY_CONFIGS,
+  DifficultyLevel
 } from '@word-rush/common';
 import { BoardRenderingState } from './board-rendering.js';
 
@@ -68,6 +70,104 @@ export function areAdjacent(row1: number, col1: number, row2: number, col2: numb
  */
 export function isTileSelected(row: number, col: number, state: InteractionState): boolean {
   return state.selectedTiles.some(selected => selected.row === row && selected.col === col);
+}
+
+/**
+ * Comprehensive client-side word validation before server submission
+ * Prevents invalid submissions by checking length, uniqueness, and adjacency
+ * @param word - The word string to validate
+ * @param selectedTiles - Array of selected tiles with position data
+ * @param difficulty - Player's current difficulty level for dynamic validation
+ * @returns Validation result with success status and error reason
+ */
+function validateWordSubmission(
+  word: string, 
+  selectedTiles: Array<{ row: number; col: number; tile: any }>,
+  difficulty: DifficultyLevel = 'medium'
+): { isValid: boolean; reason: string } {
+  
+  // 🕰️ PHASE 28: Dynamic minimum length based on difficulty
+  const minWordLength = DIFFICULTY_CONFIGS[difficulty].minWordLength;
+  if (word.length < minWordLength) {
+    return { isValid: false, reason: `Word too short (minimum ${minWordLength} letters for ${difficulty} mode)` };
+  }
+  
+  // Check for tile uniqueness (no reused tiles)
+  const uniquePositions = new Set(selectedTiles.map(t => `${t.row}-${t.col}`));
+  if (uniquePositions.size !== selectedTiles.length) {
+    return { isValid: false, reason: 'Cannot reuse tiles in same word' };
+  }
+  
+  // Check adjacency - each tile must be adjacent to the previous one
+  for (let i = 1; i < selectedTiles.length; i++) {
+    const prevTile = selectedTiles[i - 1];
+    const currentTile = selectedTiles[i];
+    
+    if (!areAdjacent(prevTile.row, prevTile.col, currentTile.row, currentTile.col)) {
+      return { isValid: false, reason: 'All tiles must be connected' };
+    }
+  }
+  
+  // Check for empty word (safety check)
+  if (word.trim().length === 0) {
+    return { isValid: false, reason: 'Empty word not allowed' };
+  }
+  
+  return { isValid: true, reason: '' };
+}
+
+/**
+ * Provide visual feedback for invalid tile selection attempts
+ * Shows users why their selection is invalid with temporary visual indicators
+ * @param row - Row of attempted tile selection
+ * @param col - Column of attempted tile selection  
+ * @param lastSelected - Last successfully selected tile
+ * @param boardState - Board rendering state for visual updates
+ * @param interactionState - Current interaction state
+ */
+function provideInvalidSelectionFeedback(
+  row: number,
+  col: number,
+  lastSelected: { row: number; col: number },
+  boardState: BoardRenderingState,
+  interactionState: InteractionState
+): void {
+  
+  // Determine the reason for invalid selection
+  let reason = '';
+  if (isTileSelected(row, col, interactionState)) {
+    reason = 'Tile already used';
+  } else if (!areAdjacent(lastSelected.row, lastSelected.col, row, col)) {
+    reason = 'Tiles must be adjacent';
+  }
+  
+  // Flash the tile red briefly to indicate invalid selection
+  if (boardState.tileSprites[row] && boardState.tileSprites[row][col]) {
+    const tile = boardState.tileSprites[row][col];
+    const originalColor = tile.fillColor;
+    
+    // Flash red for invalid selection
+    tile.setFillStyle(0xFF6B6B); // Red color for invalid
+    tile.setStrokeStyle(3, 0xFF6B6B);
+    
+    // Restore original color after brief flash
+    setTimeout(() => {
+      if (tile && !tile.scene?.game?.isDestroyed) {
+        tile.setFillStyle(originalColor);
+        tile.setStrokeStyle(2, parseInt(COLORS.tileBackground.replace('#', ''), 16));
+      }
+    }, 200); // 200ms flash duration
+  }
+  
+  // Show tooltip/feedback message (import notifications for feedback)
+  if (reason) {
+    import('../services/notifications.js').then(({ notifications }) => {
+      notifications.warning(reason, 1000); // Brief warning message
+    }).catch(() => {
+      // Fallback to console if notifications not available
+      console.log(`[Interactions] Invalid selection: ${reason}`);
+    });
+  }
 }
 
 /**
@@ -165,6 +265,9 @@ export function onTilePointerOver(
 
       // Update word display
       updateWordDisplay(interactionState);
+    } else {
+      // Provide visual feedback for invalid selection attempts
+      provideInvalidSelectionFeedback(row, col, lastSelected, boardState, interactionState);
     }
   }
 }
@@ -178,49 +281,84 @@ export function onTilePointerOver(
  * 4. Clears current selection state for next word
  * @param boardState - Board rendering state for visual updates
  * @param interactionState - Interaction state containing selection and socket
+ * @param gameState - Current game state for validation
+ * @param getCurrentDifficulty - Function to get current player's difficulty level
  * @returns void - Sends word submission to server and resets UI state
  */
 export function onPointerUp(
   boardState: BoardRenderingState,
   interactionState: InteractionState,
-  gameState?: 'menu' | 'lobby' | 'match' | 'round-end' | 'match-end'
+  gameState?: 'menu' | 'lobby' | 'match' | 'round-end' | 'match-end',
+  getCurrentDifficulty?: () => DifficultyLevel
 ): void {
   if (!interactionState.isSelecting || interactionState.selectedTiles.length === 0) return;
 
   const word = interactionState.selectedTiles.map(selected => selected.tile.letter).join('');
   
-  // Submit word only if game is active and word is valid length
-  if (word.length >= 2 && interactionState.gameSocket) {
-    // Check if game state allows submissions (only during 'match')
-    if (gameState !== 'match') {
-      console.warn(`[Interactions] Word submission blocked - game not active (state: ${gameState})`);
-      // Still clear selection to provide user feedback
-      clearSelection(boardState, interactionState);
-      return;
-    }
-    
-    // Apply debounce to prevent rapid submissions
-    const currentTime = Date.now();
-    if (currentTime - lastSubmissionTime < WORD_SUBMISSION_DEBOUNCE_MS) {
-      console.warn(`[Interactions] Word submission debounced - too rapid (${currentTime - lastSubmissionTime}ms)`);
-      // Still clear selection to provide user feedback
-      clearSelection(boardState, interactionState);
-      return;
-    }
-    
-    lastSubmissionTime = currentTime;
-    
-    // Record submission timestamp for latency measurement
-    wordSubmissionTimestamps.set(word, Date.now());
-    
-    interactionState.gameSocket.emit('word:submit', {
-      word,
-      tiles: interactionState.selectedTiles.map(selected => selected.tile),
+  // Pre-submit client-side validation to prevent obvious invalid submissions
+  const currentDifficulty = getCurrentDifficulty ? getCurrentDifficulty() : 'medium';
+  const validationResult = validateWordSubmission(word, interactionState.selectedTiles, currentDifficulty);
+  if (!validationResult.isValid) {
+    console.warn(`[Interactions] Word submission blocked - ${validationResult.reason}`);
+    // Import notifications for user feedback
+    import('../services/notifications.js').then(({ notifications }) => {
+      notifications.warning(validationResult.reason, 2000);
     });
+    clearSelection(boardState, interactionState);
+    return;
   }
+  
+  // Check invalid word cache to prevent repeat server requests
+  // Note: getCachedInvalidWord will be available through global export in GameConnection
+  if ((window as any).getCachedInvalidWord) {
+    const cachedInvalid = (window as any).getCachedInvalidWord(word);
+    if (cachedInvalid) {
+      console.log(`[Interactions] Word found in invalid cache: "${word}" - ${cachedInvalid.reason}`);
+      import('../services/notifications.js').then(({ notifications }) => {
+        notifications.error(`"${word}" is not valid: ${cachedInvalid.reason}`, 2000);
+      });
+      clearSelection(boardState, interactionState);
+      return;
+    }
+  }
+  
+  // Word passed validation and not in cache, proceed with server submission
+  submitWordToServer();
+  
+     function submitWordToServer() {
+    // Submit word to server (already validated by validateWordSubmission above)
+    if (interactionState.gameSocket) {
+      // Check if game state allows submissions (only during 'match')
+      if (gameState !== 'match') {
+        console.warn(`[Interactions] Word submission blocked - game not active (state: ${gameState})`);
+        // Still clear selection to provide user feedback
+        clearSelection(boardState, interactionState);
+        return;
+      }
+      
+      // Apply debounce to prevent rapid submissions
+      const currentTime = Date.now();
+      if (currentTime - lastSubmissionTime < WORD_SUBMISSION_DEBOUNCE_MS) {
+        console.warn(`[Interactions] Word submission debounced - too rapid (${currentTime - lastSubmissionTime}ms)`);
+        // Still clear selection to provide user feedback
+        clearSelection(boardState, interactionState);
+        return;
+      }
+      
+      lastSubmissionTime = currentTime;
+      
+      // Record submission timestamp for latency measurement
+      wordSubmissionTimestamps.set(word, Date.now());
+      
+      interactionState.gameSocket.emit('word:submit', {
+        word,
+        tiles: interactionState.selectedTiles.map(selected => selected.tile),
+      });
+    }
 
-  // Reset selection
-  clearSelection(boardState, interactionState);
+    // Reset selection
+    clearSelection(boardState, interactionState);
+  }
 }
 
 /**
@@ -286,6 +424,12 @@ export function setupTileInteraction(
   boardState: BoardRenderingState,
   interactionState: InteractionState
 ): void {
+  // Clear any existing event listeners to prevent duplicates/conflicts
+  tile.removeAllListeners();
+  
+  // Ensure tile is interactive (may have been cleared with listeners)
+  tile.setInteractive();
+  
   // Add hover effect (when not selecting)
   tile.on('pointerover', () => {
     if (!interactionState.isSelecting) {
@@ -306,7 +450,7 @@ export function setupTileInteraction(
     onTilePointerDown(row, col, tileData, boardState, interactionState);
   });
 
-  // Store tile data for word selection
+  // Store tile data for word selection (update with current values)
   tile.setData('tileData', tileData);
   tile.setData('row', row);
   tile.setData('col', col);
@@ -317,15 +461,18 @@ export function setupTileInteraction(
  * @param scene - The Phaser scene
  * @param boardState - Board rendering state
  * @param interactionState - Interaction state
+ * @param getGameState - Function to get current game state
+ * @param getCurrentDifficulty - Function to get current player's difficulty level
  */
 export function initializeGlobalPointerEvents(
   scene: Phaser.Scene,
   boardState: BoardRenderingState,
   interactionState: InteractionState,
-  getGameState: () => 'menu' | 'lobby' | 'match' | 'round-end' | 'match-end'
+  getGameState: () => 'menu' | 'lobby' | 'match' | 'round-end' | 'match-end',
+  getCurrentDifficulty: () => DifficultyLevel
 ): void {
   // Set up global pointer up event
   scene.input.on('pointerup', () => {
-    onPointerUp(boardState, interactionState, getGameState());
+    onPointerUp(boardState, interactionState, getGameState(), getCurrentDifficulty);
   });
 } 

@@ -11,6 +11,7 @@ import GameControls from './components/GameControls';
 import PhaserGame from './components/PhaserGame';
 import MainMenu from './components/MainMenu';
 import LobbyScreen from './components/LobbyScreen';
+import CountdownScreen from './components/CountdownScreen';
 import { RoundSummary } from './components/RoundSummary';
 import { MatchComplete } from './components/MatchComplete';
 import { notifications } from './services/notifications';
@@ -48,13 +49,13 @@ const AppContent = React.memo((): JSX.Element => {
     playerSession 
   } = useGameContext();
 
-  // Component key stability - ensure PhaserGame component doesn't remount during round transitions
+  // Component key stability - ensure PhaserGame component doesn't remount during transitions
   const phaserGameKey = React.useMemo(() => {
-    // Use room code + session start time for stability across rounds
-    const roomIdentifier = currentRoom?.roomCode || 'no-room';
-    const sessionIdentifier = playerSession?.id || 'no-session';
-    return `phaser-${roomIdentifier}-${sessionIdentifier}`;
-  }, [currentRoom?.roomCode, playerSession?.id]);
+    // Use session ID with fallback for maximum stability across all transitions
+    // This prevents remounting during room changes, reconnections, or state transitions
+    const sessionIdentifier = playerSession?.id || 'default-session';
+    return `phaser-stable-${sessionIdentifier}`;
+  }, [playerSession?.id]); // Only re-compute if session actually changes
 
   // 🟡 PHASE 3A: Memoize expensive computations to prevent unnecessary recalculations
   const isHost = React.useMemo(() => {
@@ -114,8 +115,15 @@ const AppContent = React.memo((): JSX.Element => {
     return gameState === 'match-end' && matchComplete && currentRoom;
   }, [gameState, matchComplete, currentRoom]);
 
-  // Debug logging for render optimization
-  console.log(`[${new Date().toISOString()}] 🎯 AppContent render: gameState=${gameState}, phaserKey=${phaserGameKey}, optimized=true`);
+  // Debug logging for render optimization and key stability
+  console.log(`[${new Date().toISOString()}] 🎯 AppContent render: gameState=${gameState}, phaserKey=${phaserGameKey}, sessionId=${playerSession?.id || 'none'}, roomCode=${currentRoom?.roomCode || 'none'}`);
+  
+  // Monitor key stability - warn if key changes during active gameplay
+  React.useEffect(() => {
+    if (gameState === 'match') {
+      console.log(`[${new Date().toISOString()}] 🔑 Phaser key stable during match: ${phaserGameKey}`);
+    }
+  }, [phaserGameKey, gameState]);
 
   return (
     <div className="app">
@@ -125,6 +133,8 @@ const AppContent = React.memo((): JSX.Element => {
       {gameState === 'menu' && <MainMenu />}
       
       {gameState === 'lobby' && <LobbyScreen />}
+      
+      {gameState === 'countdown' && <CountdownScreen />}
       
       {shouldRenderPhaser && (
         <>

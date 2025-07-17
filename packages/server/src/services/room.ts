@@ -142,18 +142,18 @@ function createRoomService(cleanupIntervalMs: number = 10 * 60 * 1000): RoomModu
   }
 
   const BOARD_SYNC_CONFIG: BoardSyncConfig = {
-    baseSyncIntervalMs: 5000,
+    baseSyncIntervalMs: 8000, // Increased from 5000ms to reduce baseline frequency
     adaptiveSyncIntervals: {
-      inactive: 10000,   // 10 seconds when inactive
-      low: 8000,         // 8 seconds for low activity
-      medium: 5000,      // 5 seconds for medium activity
-      high: 3000         // 3 seconds for high activity
+      inactive: 20000,   // 20 seconds when inactive (doubled)
+      low: 15000,        // 15 seconds for low activity (increased from 8s)
+      medium: 10000,     // 10 seconds for medium activity (increased from 5s)
+      high: 6000         // 6 seconds for high activity (increased from 3s)
     },
     syncTimeoutMs: 2000,
     maxRetryAttempts: 3,
     retryBackoffBase: 1000,
     retryBackoffMax: 5000,
-    healthCheckInterval: 30000 // 30 seconds
+    healthCheckInterval: 45000 // 45 seconds (increased from 30s)
   };
 
   // Sync health tracking
@@ -181,26 +181,42 @@ function createRoomService(cleanupIntervalMs: number = 10 * 60 * 1000): RoomModu
       return BOARD_SYNC_CONFIG.baseSyncIntervalMs;
     }
 
-    // Determine activity level based on recent activity
+    // Enhanced activity level calculation with multiple factors
     const now = Date.now();
     const timeSinceLastActivity = now - health.lastActivityTime;
     const minutesSinceLastActivity = timeSinceLastActivity / (60 * 1000);
 
-    // Calculate activity rate (actions per minute)
-    const activityRate = health.activityCount / Math.max(minutesSinceLastActivity, 1);
+    // Calculate activity rate with decay factor for older activities
+    const activityWindow = Math.min(minutesSinceLastActivity, 5); // 5-minute sliding window
+    const decayedActivityCount = health.activityCount * Math.exp(-minutesSinceLastActivity * 0.2); // Exponential decay
+    const activityRate = decayedActivityCount / Math.max(activityWindow, 0.5);
+
+    // Consider sync health for additional optimization
+    const syncSuccessRate = health.successfulSyncs / Math.max(health.successfulSyncs + health.failedSyncs, 1);
+    const avgLatencyMs = health.averageLatency;
 
     let activityLevel: 'inactive' | 'low' | 'medium' | 'high';
-    if (timeSinceLastActivity > 60000) { // More than 1 minute
+    
+    // More sophisticated activity classification
+    if (timeSinceLastActivity > 120000) { // More than 2 minutes
       activityLevel = 'inactive';
-    } else if (activityRate < 3) {
+    } else if (activityRate < 2 || syncSuccessRate < 0.8) {
       activityLevel = 'low';
-    } else if (activityRate < 6) {
+    } else if (activityRate < 5 && avgLatencyMs < 100) {
       activityLevel = 'medium';
+    } else if (activityRate >= 5 || avgLatencyMs > 150) {
+      activityLevel = 'high'; // High activity or poor performance needs frequent sync
     } else {
-      activityLevel = 'high';
+      activityLevel = 'medium';
     }
 
     health.activityLevel = activityLevel;
+    
+    // Log adaptive decisions for monitoring
+    if (health.activityCount > 0) {
+      console.log(`[${new Date().toISOString()}] 📊 Adaptive sync for ${roomCode}: activity=${activityLevel}, rate=${activityRate.toFixed(1)}/min, success=${(syncSuccessRate * 100).toFixed(1)}%, latency=${avgLatencyMs.toFixed(0)}ms`);
+    }
+    
     return BOARD_SYNC_CONFIG.adaptiveSyncIntervals[activityLevel];
   }
 

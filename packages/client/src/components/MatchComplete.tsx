@@ -1,10 +1,10 @@
 /**
  * Match Complete Component
- * Displays final match results with winner announcement and comprehensive rankings
- * Appears at the end of a match showing overall performance and allowing return to lobby
+ * Displays final match results and victory screen
+ * Shows final scores, winner, and options to play again or return to lobby
  */
 
-import React from 'react';
+import { MatchComplete as MatchCompleteType } from '@word-rush/common';
 
 /**
  * Match completion data structure with optional properties to prevent crashes

@@ -574,6 +574,38 @@
   color: #8CE6EC; /* Electric Blue */
 }
 
+/* Duration selector styles */
+.duration-selector {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.duration-button {
+  background: #00435D; /* Empty tile background */
+  border: 2px solid #09637B;
+  border-radius: 8px;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+  color: #E1F5E4; /* Honeydew */
+  font-weight: 600;
+  font-size: 0.9rem;
+  min-width: 50px;
+}
+
+.duration-button:hover {
+  border-color: #FAA827; /* Orange Web accent */
+  background: rgba(250, 168, 39, 0.1);
+}
+
+.duration-button.selected {
+  border-color: #FAA827;
+  background: rgba(250, 168, 39, 0.2);
+  color: #FFE265; /* Golden highlight */
+}
+
 .ready-section {
   grid-column: 1 / -1;
   display: flex;

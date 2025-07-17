@@ -45,7 +45,7 @@ const PlayerSchema = z.object({
 
 const MatchSettingsSchema = z.object({
   totalRounds: z.number().min(1),
-  roundDuration: z.number().min(30),
+  roundDuration: z.number().min(15).max(300), // Allow 15 seconds to 5 minutes for flexible game durations
   shuffleCost: z.number().min(0),
   speedBonusMultiplier: z.number().min(1),
   speedBonusWindow: z.number().min(1),

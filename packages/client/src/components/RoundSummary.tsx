@@ -1,10 +1,10 @@
 /**
- * Round Summary Component
- * Displays end-of-round scores, player rankings, and match progression
- * Appears between rounds showing individual round performance and overall standings
+ * Round Summary Component  
+ * Displays results at the end of each round
+ * Shows scores, submitted words, and controls for next round
  */
 
-import React from 'react';
+import { RoundSummary as RoundSummaryType } from '@word-rush/common';
 
 /**
  * Round summary data structure
