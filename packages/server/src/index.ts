@@ -53,7 +53,7 @@ const io = new Server<
     origin:
       process.env.NODE_ENV === 'production'
         ? process.env.CLIENT_URL
-        : 'http://localhost:5173',
+        : ['http://localhost:5173', 'http://localhost:5174'],
     methods: ['GET', 'POST'],
   },
 });
@@ -70,7 +70,7 @@ app.use(
     origin:
       process.env.NODE_ENV === 'production'
         ? process.env.CLIENT_URL
-        : 'http://localhost:5173',
+        : ['http://localhost:5173', 'http://localhost:5174'],
   })
 );
 
@@ -101,9 +101,12 @@ app.get('/health', (_, res) => {
   });
 });
 
-// TEMPORARILY DISABLED: Initialize board pre-generation cache after dictionary is ready
-// Board generation will happen on-demand for now to allow immediate server startup
-console.log(`[${new Date().toISOString()}] ⚡ Skipping board pre-generation for fast startup - boards will be generated on-demand`);
+// Initialize board pre-generation cache after dictionary is ready
+// This caches boards upfront to prevent on-demand generation delays
+console.log(`[${new Date().toISOString()}] 🎲 Starting board pre-generation cache...`);
+preGenerateBoards(dictionaryService, 10).catch(error => {
+  console.error(`[${new Date().toISOString()}] ❌ Board pre-generation failed:`, error);
+});
 
 // Set up periodic cache maintenance
 setInterval(() => {
@@ -201,20 +204,22 @@ io.on('connection', (socket) => {
   // Handle initial connection
   handlePlayerConnect(socket, sessionService);
   
-  // Send initial board to the player
-  const initialBoard = generateBoard(dictionaryService);
-  
-  // 🔧 TASK 4: Add checksum for validation
-  const boardString = JSON.stringify({
-    width: initialBoard.width,
-    height: initialBoard.height,
-    tiles: initialBoard.tiles.map(row => 
-      row.map(tile => ({ letter: tile.letter, points: tile.points, x: tile.x, y: tile.y }))
-    )
-  });
-  const initialBoardChecksum = crypto.createHash('md5').update(boardString).digest('hex');
-  
-  socket.emit('game:initial-board', { board: initialBoard, boardChecksum: initialBoardChecksum });
+  // Send initial board to the player (async to prevent blocking)
+  setTimeout(() => {
+    const initialBoard = generateBoard(dictionaryService);
+    
+    // 🔧 TASK 4: Add checksum for validation
+    const boardString = JSON.stringify({
+      width: initialBoard.width,
+      height: initialBoard.height,
+      tiles: initialBoard.tiles.map(row => 
+        row.map(tile => ({ letter: tile.letter, points: tile.points, x: tile.x, y: tile.y }))
+      )
+    });
+    const initialBoardChecksum = crypto.createHash('md5').update(boardString).digest('hex');
+    
+    socket.emit('game:initial-board', { board: initialBoard, boardChecksum: initialBoardChecksum });
+  }, 0);
 
   // Create services object for handlers
   const services = {

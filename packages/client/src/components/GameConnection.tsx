@@ -244,29 +244,67 @@ function GameConnection(): null {
     }
   }, []);
 
+  // 🚨 REACT STRICT MODE FIX: Use refs to persist socket across re-renders
+  const socketRef = useRef<Socket | null>(null);
+  const isInitializedRef = useRef(false);
+
   useEffect(() => {
+    // 🚨 REACT STRICT MODE FIX: Prevent duplicate socket creation during double effect execution
+    if (isInitializedRef.current || socketRef.current?.connected) {
+      if (DEBUG_SOCKET_EVENTS) {
+        console.log('🔌 Socket already initialized, skipping creation');
+      }
+      return;
+    }
+    
+    isInitializedRef.current = true;
+    let isCleanedUp = false;
+    
     if (DEBUG_SOCKET_EVENTS) {
       console.log('🔌 Creating socket connection (should only happen once)');
     }
+    
     // 🚨 EDGE CASE 4: Mobile/Variable Networks - Device and connection detection (MOVED UP)
     const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     const connection = (navigator as any).connection || (navigator as any).mozConnection || (navigator as any).webkitConnection;
     const isSlowConnection = connection && (connection.effectiveType === 'slow-2g' || connection.effectiveType === '2g');
 
     // 🚨 EDGE CASE 4: Adaptive socket configuration for mobile/variable networks
+    // 🚀 OPTIMIZATION: Increased timeouts to accommodate slower board generation
     const socketConfig = {
       reconnectionAttempts: isMobileDevice || isSlowConnection ? 8 : 5, // More attempts for mobile
       reconnectionDelay: isMobileDevice || isSlowConnection ? 2000 : 1000, // Longer delays for mobile
       reconnectionDelayMax: isMobileDevice || isSlowConnection ? 10000 : 5000, // Higher max for mobile
-      timeout: isMobileDevice || isSlowConnection ? 30000 : 20000, // Longer timeout for mobile
+      timeout: isMobileDevice || isSlowConnection ? 60000 : 45000, // Increased timeout for board generation patience
     };
     
     console.log(`[${new Date().toISOString()}] 📱 Using adaptive socket config:`, socketConfig);
     
     const newSocket = io('http://localhost:3001', socketConfig);
-    contextRef.current.setSocket(newSocket);
+    socketRef.current = newSocket;
+    
+    // 🚨 REACT STRICT MODE FIX: Only set socket if not cleaned up
+    if (!isCleanedUp) {
+      contextRef.current.setSocket(newSocket);
+    }
     
     console.log(`[${new Date().toISOString()}] 📱 Device detection: mobile=${isMobileDevice}, slow_connection=${isSlowConnection}`);
+    
+    // 🚨 REACT STRICT MODE FIX: Add connection success/failure logging
+    newSocket.on('connect', () => {
+      console.log(`[${new Date().toISOString()}] ✅ Socket connected successfully to localhost:3001`);
+      contextRef.current.setConnectionStatus('connected');
+    });
+    
+    newSocket.on('disconnect', (reason) => {
+      console.log(`[${new Date().toISOString()}] ❌ Socket disconnected: ${reason}`);
+      contextRef.current.setConnectionStatus('disconnected');
+    });
+    
+    newSocket.on('connect_error', (error) => {
+      console.error(`[${new Date().toISOString()}] ❌ Socket connection error:`, error);
+      contextRef.current.setConnectionStatus('disconnected');
+    });
     
     // 🚨 EDGE CASE 2: High latency detection and handling with mobile adaptations
     let latencyMeasurements: number[] = [];
@@ -1105,6 +1143,11 @@ function GameConnection(): null {
 
     // Cleanup on unmount
     return () => {
+      // 🚨 REACT STRICT MODE FIX: Mark as cleaned up
+      isCleanedUp = true;
+      isInitializedRef.current = false;
+      socketRef.current = null;
+      
       if (DEBUG_SOCKET_EVENTS) {
         console.log('🔌 Closing socket connection (cleanup)');
       }
@@ -1126,7 +1169,13 @@ function GameConnection(): null {
       // 🚨 EDGE CASE 4: Clean up device info
       (window as any).deviceInfo = null;
       
-      newSocket.close();
+      // 🚨 REACT STRICT MODE FIX: Clean up event listeners and close socket properly
+      if (newSocket) {
+        newSocket.off('connect');
+        newSocket.off('disconnect');
+        newSocket.off('connect_error');
+        newSocket.close();
+      }
     };
   }, []); // Empty dependency array to prevent socket recreation
 

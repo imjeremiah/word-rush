@@ -433,7 +433,7 @@ export function setupTileInteraction(
   // Add hover effect (when not selecting)
   tile.on('pointerover', () => {
     if (!interactionState.isSelecting) {
-      tile.setFillStyle(parseInt(COLORS.tileHover.replace('#', ''), 16));
+      tile.setFillStyle(parseInt(UI_ELEMENTS.tileHover.replace('#', ''), 16));
     } else {
       onTilePointerOver(row, col, tileData, boardState, interactionState);
     }
@@ -441,7 +441,9 @@ export function setupTileInteraction(
 
   tile.on('pointerout', () => {
     if (!interactionState.isSelecting && !isTileSelected(row, col, interactionState)) {
-      tile.setFillStyle(parseInt(COLORS.tileBackground.replace('#', ''), 16));
+      // Reset to proper point-based color instead of generic background
+      const originalColor = getTileColorByPoints(tileData.points);
+      tile.setFillStyle(parseInt(originalColor.replace('#', ''), 16));
     }
   });
 

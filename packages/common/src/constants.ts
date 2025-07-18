@@ -4,17 +4,17 @@
  */
 
 /**
- * Default game configuration for Phase 4: Premium Visual Transformation
- * Upgraded to 7x7 board for enhanced strategic gameplay and visual presence
- * Extended duration to accommodate larger board complexity
+ * Default game configuration for 5x5 Board Implementation
+ * Upgraded to 5x5 board for enhanced strategic gameplay and improved user experience
+ * Balanced duration to accommodate larger board complexity while maintaining engagement
  */
 export const DEFAULT_GAME_CONFIG = {
-  /** Number of columns in the game board grid (upgraded to 7x7 for Phase 4) */
-  boardWidth: 7,
-  /** Number of rows in the game board grid (upgraded to 7x7 for Phase 4) */
-  boardHeight: 7,
-  /** Duration of each round in seconds (extended to 120 seconds for 7x7 complexity) */
-  roundDuration: 120,
+  /** Number of columns in the game board grid (upgraded to 5x5) */
+  boardWidth: 5,
+  /** Number of rows in the game board grid (upgraded to 5x5) */
+  boardHeight: 5,
+  /** Duration of each round in seconds (set to 90 seconds for 5x5 complexity) */
+  roundDuration: 90,
   /** Maximum number of rounds per match (Best of 3 for MVP) */
   maxRounds: 3,
   /** Minimum players required to start a match */
@@ -116,11 +116,11 @@ export const SOCKET_EVENTS = {
 /**
  * Game timing constants in milliseconds
  * Performance targets and timeout values for responsive gameplay
- * Updated for Phase 4 with extended round duration
+ * Updated for 5x5 board with balanced round duration
  */
 export const TIMING = {
-  /** Duration of each round in milliseconds (120 seconds for 7x7 board) */
-  ROUND_DURATION: 120000,
+  /** Duration of each round in milliseconds (90 seconds for 5x5 board) */
+  ROUND_DURATION: 90000,
   /** Maximum allowed time for word validation (150ms target) */
   WORD_VALIDATION_TIMEOUT: 150,
   /** Grace period for player reconnection attempts (30 seconds) */

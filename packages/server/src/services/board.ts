@@ -67,10 +67,10 @@ async function generateValidBoardAsync(dictionaryService: DictionaryModule): Pro
         const board = createRandomBoardOptimized();
         const foundWords = findAllValidWordsOptimized(board, dictionaryService);
         
-        // 🚀 PHASE 5A: Updated for 7x7 board - require more words for larger board
-        if (foundWords.length >= 10) { // Further reduced to 10 for immediate gameplay
+        // 🚀 PHASE 5x5: Updated for 5x5 board - require more words for larger board
+        if (foundWords.length >= 15) { // Increased to 15 for 5x5 board validation
           const endTime = Date.now();
-          console.log(`[${new Date().toISOString()}] 🎯 Generated valid 4x4 board with ${foundWords.length} words in ${attempts} attempts (${endTime - startTime}ms)`);
+          console.log(`[${new Date().toISOString()}] 🎯 Generated valid 5x5 board with ${foundWords.length} words in ${attempts} attempts (${endTime - startTime}ms)`);
           resolve(board);
           return;
         }
@@ -92,15 +92,15 @@ async function generateValidBoardAsync(dictionaryService: DictionaryModule): Pro
 }
 
 /**
- * Optimized board creation using persistent tile bag for 7x7 boards
+ * Optimized board creation using persistent tile bag for 5x5 boards
  * Reuses the tile bag instead of recreating it each time
- * @returns GameBoard with optimized tile generation for 7x7 grid
+ * @returns GameBoard with optimized tile generation for 5x5 grid
  */
 function createRandomBoardOptimized(): GameBoard {
   const tiles: LetterTile[][] = [];
-  // 🚀 PHASE 5A: TEMPORARILY back to 4x4 for immediate gameplay
-  const boardWidth = 4;  // Temporarily back to 4x4 for faster generation
-  const boardHeight = 4;
+  // 🚀 PHASE 5x5: Upgraded to 5x5 for enhanced gameplay
+  const boardWidth = 5;  // Upgraded to 5x5 for enhanced gameplay
+  const boardHeight = 5;
   
   // Refill persistent bag if needed
   if (persistentTileBag.length < boardWidth * boardHeight) {
@@ -135,13 +135,14 @@ function createRandomBoardOptimized(): GameBoard {
 }
 
 /**
- * Optimized word finding with memoization
- * Caches solver results to avoid recomputation
+ * Fast iterative word finder with early termination
+ * Focuses on finding enough words quickly rather than all possible words
  * @param board - The game board to analyze
  * @param dictionaryService - Dictionary service for word validation
+ * @param targetCount - Stop after finding this many words (default 20)
  * @returns Array of unique valid words found on the board
  */
-function findAllValidWordsOptimized(board: GameBoard, dictionaryService: DictionaryModule): string[] {
+function findAllValidWordsOptimized(board: GameBoard, dictionaryService: DictionaryModule, targetCount: number = 20): string[] {
   const boardKey = generateBoardKey(board);
   
   if (solverMemoCache.has(boardKey)) {
@@ -149,20 +150,62 @@ function findAllValidWordsOptimized(board: GameBoard, dictionaryService: Diction
   }
   
   const foundWords = new Set<string>();
+  const directions = [
+    [-1, -1], [-1, 0], [-1, 1],
+    [0, -1],           [0, 1],
+    [1, -1],  [1, 0],  [1, 1]
+  ];
   
-  // Check all possible starting positions
-  for (let row = 0; row < board.height; row++) {
-    for (let col = 0; col < board.width; col++) {
-      findWordsFromPositionOptimized(
-        board,
-        row,
-        col,
-        '',
-        new Set(),
-        foundWords,
-        dictionaryService,
-        new Map() // Position-level memoization
-      );
+  // Fast iterative search with early termination
+  for (let startRow = 0; startRow < board.height && foundWords.size < targetCount; startRow++) {
+    for (let startCol = 0; startCol < board.width && foundWords.size < targetCount; startCol++) {
+      // Use iterative BFS instead of recursive DFS
+      const queue: Array<{
+        row: number;
+        col: number;
+        word: string;
+        path: Set<string>;
+      }> = [{
+        row: startRow,
+        col: startCol,
+        word: board.tiles[startRow][startCol].letter,
+        path: new Set([`${startRow}-${startCol}`])
+      }];
+      
+      while (queue.length > 0 && foundWords.size < targetCount) {
+        const current = queue.shift()!;
+        
+        // Check if current word is valid (3+ letters)
+        if (current.word.length >= 3 && dictionaryService.isValidWord(current.word)) {
+          foundWords.add(current.word);
+        }
+        
+        // Don't expand words longer than 8 letters (performance limit)
+        if (current.word.length >= 8) continue;
+        
+        // Explore adjacent cells
+        for (const [deltaRow, deltaCol] of directions) {
+          const newRow = current.row + deltaRow;
+          const newCol = current.col + deltaCol;
+          const posKey = `${newRow}-${newCol}`;
+          
+          // Bounds check and avoid revisiting
+          if (newRow >= 0 && newRow < board.height && 
+              newCol >= 0 && newCol < board.width && 
+              !current.path.has(posKey)) {
+            
+            const newPath = new Set(current.path);
+            newPath.add(posKey);
+            
+            queue.push({
+              row: newRow,
+              col: newCol,
+              word: current.word + board.tiles[newRow][newCol].letter,
+              path: newPath
+            });
+          }
+        }
+      }
     }
   }
   
@@ -433,14 +476,15 @@ interface BoardConfig {
 }
 
 /**
- * Default board configuration for enhanced gameplay (7x7 grid)
- * 🚀 PHASE 5A: Upgraded to 7x7 for richer strategic gameplay
+ * Default board configuration for enhanced gameplay (5x5 grid)
+ * 🚀 PHASE 5x5: Upgraded to 5x5 for improved strategic gameplay
+ * 🚀 OPTIMIZATION: Reduced minWordsRequired to 8 for faster generation while maintaining playability
  */
 const DEFAULT_BOARD_CONFIG: BoardConfig = {
-  boardWidth: 4,   // Temporarily back to 4x4 for faster generation
-  boardHeight: 4,  // Temporarily back to 4x4 for faster generation
-  minWordsRequired: 10, // Temporarily reduced for immediate gameplay
-  maxGenerationAttempts: 30, // Reduced for faster generation
+  boardWidth: 5,   // Upgraded to 5x5 for enhanced gameplay
+  boardHeight: 5,  // Upgraded to 5x5 for enhanced gameplay
+  minWordsRequired: 5, // Further optimized for maximum speed (was 8, originally 15)
+  maxGenerationAttempts: 50, // Increased attempts for larger board validation
   minWordLength: 3,
 };
 

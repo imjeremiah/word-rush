@@ -254,9 +254,10 @@ export { trackTimeout };
 // Game state variables
 const boardState: BoardRenderingState = {
   currentBoard: null,
-  pendingBoard: null, // 🔧 TASK 1: Preloaded board during countdown
+  pendingBoard: null,
   tileSprites: [],
   tileTexts: [],
+  pointTexts: [],
   shadowSprites: []
 };
 
@@ -1328,12 +1329,12 @@ function updateBoardDisplayWrapper(this: Phaser.Scene) {
               boardState,
               setupTileInteractionWrapper.bind(this)
             );
-          }, 100);
+          }, 400); // Increased delay to ensure cascade animations are complete
         }
       } else {
         console.log(`[${new Date().toISOString()}] ✅ Visual state validation passed`);
       }
-    }, 50); // Small delay to allow render completion
+    }, 300); // Increased delay to allow cascade animations to complete (150ms + buffer)
 
     // Start periodic validation if not already started
     if (!visualValidationInterval) {
@@ -1356,7 +1357,7 @@ function updateBoardDisplayWrapper(this: Phaser.Scene) {
         boardState,
         setupTileInteractionWrapper.bind(this)
       );
-    }, 100);
+    }, 500); // Increased delay to avoid interfering with cascade animations
   }
 }
 

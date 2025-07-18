@@ -7,13 +7,10 @@ import Phaser from 'phaser';
 import { 
   GameBoard, 
   LetterTile, 
-  COLORS, 
-  FONTS, 
   TileChanges,
-  TILE_COLORS,
   BACKGROUNDS,
   TEXT_COLORS,
-  PARTICLE_COLORS,
+  FONTS,
   getTileColorByPoints
 } from '@word-rush/common';
 
@@ -21,12 +18,31 @@ import {
 // Set to false in production to reduce console noise during scene transitions
 const DEBUG_SCENE_TRANSITIONS = false; // Toggle for production deployment
 
+// Global flag to track if cascade animations are running
+let cascadeAnimationsRunning = false;
+
+/**
+ * Set cascade animation state for debugging validation interference
+ */
+export function setCascadeAnimationState(isRunning: boolean): void {
+  cascadeAnimationsRunning = isRunning;
+  console.log(`[${new Date().toISOString()}] 🎬 Cascade animations: ${isRunning ? 'STARTED' : 'COMPLETED'}`);
+}
+
+/**
+ * Check if cascade animations are currently running
+ */
+export function areCascadeAnimationsRunning(): boolean {
+  return cascadeAnimationsRunning;
+}
+
 // Types for board rendering state
 export interface BoardRenderingState {
   currentBoard: GameBoard | null;
   pendingBoard: GameBoard | null; // 🔧 TASK 1: Board preloaded during countdown but not yet rendered
   tileSprites: Phaser.GameObjects.Rectangle[][];
   tileTexts: Phaser.GameObjects.Text[][];
+  pointTexts: Phaser.GameObjects.Text[][]; // Track point value texts for cascade persistence
   shadowSprites: Phaser.GameObjects.Rectangle[][]; // Track shadow tiles for proper cleanup
 }
 
@@ -240,6 +256,7 @@ function updateExistingTiles(
   while (state.tileSprites.length < boardHeight) {
     state.tileSprites.push([]);
     state.tileTexts.push([]);
+    state.pointTexts.push([]);
     state.shadowSprites.push([]);
   }
 
@@ -247,12 +264,14 @@ function updateExistingTiles(
     // Ensure row arrays exist
     if (!state.tileSprites[row]) state.tileSprites[row] = [];
     if (!state.tileTexts[row]) state.tileTexts[row] = [];
+    if (!state.pointTexts[row]) state.pointTexts[row] = [];
     if (!state.shadowSprites[row]) state.shadowSprites[row] = [];
 
     for (let col = 0; col < boardWidth; col++) {
       const tileData = state.currentBoard.tiles[row][col];
       const existingSprite = state.tileSprites[row]?.[col];
       const existingText = state.tileTexts[row]?.[col];
+      const existingPointText = state.pointTexts[row]?.[col];
 
       const x = gridStartX + col * tileSize + tileSize / 2;
       const y = gridStartY + row * tileSize + tileSize / 2;
@@ -261,6 +280,7 @@ function updateExistingTiles(
         // Reuse existing tile - update properties instead of recreating
         const tileColor = getTileColorByPoints(tileData.points);
         const letterSize = Math.max(12, Math.min(32, tileSize * 0.4));
+        const pointSize = Math.max(8, Math.min(12, tileSize * 0.15));
 
         // Update sprite properties
         existingSprite.setPosition(x, y);
@@ -273,6 +293,23 @@ function updateExistingTiles(
         existingText.setText(tileData.letter);
         existingText.setFontSize(letterSize);
         existingText.setColor(TEXT_COLORS.tileLetters);
+
+        // Update or create point text
+        if (existingPointText) {
+          existingPointText.setPosition(x + tileSize * 0.4, y + tileSize * 0.4);
+          existingPointText.setOrigin(1, 1);
+          existingPointText.setText(tileData.points.toString());
+          existingPointText.setFontSize(pointSize);
+        } else {
+          // Create missing point text
+          const pointText = scene.add.text(x + tileSize * 0.4, y + tileSize * 0.4, tileData.points.toString(), {
+            fontSize: pointSize + 'px',
+            color: TEXT_COLORS.playerScores,
+            fontFamily: FONTS.body,
+            fontStyle: 'bold',
+          }).setOrigin(1, 1);
+          state.pointTexts[row][col] = pointText;
+        }
 
         // Re-setup interactions for updated tile
         setupTileInteraction(existingSprite, row, col, tileData);
@@ -309,17 +346,18 @@ function updateExistingTiles(
           fontStyle: 'bold',
         }).setOrigin(0.5);
 
-        // Add point value
-        scene.add.text(x + tileSize * 0.3, y + tileSize * 0.25, tileData.points.toString(), {
+        // Create and store point value text
+        const pointText = scene.add.text(x + tileSize * 0.4, y + tileSize * 0.4, tileData.points.toString(), {
           fontSize: pointSize + 'px',
           color: TEXT_COLORS.playerScores,
           fontFamily: FONTS.body,
           fontStyle: 'bold',
-        }).setOrigin(0.5);
+        }).setOrigin(1, 1);
 
         // Store sprites and track shadow tiles (prevents artifacts)
         state.tileSprites[row][col] = tile;
         state.tileTexts[row][col] = letterText;
+        state.pointTexts[row][col] = pointText;
         
         // Ensure shadow array exists and store shadow tile
         if (!state.shadowSprites[row]) state.shadowSprites[row] = [];
@@ -394,8 +432,10 @@ export function updateBoardDisplay(
     // True initial setup - create everything from scratch
     state.tileSprites.forEach(row => row.forEach(tile => tile?.destroy()));
     state.tileTexts.forEach(row => row.forEach(text => text?.destroy()));
+    state.pointTexts.forEach(row => row.forEach(pointText => pointText?.destroy()));
     state.tileSprites = [];
     state.tileTexts = [];
+    state.pointTexts = [];
 
     createBoardTiles(scene, state, gridStartX, gridStartY, tileSize, setupTileInteraction);
   } else {
@@ -616,6 +656,7 @@ function animateTileRemoval(
     for (const { x, y } of positions) {
       const tileSprite = state.tileSprites[y]?.[x];
       const tileText = state.tileTexts[y]?.[x];
+      const pointText = state.pointTexts[y]?.[x];
       
       if (tileSprite && tileText) {
         const removalPromise = new Promise<void>((animResolve) => {
@@ -626,7 +667,7 @@ function animateTileRemoval(
 
             // Animate tile disappearing
             scene.tweens.add({
-              targets: [tileSprite, tileText],
+              targets: [tileSprite, tileText, pointText],
               alpha: 0,
               scaleX: 1.2,
               scaleY: 1.2,
@@ -637,12 +678,14 @@ function animateTileRemoval(
                   // Cleanup immediately
                   tileSprite.destroy();
                   tileText.destroy();
+                  pointText.destroy();
                   
                   // particles will auto-destroy via setTimeout in createTileRemovalEffect
                   
                   // Clear from state arrays
                   state.tileSprites[y][x] = null as any;
                   state.tileTexts[y][x] = null as any;
+                  state.pointTexts[y][x] = null as any;
                   
                   animResolve();
                 } catch (error) {
@@ -657,8 +700,10 @@ function animateTileRemoval(
             try {
               tileSprite.destroy();
               tileText.destroy();
+              pointText.destroy();
               state.tileSprites[y][x] = null as any;
               state.tileTexts[y][x] = null as any;
+              state.pointTexts[y][x] = null as any;
             } catch (cleanupError) {
               console.error('[BoardRendering] Fallback cleanup failed:', cleanupError);
             }
@@ -704,6 +749,7 @@ function animateTileFalling(
       const { from, to } = movement;
       const tileSprite = state.tileSprites[from.y]?.[from.x];
       const tileText = state.tileTexts[from.y]?.[from.x];
+      const pointText = state.pointTexts[from.y]?.[from.x];
       
       if (tileSprite && tileText) {
         const fallingPromise = new Promise<void>((animResolve) => {
@@ -715,7 +761,7 @@ function animateTileFalling(
           
           // Animate tile falling to new position - optimized for <400ms target
           scene.tweens.add({
-            targets: [tileSprite, tileText],
+            targets: [tileSprite, tileText, pointText],
             x: newX,
             y: newY,
             duration: 150, // Reduced from 180ms to 150ms for faster cascade
@@ -725,11 +771,13 @@ function animateTileFalling(
               // Update state arrays efficiently
               state.tileSprites[to.y][to.x] = tileSprite;
               state.tileTexts[to.y][to.x] = tileText;
+              state.pointTexts[to.y][to.x] = pointText;
               
               // Clear old position only if different
               if (from.y !== to.y || from.x !== to.x) {
                 state.tileSprites[from.y][from.x] = null as any;
                 state.tileTexts[from.y][from.x] = null as any;
+                state.pointTexts[from.y][from.x] = null as any;
               }
               
               animResolve();
@@ -819,18 +867,18 @@ function animateNewTileAppearance(
         
         // Create point value text with premium electric blue
         const pointText = scene.add
-          .text(x + tileSize * 0.3, startY + tileSize * 0.25, points.toString(), {
+          .text(x + tileSize * 0.4, startY + tileSize * 0.4, points.toString(), {
             fontSize: pointSize + 'px',
             color: TEXT_COLORS.playerScores,
             fontFamily: FONTS.body,
             fontStyle: 'bold',
           })
-          .setOrigin(0.5);
+          .setOrigin(1, 1);
 
         // Animate tile falling into place - optimized for <400ms performance
         scene.tweens.add({
           targets: [tile, letterText, pointText, shadowTile], // Include shadow in animation
-          y: [startY, finalY, finalY - 4, finalY + tileSize * 0.25, finalY + 2], // Different targets for different elements
+          y: [startY, finalY, finalY - 4, finalY + tileSize * 0.4, finalY + 2], // Different targets for different elements
           duration: 120, // Reduced from 150ms to 120ms for faster completion
           ease: 'Cubic.easeOut', // Optimized for smooth 60fps performance
           delay: position.x * 10, // Reduced stagger from 20ms to 10ms for faster completion
@@ -838,6 +886,7 @@ function animateNewTileAppearance(
             // Store in state arrays efficiently (includes shadow tracking)
             state.tileSprites[position.y][position.x] = tile;
             state.tileTexts[position.y][position.x] = letterText;
+            state.pointTexts[position.y][position.x] = pointText;
             
             // Ensure shadow array exists and store shadow tile
             if (!state.shadowSprites[position.y]) state.shadowSprites[position.y] = [];
@@ -895,11 +944,12 @@ function animateBoardUpdate(
     for (let col = 0; col < state.tileSprites[row].length; col++) {
       const tile = state.tileSprites[row][col];
       const text = state.tileTexts[row][col];
+      const pointText = state.pointTexts[row][col];
       
       if (tile) {
         const promise = new Promise<void>((resolve) => {
           scene.tweens.add({
-            targets: [tile, text],
+            targets: [tile, text, pointText],
             y: height + 100,
             alpha: 0,
             duration: 150, // Optimized from 300ms
@@ -908,6 +958,7 @@ function animateBoardUpdate(
             onComplete: () => {
               tile.destroy();
               if (text) text.destroy();
+              if (pointText) pointText.destroy();
               resolve();
             }
           });
@@ -949,6 +1000,7 @@ function createNewBoardWithAnimation(
   // Clear arrays
   state.tileSprites = [];
   state.tileTexts = [];
+  state.pointTexts = [];
 
   // Create grid background
   scene.add.rectangle(
@@ -963,6 +1015,7 @@ function createNewBoardWithAnimation(
   for (let row = 0; row < boardHeight; row++) {
     state.tileSprites[row] = [];
     state.tileTexts[row] = [];
+    state.pointTexts[row] = [];
     
     for (let col = 0; col < boardWidth; col++) {
       const x = gridStartX + col * tileSize + tileSize / 2;
@@ -1009,13 +1062,13 @@ function createNewBoardWithAnimation(
       
       // Add point value in corner with premium electric blue
       const pointText = scene.add
-        .text(x + tileSize * 0.3, startY + tileSize * 0.25, tileData.points.toString(), {
+        .text(x + tileSize * 0.4, startY + tileSize * 0.4, tileData.points.toString(), {
           fontSize: pointSize + 'px',
           color: TEXT_COLORS.playerScores,
           fontFamily: FONTS.body,
           fontStyle: 'bold',
         })
-        .setOrigin(0.5);
+        .setOrigin(1, 1);
 
       state.tileSprites[row][col] = tile;
       
@@ -1026,7 +1079,7 @@ function createNewBoardWithAnimation(
       // Animate tiles falling into place (optimized)
       scene.tweens.add({
         targets: [tile, letterText, pointText, shadowTile], // Include shadow in animation
-        y: [startY, y, y - 4, y + tileSize * 0.25, y + 2], // Different final positions for different elements
+        y: [startY, y, y - 4, y + tileSize * 0.4, y + 2], // Different final positions for different elements
         duration: 150 + (row * 25), // Reduced from 300+50ms to 150+25ms
         ease: 'Cubic.easeOut', // Faster than Bounce.easeOut
         delay: col * 30, // Reduced stagger for faster completion
@@ -1084,6 +1137,7 @@ function animateTileRemovalAndCascade(
   for (const { x, y } of removedTiles) {
     const tileSprite = state.tileSprites[y]?.[x];
     const tileText = state.tileTexts[y]?.[x];
+    const pointText = state.pointTexts[y]?.[x];
     
     if (tileSprite && tileText) {
       removedPositions.add(`${x}-${y}`);
@@ -1094,7 +1148,7 @@ function animateTileRemovalAndCascade(
 
         // Animate tile disappearing
         scene.tweens.add({
-          targets: [tileSprite, tileText],
+          targets: [tileSprite, tileText, pointText],
           alpha: 0,
           scaleX: 1.2,
           scaleY: 1.2,
@@ -1103,11 +1157,13 @@ function animateTileRemovalAndCascade(
           onComplete: () => {
             tileSprite.destroy();
             tileText.destroy();
+            pointText.destroy();
             particles.destroy();
             
             // Clear from state arrays
             state.tileSprites[y][x] = null as any;
             state.tileTexts[y][x] = null as any;
+            state.pointTexts[y][x] = null as any;
             
             resolve();
           }
@@ -1149,6 +1205,9 @@ function animateCascadingTilesWithRemovedPositions(
   // Start timing for performance tracking
   const animationStartTime = performance.now();
   console.log(`[${new Date().toISOString()}] 🎬 Starting cascade animation with ${removedPositions.size} removed tiles`);
+  
+  // Set cascade animation flag to prevent validation interference
+  setCascadeAnimationState(true);
 
   const boardWidth = state.currentBoard.width;
   const boardHeight = state.currentBoard.height;
@@ -1158,7 +1217,7 @@ function animateCascadingTilesWithRemovedPositions(
   
   for (let col = 0; col < boardWidth; col++) {
     let dropCount = 0; // Count removed tiles from bottom up
-    const existingTiles: { sprite: Phaser.GameObjects.Rectangle; text: Phaser.GameObjects.Text; originalRow: number }[] = [];
+    const existingTiles: { sprite: Phaser.GameObjects.Rectangle; text: Phaser.GameObjects.Text; pointText: Phaser.GameObjects.Text; originalRow: number }[] = [];
     
     // First pass: Collect existing tiles and count gaps
     for (let row = boardHeight - 1; row >= 0; row--) {
@@ -1171,11 +1230,13 @@ function animateCascadingTilesWithRemovedPositions(
         // This tile still exists, collect it for repositioning
         const currentTileSprite = state.tileSprites[row]?.[col];
         const currentTileText = state.tileTexts[row]?.[col];
+        const currentPointText = state.pointTexts[row]?.[col];
         
-        if (currentTileSprite && currentTileText) {
+        if (currentTileSprite && currentTileText && currentPointText) {
           existingTiles.unshift({ // Add to front so we process top-to-bottom
             sprite: currentTileSprite,
             text: currentTileText,
+            pointText: currentPointText,
             originalRow: row
           });
         }
@@ -1191,19 +1252,31 @@ function animateCascadingTilesWithRemovedPositions(
         
         // Animate existing tile falling to new position (optimized for <400ms total)
         const dropPromise = new Promise<void>((resolve) => {
+          // Animate sprite and text to center position
           scene.tweens.add({
             targets: [tileInfo.sprite, tileInfo.text],
             y: newY,
             duration: 150, // Reduced from 300ms for speed
             ease: 'Cubic.easeOut', // Faster than Bounce.easeOut
             delay: col * 15, // Reduced stagger for faster completion
+          });
+          
+          // Animate point text to correct corner position
+          scene.tweens.add({
+            targets: tileInfo.pointText,
+            y: newY + tileSize * 0.4,
+            duration: 150,
+            ease: 'Cubic.easeOut',
+            delay: col * 15,
             onComplete: () => {
               // Update positions in state arrays
               state.tileSprites[newRow][col] = tileInfo.sprite;
               state.tileTexts[newRow][col] = tileInfo.text;
+              state.pointTexts[newRow][col] = tileInfo.pointText;
               if (newRow !== tileInfo.originalRow) {
                 state.tileSprites[tileInfo.originalRow][col] = null as any;
                 state.tileTexts[tileInfo.originalRow][col] = null as any;
+                state.pointTexts[tileInfo.originalRow][col] = null as any;
               }
               
               // Re-setup interactions for new position
@@ -1263,19 +1336,20 @@ function animateCascadingTilesWithRemovedPositions(
         })
         .setOrigin(0.5);
       
-      // Add point value in corner with premium electric blue
+      // Create and store point value text
       const pointText = scene.add
-        .text(x + tileSize * 0.3, startY + tileSize * 0.25, tileData.points.toString(), {
+        .text(x + tileSize * 0.4, startY + tileSize * 0.4, tileData.points.toString(), {
           fontSize: pointSize + 'px',
           color: TEXT_COLORS.playerScores,
           fontFamily: FONTS.body,
           fontStyle: 'bold',
         })
-        .setOrigin(0.5);
+        .setOrigin(1, 1);
 
       // Update state arrays (includes shadow tracking)
       state.tileSprites[newRow][col] = tile;
       state.tileTexts[newRow][col] = letterText;
+      state.pointTexts[newRow][col] = pointText;
       
       // Ensure shadow array exists and store shadow tile
       if (!state.shadowSprites[newRow]) state.shadowSprites[newRow] = [];
@@ -1285,7 +1359,7 @@ function animateCascadingTilesWithRemovedPositions(
       const newTilePromise = new Promise<void>((resolve) => {
         scene.tweens.add({
           targets: [tile, letterText, pointText, shadowTile], // Include shadow in animation
-          y: [startY, finalY, finalY - 4, finalY + tileSize * 0.25, finalY + 2], // Different final positions
+          y: [startY, finalY, finalY - 4, finalY + tileSize * 0.4, finalY + 2], // Different final positions
           duration: 120 + (i * 20), // Reduced from 400+50ms to 120+20ms
           ease: 'Cubic.easeOut', // Faster than Bounce.easeOut
           delay: col * 25 + 100, // Reduced delays for faster completion
@@ -1310,6 +1384,9 @@ function animateCascadingTilesWithRemovedPositions(
     if (!isOptimal) {
       console.warn(`[${new Date().toISOString()}] ⚠️ Slow animation detected: ${Math.round(totalDuration)}ms exceeds 400ms target`);
     }
+    
+    // Clear cascade animation flag now that animations are complete
+    setCascadeAnimationState(false);
   });
 }
 
@@ -1397,6 +1474,7 @@ function createBoardTiles(
   for (let row = 0; row < boardHeight; row++) {
     state.tileSprites[row] = [];
     state.tileTexts[row] = [];
+    state.pointTexts[row] = [];
     
     for (let col = 0; col < boardWidth; col++) {
       const x = gridStartX + col * tileSize + tileSize / 2;
@@ -1448,16 +1526,17 @@ function createBoardTiles(
         .setOrigin(0.5);
       
       // Add point value in corner with premium text color
-      scene.add
-        .text(x + tileSize * 0.3, y + tileSize * 0.25, tileData.points.toString(), {
+      const pointText = scene.add
+        .text(x + tileSize * 0.4, y + tileSize * 0.4, tileData.points.toString(), {
           fontSize: pointSize + 'px',
           color: TEXT_COLORS.playerScores, // Use electric blue for point values
           fontFamily: FONTS.body,
           fontStyle: 'bold',
         })
-        .setOrigin(0.5);
+        .setOrigin(1, 1);
 
       state.tileTexts[row][col] = letterText;
+      state.pointTexts[row][col] = pointText;
 
       // Add hover effects and interactions
       setupTileInteraction(tile, row, col, tileData);
@@ -1486,6 +1565,12 @@ export function validateVisualState(state: BoardRenderingState): {
   }>;
   summary: string;
 } {
+  // Skip validation if cascade animations are running
+  if (areCascadeAnimationsRunning()) {
+    console.log(`[${new Date().toISOString()}] ⏭️ Skipping validation - cascade animations in progress`);
+    return { isValid: true, mismatches: [], summary: 'Validation skipped - animations running' };
+  }
+
   const mismatches: Array<{
     type: 'missing_visual' | 'missing_logical' | 'position_mismatch' | 'content_mismatch';
     position: { x: number; y: number };
@@ -1500,7 +1585,7 @@ export function validateVisualState(state: BoardRenderingState): {
     };
   }
 
-  const { currentBoard, tileSprites, tileTexts } = state;
+  const { currentBoard, tileSprites, tileTexts, pointTexts } = state;
 
   // Check each position in the logical board
   for (let row = 0; row < currentBoard.height; row++) {
@@ -1508,14 +1593,15 @@ export function validateVisualState(state: BoardRenderingState): {
       const logicalTile = currentBoard.tiles[row][col];
       const visualSprite = tileSprites[row]?.[col];
       const visualText = tileTexts[row]?.[col];
+      const pointText = pointTexts[row]?.[col];
 
       if (logicalTile) {
         // Logical tile exists - check visual representation
-        if (!visualSprite || !visualText) {
+        if (!visualSprite || !visualText || !pointText) {
           mismatches.push({
             type: 'missing_visual',
             position: { x: col, y: row },
-            details: `Logical tile '${logicalTile.letter}' has no visual representation`
+            details: `Logical tile '${logicalTile.letter}' missing visual: sprite=${!!visualSprite}, text=${!!visualText}, points=${!!pointText}`
           });
         } else {
           // Check content match
@@ -1523,7 +1609,16 @@ export function validateVisualState(state: BoardRenderingState): {
             mismatches.push({
               type: 'content_mismatch',
               position: { x: col, y: row },
-              details: `Visual '${visualText.text}' != Logical '${logicalTile.letter}'`
+              details: `Letter mismatch: logical='${logicalTile.letter}', visual='${visualText.text}'`
+            });
+          }
+          
+          // Check point text content match
+          if (pointText.text !== logicalTile.points.toString()) {
+            mismatches.push({
+              type: 'content_mismatch',
+              position: { x: col, y: row },
+              details: `Points mismatch: logical='${logicalTile.points}', visual='${pointText.text}'`
             });
           }
           
@@ -1623,6 +1718,12 @@ export function correctVisualStateTileByTile(
     return 0;
   }
 
+  // Skip correction if cascade animations are running
+  if (areCascadeAnimationsRunning()) {
+    console.log(`[${new Date().toISOString()}] ⏭️ Skipping tile correction - cascade animations in progress`);
+    return 0;
+  }
+
   const validation = validateVisualState(state);
   if (validation.isValid) {
     return 0;
@@ -1683,6 +1784,8 @@ export function correctVisualStateTileByTile(
 
             // Create text with premium colors
             const letterSize = Math.max(12, Math.min(32, tileSize * 0.4));
+            const pointSize = Math.max(8, Math.min(12, tileSize * 0.15));
+            
             const letterText = scene.add.text(x, y - 4, logicalTile.letter, {
               fontSize: letterSize + 'px',
               color: TEXT_COLORS.tileLetters,
@@ -1690,13 +1793,23 @@ export function correctVisualStateTileByTile(
               fontStyle: 'bold',
             }).setOrigin(0.5);
 
+            // Create point text
+            const pointText = scene.add.text(x + tileSize * 0.4, y + tileSize * 0.4, logicalTile.points.toString(), {
+              fontSize: pointSize + 'px',
+              color: TEXT_COLORS.playerScores,
+              fontFamily: FONTS.body,
+              fontStyle: 'bold',
+            }).setOrigin(1, 1);
+
             // Ensure arrays exist
             if (!state.tileSprites[row]) state.tileSprites[row] = [];
             if (!state.tileTexts[row]) state.tileTexts[row] = [];
+            if (!state.pointTexts[row]) state.pointTexts[row] = [];
             if (!state.shadowSprites[row]) state.shadowSprites[row] = [];
 
             state.tileSprites[row][col] = tile;
             state.tileTexts[row][col] = letterText;
+            state.pointTexts[row][col] = pointText;
             state.shadowSprites[row][col] = shadowTile;
 
             setupTileInteraction(tile, row, col, logicalTile);
@@ -1709,6 +1822,7 @@ export function correctVisualStateTileByTile(
           // Remove extra visual tile
           const sprite = state.tileSprites[row]?.[col];
           const text = state.tileTexts[row]?.[col];
+          const pointText = state.pointTexts[row]?.[col];
           
           if (sprite) {
             sprite.destroy();
@@ -1718,6 +1832,10 @@ export function correctVisualStateTileByTile(
             text.destroy();
             state.tileTexts[row][col] = null as any;
           }
+          if (pointText) {
+            pointText.destroy();
+            state.pointTexts[row][col] = null as any;
+          }
           correctedCount++;
           break;
         }
@@ -1726,9 +1844,14 @@ export function correctVisualStateTileByTile(
           // Update visual content to match logical
           const logicalTile = state.currentBoard.tiles[row][col];
           const visualText = state.tileTexts[row]?.[col];
+          const pointText = state.pointTexts[row]?.[col];
           
           if (logicalTile && visualText) {
             visualText.setText(logicalTile.letter);
+            correctedCount++;
+          }
+          if (logicalTile && pointText) {
+            pointText.setText(logicalTile.points.toString());
             correctedCount++;
           }
           break;
@@ -1739,15 +1862,21 @@ export function correctVisualStateTileByTile(
           const logicalTile = state.currentBoard.tiles[row][col];
           const visualSprite = state.tileSprites[row]?.[col];
           const visualText = state.tileTexts[row]?.[col];
+          const pointText = state.pointTexts[row]?.[col];
+          
+          const correctX = gridStartX + col * tileSize + tileSize / 2;
+          const correctY = gridStartY + row * tileSize + tileSize / 2;
           
           if (logicalTile && visualSprite && visualText) {
-            const correctX = gridStartX + col * tileSize + tileSize / 2;
-            const correctY = gridStartY + row * tileSize + tileSize / 2;
-            
             visualSprite.setPosition(correctX, correctY);
             visualText.setPosition(correctX, correctY - 4);
             correctedCount++;
           }
+                      if (logicalTile && pointText) {
+              pointText.setPosition(correctX + tileSize * 0.4, correctY + tileSize * 0.4);
+              pointText.setOrigin(1, 1);
+              correctedCount++;
+            }
           break;
         }
       }
@@ -2150,6 +2279,7 @@ function forceSyncVisualToLogicalPositions(scene: Phaser.Scene, state: BoardRend
       const logicalTile = state.currentBoard.tiles[row][col];
       const visualSprite = state.tileSprites[row]?.[col];
       const visualText = state.tileTexts[row]?.[col];
+      const pointText = state.pointTexts[row]?.[col];
       
       if (logicalTile && visualSprite && visualText) {
         const correctX = gridStartX + col * tileSize + tileSize / 2;
@@ -2162,6 +2292,8 @@ function forceSyncVisualToLogicalPositions(scene: Phaser.Scene, state: BoardRend
         if (deltaX > 1 || deltaY > 1) {
           visualSprite.setPosition(correctX, correctY);
           visualText.setPosition(correctX, correctY - 4);
+          pointText.setPosition(correctX + tileSize * 0.4, correctY + tileSize * 0.4);
+          pointText.setOrigin(1, 1);
           syncedCount++;
           console.log(`[${new Date().toISOString()}] 🔧 Synced tile [${row}][${col}] from (${visualSprite.x.toFixed(1)}, ${visualSprite.y.toFixed(1)}) to (${correctX}, ${correctY})`);
         }
@@ -2188,6 +2320,7 @@ function cleanupAllVisualElements(scene: Phaser.Scene, state: BoardRenderingStat
   let cleanedTiles = 0;
   let cleanedShadows = 0;
   let cleanedTexts = 0;
+  let cleanedPointTexts = 0;
   let cleanedParticles = 0;
   
   try {
@@ -2214,6 +2347,20 @@ function cleanupAllVisualElements(scene: Phaser.Scene, state: BoardRenderingStat
         });
       }
     });
+    
+    // Destroy all existing point text objects
+    if (state.pointTexts) {
+      state.pointTexts.forEach(row => {
+        if (row) {
+          row.forEach(pointText => {
+            if (pointText && pointText.scene && !pointText.scene.game.isDestroyed) {
+              pointText.destroy();
+              cleanedPointTexts++;
+            }
+          });
+        }
+      });
+    }
     
     // Destroy all existing shadow sprites (NEW - fixes shadow artifacts)
     if (state.shadowSprites) {
@@ -2250,15 +2397,148 @@ function cleanupAllVisualElements(scene: Phaser.Scene, state: BoardRenderingStat
     // Reset all state arrays
     state.tileSprites = [];
     state.tileTexts = [];
+    state.pointTexts = [];
     state.shadowSprites = [];
     
-    console.log(`[${new Date().toISOString()}] ✅ Cleanup completed: ${cleanedTiles} tiles, ${cleanedShadows} shadows, ${cleanedTexts} texts, ${cleanedParticles} particles`);
+    console.log(`[${new Date().toISOString()}] ✅ Cleanup completed: ${cleanedTiles} tiles, ${cleanedShadows} shadows, ${cleanedTexts} texts, ${cleanedPointTexts} point texts, ${cleanedParticles} particles`);
     
   } catch (error) {
     console.error('Error during visual cleanup:', error);
     // Force reset arrays even if cleanup failed
     state.tileSprites = [];
     state.tileTexts = [];
+    state.pointTexts = [];
     state.shadowSprites = [];
   }
 }
+
+/**
+ * Debug function to verify tile colors are correctly mapped
+ * Can be called from browser console: window.debugTileColors()
+ */
+function debugTileColors(): void {
+  console.log('🎨 Tile Color Mappings:');
+  console.log('1 point (E,A,I,O,U,L,N,S,T,R):', getTileColorByPoints(1)); // Should be #045476
+  console.log('2 points (D,G):', getTileColorByPoints(2)); // Should be #0A7497
+  console.log('3 points (B,C,M,P):', getTileColorByPoints(3)); // Should be #149ABC
+  console.log('4 points (F,H,V,W,Y):', getTileColorByPoints(4)); // Should be #0F9995
+  console.log('5 points (K):', getTileColorByPoints(5)); // Should be #FBA731
+  console.log('8 points (J,X):', getTileColorByPoints(8)); // Should be #F88C2B
+  console.log('10 points (Q,Z):', getTileColorByPoints(10)); // Should be #F1742A
+}
+
+// Make debug function available globally for testing
+if (typeof window !== 'undefined') {
+  (window as any).debugTileColors = debugTileColors;
+}
+
+/**
+ * Debug function to verify point text persistence
+ * Can be called from browser console: window.debugPointTexts()
+ */
+function debugPointTexts(): void {
+  console.log('🔢 Point Text Debug Information:');
+  
+  // Try to access the board state through the global Phaser game instance
+  const scenes = (window as any).game?.scene?.scenes || [];
+  const gameScene = scenes.find((scene: any) => scene.scene?.key !== 'default');
+  
+  if (!gameScene) {
+    console.error('No active game scene found');
+    return;
+  }
+  
+  // Access board state (this is a hack for debugging)
+  const boardState = (gameScene as any).boardState;
+  if (!boardState) {
+    console.error('No board state found in scene');
+    return;
+  }
+  
+  if (!boardState.currentBoard) {
+    console.log('No current board loaded');
+    return;
+  }
+  
+  console.log(`Board size: ${boardState.currentBoard.width}x${boardState.currentBoard.height}`);
+  
+  // Check each position for point text presence
+  let totalTiles = 0;
+  let tilesWithPointTexts = 0;
+  let missingPointTexts = [];
+  
+  for (let row = 0; row < boardState.currentBoard.height; row++) {
+    for (let col = 0; col < boardState.currentBoard.width; col++) {
+      const logicalTile = boardState.currentBoard.tiles[row][col];
+      const pointText = boardState.pointTexts[row]?.[col];
+      
+      if (logicalTile) {
+        totalTiles++;
+        if (pointText && pointText.scene && !pointText.scene.game.isDestroyed) {
+          tilesWithPointTexts++;
+          console.log(`✅ [${row}][${col}] ${logicalTile.letter}(${logicalTile.points}) -> "${pointText.text}"`);
+        } else {
+          missingPointTexts.push({ row, col, letter: logicalTile.letter, points: logicalTile.points });
+          console.log(`❌ [${row}][${col}] ${logicalTile.letter}(${logicalTile.points}) -> MISSING POINT TEXT`);
+        }
+      }
+    }
+  }
+  
+  console.log(`Summary: ${tilesWithPointTexts}/${totalTiles} tiles have point texts`);
+  if (missingPointTexts.length > 0) {
+    console.log('Missing point texts:', missingPointTexts);
+  }
+}
+
+// Make debug function available globally for testing
+if (typeof window !== 'undefined') {
+  (window as any).debugPointTexts = debugPointTexts;
+}
+
+/**
+ * Debug function to verify point text positioning and origin
+ * Can be called from browser console: window.debugPointTextPositioning()
+ */
+function debugPointTextPositioning(): void {
+  console.log('🎯 Point Text Positioning Debug:');
+  console.log('✅ Origin: (1, 1) - Bottom-right anchor');
+  console.log('✅ Position: x + tileSize * 0.4, y + tileSize * 0.4');
+  console.log('✅ This places the bottom-right corner of the text in the bottom-right area of the tile');
+  
+  // Try to access the board state through the global Phaser game instance
+  const scenes = (window as any).game?.scene?.scenes || [];
+  const gameScene = scenes.find((scene: any) => scene.scene?.key !== 'default');
+  
+  if (!gameScene) {
+    console.error('No active game scene found');
+    return;
+  }
+  
+  // Access board state (this is a hack for debugging)
+  const boardState = (gameScene as any).boardState;
+  if (!boardState || !boardState.pointTexts) {
+    console.error('No point texts found in board state');
+    return;
+  }
+  
+  let totalPointTexts = 0;
+  let correctlyPositioned = 0;
+  
+  boardState.pointTexts.forEach((row: any[], rowIndex: number) => {
+    row.forEach((pointText: any, colIndex: number) => {
+      if (pointText && pointText.originX !== undefined) {
+        totalPointTexts++;
+        if (pointText.originX === 1 && pointText.originY === 1) {
+          correctlyPositioned++;
+        }
+        console.log(`[${rowIndex}][${colIndex}] origin: (${pointText.originX}, ${pointText.originY}), pos: (${pointText.x}, ${pointText.y})`);
+      }
+    });
+  });
+  
+  console.log(`📊 Summary: ${correctlyPositioned}/${totalPointTexts} point texts correctly positioned`);
+}
+
+// Make debug function globally available
+(window as any).debugPointTextPositioning = debugPointTextPositioning;

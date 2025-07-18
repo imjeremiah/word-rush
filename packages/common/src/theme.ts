@@ -4,15 +4,15 @@
  * Creates a visually stunning, premium gaming experience
  */
 
-// TILE COLORS - Scrabble Point Value Gradient (7-Tier System)
+// TILE_COLORS - Scrabble Point Value Gradient (7-Tier System)
 export const TILE_COLORS = {
-  points1: '#1599BB',    // Blue Green (E, A, I, O, etc.)
-  points2: '#097698',    // Cerulean (D, G)
-  points3: '#0B9B92',    // Persian Green (B, C, M, P)
-  points4: '#0D7085',    // Caribbean Current (F, H, V, W, Y)
-  points5: '#FAA827',    // Orange Web (K)
-  points8: '#F2832C',    // Orange Wheel (J, X)
-  points10: '#EE6E2A',   // Orange Crayola (Q, Z)
+  points1: '#045476',    // Dark Blue (E, A, I, O, U, L, N, S, T, R)
+  points2: '#0A7497',    // Blue (D, G)
+  points3: '#149ABC',    // Light Blue (B, C, M, P)
+  points4: '#0F9995',    // Teal (F, H, V, W, Y)
+  points5: '#FBA731',    // Orange (K)
+  points8: '#F88C2B',    // Dark Orange (J, X)
+  points10: '#F1742A',   // Red Orange (Q, Z)
 } as const;
 
 // BACKGROUND SYSTEM - Deep Water Gradient Atmosphere
@@ -40,8 +40,8 @@ export const UI_ELEMENTS = {
   shuffleButton: '#0C5C7E',    // Lapis Lazuli
   timerRing: '#038BB0',        // Bondi Blue (background)
   timerProgress: '#2CFFFF',    // Aqua (active progress)
-  tileSelected: '#FAA827',     // Orange Web (selection glow)
-  tileHover: '#0D7085',        // Caribbean Current (hover state)
+  tileSelected: '#FDDC7A',     // Golden yellow (selection glow)
+  tileHover: '#FDDC7A',        // Golden yellow (hover state)
 } as const;
 
 // TEXT COLORS - Hierarchical Typography System
