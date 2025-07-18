@@ -26,11 +26,10 @@ interface GameHUDProps {
   players: Player[];
   /** Current player ID for highlighting */
   currentPlayerId: string;
-  /** Current player's points available for display */
-  playerPoints: number;
   /** Whether the game is currently active */
   isGameActive: boolean;
   // 🎯 PHASE C.3.2: Removed shuffle-related props: canShuffle, shuffleCost, onShuffle
+  // 🎯 PHASE D.2.2: Removed playerPoints prop - no longer needed after stats section removal
 }
 
 /**
@@ -43,9 +42,9 @@ export const GameHUD = React.memo<GameHUDProps>(({
   timer,
   players,
   currentPlayerId,
-  playerPoints,
   isGameActive
   // 🎯 PHASE C.3.2: Removed shuffle parameters: canShuffle, shuffleCost, onShuffle
+  // 🎯 PHASE D.2.2: Removed playerPoints parameter - no longer needed after stats section removal
 }: GameHUDProps): JSX.Element => {
 
   /**
@@ -237,21 +236,7 @@ export const GameHUD = React.memo<GameHUDProps>(({
             })}
           </div>
           
-          {/* Current Player Highlight */}
-          <div className="current-player-stats">
-            <div className="stats-container">
-              <div className="stat-item">
-                <span className="stat-label">Your Score:</span>
-                <span className="stat-value">
-                  {players.find(p => p.id === currentPlayerId)?.score || 0}
-                </span>
-              </div>
-              <div className="stat-item">
-                <span className="stat-label">Available Points:</span>
-                <span className="stat-value">{playerPoints}</span>
-              </div>
-            </div>
-          </div>
+          {/* 🎯 PHASE D.2.1: Current Player Stats section removed - live scores now shows only player rankings */}
 
         </div>
       </div>

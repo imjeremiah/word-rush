@@ -70,9 +70,7 @@ const AppContent = React.memo((): JSX.Element => {
     return socket?.id || '';
   }, [socket?.id]);
 
-  const playerPoints = React.useMemo(() => {
-    return playerSession?.score || 0;
-  }, [playerSession?.score]);
+  // 🎯 PHASE D.2.3: Removed playerPoints calculation - no longer needed after stats section removal
 
   // 🎯 PHASE C.3.3: Removed canShuffle calculation - shuffle functionality eliminated
 
@@ -162,11 +160,11 @@ const AppContent = React.memo((): JSX.Element => {
             <div className="game-container">
               <div className="ui-section">
                 {/* 🎯 PHASE C.3.3: Removed shuffle props: canShuffle, shuffleCost, onShuffle */}
+                {/* 🎯 PHASE D.2.3: Removed playerPoints prop - no longer needed after stats section removal */}
                 <GameHUD 
                   timer={roundTimer!}
                   players={currentRoom!.players}
                   currentPlayerId={currentPlayerId}
-                  playerPoints={playerPoints}
                   isGameActive={isGameActive}
                 />
               </div>

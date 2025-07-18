@@ -725,35 +725,8 @@
   font-size: 0.8rem;
 }
 
-.current-player-stats {
-  border-top: 1px solid #09637B; /* Midnight Green */
-  padding-top: 1rem;
-}
-
-.stats-container {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.current-player-stats .stat-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-
-.current-player-stats .stat-label {
-  color: #8CE6EC; /* Electric Blue */
-  font-size: 0.8rem;
-  margin-bottom: 0.25rem;
-}
-
-.current-player-stats .stat-value {
-  color: #FFE265; /* Golden highlight */
-  font-weight: bold;
-  font-size: 1.1rem;
-}
+/* 🎯 PHASE D.3.1: Removed current-player-stats CSS classes - stats section eliminated
+   Removed: .current-player-stats, .stats-container, .stat-item, .stat-label, .stat-value */
 
 .game-status-overlay {
   position: absolute;
