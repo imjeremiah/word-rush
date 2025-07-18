@@ -26,16 +26,11 @@ interface GameHUDProps {
   players: Player[];
   /** Current player ID for highlighting */
   currentPlayerId: string;
-  /** Whether shuffle button should be enabled */
-  canShuffle: boolean;
-  /** Current player's points available for shuffle cost */
+  /** Current player's points available for display */
   playerPoints: number;
-  /** Cost in points to shuffle the board */
-  shuffleCost: number;
-  /** Callback when shuffle button is clicked */
-  onShuffle?: () => void;
   /** Whether the game is currently active */
   isGameActive: boolean;
+  // 🎯 PHASE C.3.2: Removed shuffle-related props: canShuffle, shuffleCost, onShuffle
 }
 
 /**
@@ -48,11 +43,9 @@ export const GameHUD = React.memo<GameHUDProps>(({
   timer,
   players,
   currentPlayerId,
-  canShuffle,
   playerPoints,
-  shuffleCost,
-  onShuffle,
   isGameActive
+  // 🎯 PHASE C.3.2: Removed shuffle parameters: canShuffle, shuffleCost, onShuffle
 }: GameHUDProps): JSX.Element => {
 
   /**
@@ -129,6 +122,9 @@ export const GameHUD = React.memo<GameHUDProps>(({
         <div className="timer-section">
           <div className="timer-container">
             
+            {/* 🎯 PHASE C.4.1: Timer Label moved above for uniform structure with Round */}
+            <div className="timer-label">Time Remaining</div>
+            
             {/* Circular Timer Ring */}
             <div className="circular-timer">
               <svg className="timer-ring" width="120" height="120" viewBox="0 0 120 120">
@@ -170,32 +166,10 @@ export const GameHUD = React.memo<GameHUDProps>(({
               </svg>
             </div>
             
-            {/* Timer Label */}
-            <div className="timer-label">Time Remaining</div>
           </div>
         </div>
 
-        {/* Shuffle Control */}
-        <div className="shuffle-control">
-          <button
-            className={`shuffle-button ${canShuffle && isGameActive ? 'enabled' : 'disabled'}`}
-            onClick={onShuffle}
-            disabled={!canShuffle || !isGameActive}
-            title={
-              !isGameActive 
-                ? 'Game not active'
-                : !canShuffle 
-                  ? `Need ${shuffleCost} points to shuffle`
-                  : `Shuffle board (${shuffleCost} points)`
-            }
-          >
-            <div className="shuffle-icon">🔀</div>
-            <div className="shuffle-text">
-              <span className="shuffle-label">Shuffle</span>
-              <span className="shuffle-cost">-{shuffleCost} pts</span>
-            </div>
-          </button>
-        </div>
+        {/* 🎯 PHASE C.3.1: Shuffle Control removed - functionality eliminated */}
 
       </div>
 

@@ -37,7 +37,7 @@
   --gold-deep: #FE8E1D;          /* Exact specification */
   
   /* Interactive Elements - Oceanic */
-  --ui-shuffle: var(--sunset-orange);
+  /* 🎯 PHASE C.3.4: Removed --ui-shuffle variable - shuffle functionality eliminated */
   --ui-timer-ring: var(--oceanic-blue);
   --ui-timer-progress: var(--oceanic-teal);
   --ui-selected: #FDDC7A;        /* Preserved golden selection */
@@ -320,7 +320,7 @@
 }
 
 .control-button.new-board {
-  background: var(--ui-shuffle);
+  background: var(--sunset-orange); /* 🎯 PHASE C.3.4: Direct color usage - removed --ui-shuffle variable */
   color: var(--text-button);
   width: 100%;
   margin-bottom: 1rem;

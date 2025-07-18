@@ -74,9 +74,7 @@ const AppContent = React.memo((): JSX.Element => {
     return playerSession?.score || 0;
   }, [playerSession?.score]);
 
-  const canShuffle = React.useMemo(() => {
-    return playerPoints >= 5;
-  }, [playerPoints]);
+  // 🎯 PHASE C.3.3: Removed canShuffle calculation - shuffle functionality eliminated
 
   // 📊 DEPLOY 1: Monitoring dashboard state
   const [showMonitoringDashboard, setShowMonitoringDashboard] = useState(false);
@@ -95,11 +93,7 @@ const AppContent = React.memo((): JSX.Element => {
   }, []);
 
   // 🟡 PHASE 3A: Memoized event handlers to prevent unnecessary re-renders
-  const handleShuffle = React.useCallback(() => {
-    if (socket) {
-      socket.emit('game:shuffle-request');
-    }
-  }, [socket]);
+  // 🎯 PHASE C.3.3: Removed handleShuffle function - shuffle functionality eliminated
 
   const handleContinue = React.useCallback(() => {
     // Manual unpause fallback for host
@@ -167,14 +161,12 @@ const AppContent = React.memo((): JSX.Element => {
           <main className="app-main">
             <div className="game-container">
               <div className="ui-section">
+                {/* 🎯 PHASE C.3.3: Removed shuffle props: canShuffle, shuffleCost, onShuffle */}
                 <GameHUD 
                   timer={roundTimer!}
                   players={currentRoom!.players}
                   currentPlayerId={currentPlayerId}
-                  canShuffle={canShuffle}
                   playerPoints={playerPoints}
-                  shuffleCost={5}
-                  onShuffle={handleShuffle}
                   isGameActive={isGameActive}
                 />
               </div>
