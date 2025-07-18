@@ -398,6 +398,9 @@ export function updateBoardDisplay(
 ): void {
   if (!state.currentBoard) return;
 
+  // 🐛 PREP LOGGING: Track board display updates
+  console.log(`[BoardUpdate] Starting board display update. Board size: ${state.currentBoard.width}x${state.currentBoard.height}. Removed tiles: ${removedTiles?.length || 0}`);
+
   // 🧹 PHASE 26: Comprehensive cleanup to prevent shadow artifacts
   cleanupAllVisualElements(scene, state);
 
@@ -756,6 +759,12 @@ function animateTileFalling(
           const newX = gridStartX + to.x * tileSize + tileSize / 2;
           const newY = gridStartY + to.y * tileSize + tileSize / 2;
           
+          // 🐛 PREP LOGGING: Track tile falling animation
+          console.log(`[Cascade] Starting falling animation for tile ${movement.id} from (${tileSprite.x}, ${tileSprite.y}) to (${newX}, ${newY})`);
+          if (pointText) {
+            console.log(`[Cascade] Pre-fall point position for ${movement.id}: x=${pointText.x}, y=${pointText.y}`);
+          }
+          
           // Create cascade trail effect for falling tiles
           createCascadeTrailEffect(scene, tileSprite.x, tileSprite.y, newX, newY);
           
@@ -768,6 +777,12 @@ function animateTileFalling(
             ease: 'Cubic.easeOut', // Optimized for smooth 60fps performance
             delay: from.x * 10, // Reduced stagger from 20ms to 10ms for faster completion
             onComplete: () => {
+              // 🐛 PREP LOGGING: Track completion and point position
+              console.log(`[Cascade] Falling animation completed for tile ${movement.id}. Final position: (${newX}, ${newY})`);
+              if (pointText) {
+                console.log(`[Cascade] Post-fall point position for ${movement.id}: x=${pointText.x}, y=${pointText.y}`);
+              }
+              
               // Update state arrays efficiently
               state.tileSprites[to.y][to.x] = tileSprite;
               state.tileTexts[to.y][to.x] = tileText;
@@ -875,6 +890,9 @@ function animateNewTileAppearance(
           })
           .setOrigin(1, 1);
 
+        // 🐛 PREP LOGGING: Track new tile creation
+        console.log(`[Cascade] Creating new tile ${id} at position (${position.x}, ${position.y}). Initial point position: x=${pointText.x}, y=${pointText.y}`);
+
         // Animate tile falling into place - optimized for <400ms performance
         scene.tweens.add({
           targets: [tile, letterText, pointText, shadowTile], // Include shadow in animation
@@ -883,6 +901,9 @@ function animateNewTileAppearance(
           ease: 'Cubic.easeOut', // Optimized for smooth 60fps performance
           delay: position.x * 10, // Reduced stagger from 20ms to 10ms for faster completion
           onComplete: () => {
+            // 🐛 PREP LOGGING: Track final positioning
+            console.log(`[Cascade] New tile ${id} animation completed. Final point position: x=${pointText.x}, y=${pointText.y}`);
+            
             // Store in state arrays efficiently (includes shadow tracking)
             state.tileSprites[position.y][position.x] = tile;
             state.tileTexts[position.y][position.x] = letterText;
