@@ -63,7 +63,8 @@ export const UI_ELEMENTS = {
 
 // TEXT COLORS - Oceanic Typography System
 export const TEXT_COLORS = {
-  tileLetters: '#F9F0C6',                         // Preserved - Lemon Chiffon (on tiles)
+  universalText: '#FAF0C7',                       // Universal text color for consistency
+  tileLetters: '#FAF0C7',                         // Updated - Universal text (on tiles) // old: '#F9F0C6'
   playerNames: OCEANIC_PALETTE.oceanFoam,         // Ocean Foam (leaderboard names)
   playerScores: OCEANIC_PALETTE.sunsetOrange,     // Sunset Orange (score numbers)
   buttonText: OCEANIC_PALETTE.oceanFoam,          // Ocean Foam (button labels)

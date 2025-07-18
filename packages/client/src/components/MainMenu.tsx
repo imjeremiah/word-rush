@@ -75,7 +75,6 @@ function MainMenu(): JSX.Element {
           <ul>
             <li>Drag over adjacent letters to form words</li>
             <li>Longer words score more points</li>
-            <li>Find words quickly for speed bonuses</li>
             <li>Compete in real-time with other players</li>
           </ul>
         </div>
@@ -94,7 +93,7 @@ function CreateGameScreen({ onBack }: { onBack: () => void }): JSX.Element {
   const [settings, setSettings] = useState({
     totalRounds: 3,
     roundDuration: 90,
-    shuffleCost: 10,
+    shuffleCost: 10, // Required by server validation, but hidden from UI
     speedBonusMultiplier: 1.5,
     speedBonusWindow: 3,
     deadBoardThreshold: 5,
@@ -177,11 +176,34 @@ function CreateGameScreen({ onBack }: { onBack: () => void }): JSX.Element {
 
   /**
    * Handle settings change
+   * 🎯 SECTION 4.1: Added validation for round duration and rounds with safety fallbacks
    */
   const handleSettingChange = (key: string, value: number): void => {
+    let validatedValue = value;
+    
+    // 🎯 SECTION 4.1: Validate round duration with safety fallback
+    if (key === 'roundDuration') {
+      const validDurations = [15, 30, 45, 60, 90];
+      if (!validDurations.includes(value)) {
+        console.warn(`[MainMenu] Invalid round duration: ${value}s, falling back to 90s`);
+        validatedValue = 90; // Safety fallback
+        alert('Invalid round duration selected. Reset to 90 seconds.');
+      }
+    }
+    
+    // Validate rounds with safety fallback
+    if (key === 'totalRounds') {
+      const validRounds = [1, 2, 3, 4, 5];
+      if (!validRounds.includes(value)) {
+        console.warn(`[MainMenu] Invalid rounds count: ${value}, falling back to 3`);
+        validatedValue = 3; // Safety fallback
+        alert('Invalid rounds count selected. Reset to 3 rounds.');
+      }
+    }
+    
     setSettings(prev => ({
       ...prev,
-      [key]: value
+      [key]: validatedValue
     }));
   };
 
@@ -211,39 +233,34 @@ function CreateGameScreen({ onBack }: { onBack: () => void }): JSX.Element {
           <div className="settings-section">
             <h3>Match Settings</h3>
             
-            <div className="form-group">
+            <div className="form-group" style={{ marginBottom: '24px' }}>
               <label>Rounds: {settings.totalRounds}</label>
-              <input
-                type="range"
-                min="1"
-                max="5"
-                value={settings.totalRounds}
-                onChange={(e) => handleSettingChange('totalRounds', parseInt(e.target.value))}
-              />
+              <div className="duration-selector">
+                {[1, 2, 3, 4, 5].map(rounds => (
+                  <button 
+                    key={rounds}
+                    className={`duration-button ${settings.totalRounds === rounds ? 'selected' : ''}`}
+                    onClick={() => handleSettingChange('totalRounds', rounds)}
+                  >
+                    {rounds}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="form-group">
               <label>Round Duration: {settings.roundDuration}s</label>
-              <input
-                type="range"
-                min="60"
-                max="180"
-                step="30"
-                value={settings.roundDuration}
-                onChange={(e) => handleSettingChange('roundDuration', parseInt(e.target.value))}
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Shuffle Cost: {settings.shuffleCost} points</label>
-              <input
-                type="range"
-                min="5"
-                max="25"
-                step="5"
-                value={settings.shuffleCost}
-                onChange={(e) => handleSettingChange('shuffleCost', parseInt(e.target.value))}
-              />
+              <div className="duration-selector">
+                {[15, 30, 45, 60, 90].map(duration => (
+                  <button 
+                    key={duration}
+                    className={`duration-button ${settings.roundDuration === duration ? 'selected' : ''}`}
+                    onClick={() => handleSettingChange('roundDuration', duration)}
+                  >
+                    {duration}s
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 

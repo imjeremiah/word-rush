@@ -4,9 +4,48 @@
  */
 
 import Phaser from 'phaser';
-import { FONTS, COLORS } from '@word-rush/common';
+import { COLORS, BACKGROUNDS, TEXT_COLORS, FONTS } from "@word-rush/common";
 import { BoardRenderingState } from './board-rendering.js';
 import { InteractionState } from './interactions.js';
+
+/**
+ * 🔧 UPDATED FIX: More targeted scene readiness validation for layout operations
+ * Focuses on the actual null scene.add issue rather than broader scene state
+ */
+function isSceneReadyForGameObjects(scene: Phaser.Scene): boolean {
+  try {
+    if (!scene || !scene.sys || !scene.add) {
+      console.warn(`[LayoutGuard] Scene, scene.sys, or scene.add is null`);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error(`[LayoutGuard] Error checking scene readiness:`, error);
+    return false;
+  }
+}
+
+/**
+ * Safe wrapper for scene.add operations in layout
+ */
+function safeSceneOperation<T>(
+  scene: Phaser.Scene, 
+  operation: () => T, 
+  operationName: string
+): T | null {
+  if (!isSceneReadyForGameObjects(scene)) {
+    console.warn(`[LayoutGuard] Skipping ${operationName} - scene not ready`);
+    return null;
+  }
+
+  try {
+    return operation();
+  } catch (error) {
+    console.error(`[LayoutGuard] Failed ${operationName}:`, error);
+    return null;
+  }
+}
 
 // Types for layout state
 export interface LayoutState {
@@ -14,16 +53,20 @@ export interface LayoutState {
   instructionText: Phaser.GameObjects.Text | null;
 }
 
+// Removed calculateBoardLayout function - using simpler fixed positioning for word builder text
+
 /**
  * Create responsive game layout with title and instructions
  * @param scene - The Phaser scene
  * @param layoutState - Layout state
  * @param interactionState - Interaction state for word display
+ * @param boardState - Board state for positioning calculations
  */
 export function createGameLayout(
   scene: Phaser.Scene,
   layoutState: LayoutState,
-  interactionState: InteractionState
+  interactionState: InteractionState,
+  boardState: BoardRenderingState
 ): void {
   const { width, height } = scene.scale.gameSize;
   
@@ -39,15 +82,29 @@ export function createGameLayout(
   //   .setOrigin(0.5);
   layoutState.titleText = null; // Set to null since we're not creating it
 
-  // Add current word display
-  interactionState.currentWordText = scene.add
-    .text(width / 2, height - Math.min(150, height * 0.15), '', {
-      fontSize: Math.min(24, width * 0.03) + 'px',
-      color: '#ffffff',
-      fontFamily: FONTS.heading,
-      fontStyle: 'bold',
+  // Add current word display - positioned above board with FORCED VISIBLE positioning
+  // Use a reliable position that's always visible above the game board area
+  const safeWordTextY = height * 0.25; // Always 25% down from top - GUARANTEED VISIBLE
+  
+  console.log(`[Layout] Creating word builder text at Y=${safeWordTextY} (guaranteed visible position)`);
+
+  // 🔧 CRITICAL FIX: Use safe scene operation for word builder text
+  interactionState.currentWordText = safeSceneOperation(scene, () => scene.add
+    .text(width / 2, safeWordTextY, '', {
+      fontSize: Math.min(22, width * 0.028) + 'px', // MATCH instruction text sizing exactly
+      fontStyle: 'bold', // MATCH instruction text weight exactly
+      color: TEXT_COLORS.universalText || '#FAF0C7', // MATCH instruction text color exactly
+      fontFamily: FONTS.body, // MATCH instruction text font exactly
+      align: 'center',
+      backgroundColor: 'rgba(0, 0, 0, 0.3)', // Temporary background for visibility testing
+      padding: { x: 8, y: 4 } // Padding for better visibility
     })
-    .setOrigin(0.5);
+    .setOrigin(0.5), 'create word builder text');
+
+  if (!interactionState.currentWordText) {
+    console.error(`[LayoutGuard] Failed to create word builder text - scene not ready`);
+    // Continue with degraded functionality - the game can still work without the word display
+  }
 
   // Add instructions
   layoutState.instructionText = scene.add
@@ -58,7 +115,7 @@ export function createGameLayout(
       {
         fontSize: Math.min(22, width * 0.028) + 'px', // 🎯 PHASE 2.2: Increased from 16px/0.02 for better readability
         fontStyle: 'bold', // 🎯 PHASE 2.2: Added bold weight for prominence
-        color: COLORS.textSubtle,
+        color: TEXT_COLORS.universalText || '#FAF0C7', // Universal text color /* old: COLORS.textSubtle */
         fontFamily: FONTS.body,
         align: 'center',
         wordWrap: { width: width * 0.8 }
@@ -94,13 +151,19 @@ export function resizeGame(
   //   });
   // }
   
-  // Update current word display
+  // Update current word display - FORCE VISIBLE positioning
   if (interactionState.currentWordText) {
-    interactionState.currentWordText.setPosition(width / 2, height - Math.min(150, height * 0.15));
+    // Use reliable visible position - always 25% down from top
+    const safeY = height * 0.25; // GUARANTEED VISIBLE
+    
+    interactionState.currentWordText.setPosition(width / 2, safeY);
     interactionState.currentWordText.setStyle({ 
-      fontSize: Math.min(24, width * 0.03) + 'px',
-      fontFamily: FONTS.heading
+      fontSize: Math.min(22, width * 0.028) + 'px', // MATCH instruction text sizing exactly
+      fontFamily: FONTS.body, // MATCH instruction text font exactly
+      fontStyle: 'bold' // MATCH instruction text weight exactly
     });
+    
+    console.log(`[Layout] Resize - Word text positioned at Y=${safeY} (GUARANTEED VISIBLE)`);
   }
   
   // Update instructions
@@ -118,6 +181,26 @@ export function resizeGame(
   if (boardState.currentBoard) {
     updateBoardDisplay();
   }
+}
+
+/**
+ * Reposition word builder text above the board when board is loaded
+ * @param scene - Phaser scene
+ * @param interactionState - Interaction state 
+ * @param boardState - Board state
+ */
+export function repositionWordBuilderText(
+  scene: Phaser.Scene,
+  interactionState: InteractionState,
+  boardState: BoardRenderingState
+): void {
+  if (!interactionState.currentWordText) return;
+
+  // Use reliable visible position - always 25% down from top
+  const safeY = scene.scale.gameSize.height * 0.25; // GUARANTEED VISIBLE
+  
+  console.log(`[Layout] Repositioning word builder to Y=${safeY} (GUARANTEED VISIBLE)`);
+  interactionState.currentWordText.setPosition(scene.scale.gameSize.width / 2, safeY);
 }
 
 /**

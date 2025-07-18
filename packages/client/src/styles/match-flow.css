@@ -525,6 +525,40 @@
   position: relative;
   height: 100%;
   display: flex;
+  flex-direction: row; /* Horizontal layout: sidebar + main content */
+  gap: 0.5rem; /* REDUCED spacing between sidebar and game board */
+}
+
+/* Left Sidebar with Stacked Cards */
+.hud-left-sidebar {
+  width: 280px; /* REDUCED width for tighter layout */
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Individual Cards */
+.hud-card {
+  background: #002840; /* Premium leaderboard background */
+  border: 2px solid #09637B; /* Midnight Green border */
+  border-radius: 15px;
+  padding: 1rem;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Card Headers - ALL use same style as original Live Scores */
+.card-header h3 {
+  margin: 0 0 1rem 0;
+  text-align: center;
+  color: #FAF0C7; /* Universal text color - CONSISTENT */
+  font-size: 1.3rem;
+  font-weight: normal;
+}
+
+/* Main Content Area */
+.hud-main-content {
+  flex: 1; /* Take remaining space */
+  display: flex;
   flex-direction: column;
 }
 
@@ -554,22 +588,11 @@
   gap: 0.25rem;
 }
 
-.round-label {
-  font-size: 0.9rem;
-  opacity: 0.8;
-  color: #8CE6EC; /* Electric Blue */
-}
-
 .round-numbers {
   font-size: 1.5rem;
   font-weight: bold;
   color: #FFE265; /* Golden highlight */
-}
-
-.timer-section {
-  flex: 1;
-  display: flex;
-  justify-content: center;
+  text-align: center;
 }
 
 .timer-container {
@@ -608,35 +631,20 @@
 }
 
 .timer-text-svg {
-  fill: #E2EEDD; /* Honeydew timer numbers */
+  fill: var(--universal-text, #FAF0C7); /* Universal text color /* old: #E2EEDD */
   font-family: 'Inter', monospace;
   font-weight: bold;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-.timer-label {
-  font-size: 0.9rem;
-  color: #8CE6EC; /* Electric Blue */
-  text-align: center;
-}
+/* Timer label now handled by card-header h3 */
 
 /* 🎯 PHASE C.3.4: Removed shuffle CSS classes - functionality eliminated
    Removed: .shuffle-control, .shuffle-button, .shuffle-icon, .shuffle-text, .shuffle-label, .shuffle-cost */
 
-.hud-leaderboard {
-  background: #002840; /* Premium leaderboard background */
-  border: 2px solid #09637B; /* Midnight Green border */
-  border-radius: 15px;
-  padding: 1rem;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
+/* Leaderboard now handled by .hud-card class */
 
-.leaderboard-header h3 {
-  margin: 0 0 1rem 0;
-  text-align: center;
-  color: #E1F5E4; /* Honeydew */
-  font-size: 1.3rem;
-}
+/* Leaderboard header now handled by .card-header h3 */
 
 .leaderboard-list {
   display: flex;

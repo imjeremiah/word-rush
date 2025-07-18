@@ -477,20 +477,20 @@ interface BoardConfig {
 
 /**
  * Default board configuration for enhanced gameplay (5x5 grid)
- * 🚀 PHASE 5x5: Upgraded to 5x5 for improved strategic gameplay
- * 🚀 OPTIMIZATION: Reduced minWordsRequired to 8 for faster generation while maintaining playability
+ * 🔧 SECTION 5 FIX: Further optimized for maximum speed and zero delays
  */
 const DEFAULT_BOARD_CONFIG: BoardConfig = {
   boardWidth: 5,   // Upgraded to 5x5 for enhanced gameplay
   boardHeight: 5,  // Upgraded to 5x5 for enhanced gameplay
-  minWordsRequired: 5, // Further optimized for maximum speed (was 8, originally 15)
-  maxGenerationAttempts: 50, // Increased attempts for larger board validation
+  minWordsRequired: 3, // 🔧 SECTION 5 FIX: Reduced to 3 for ultra-fast generation
+  maxGenerationAttempts: 25, // 🔧 SECTION 5 FIX: Reduced attempts for faster fallback
   minWordLength: 3,
 };
 
 /**
  * Generate a new game board with guaranteed minimum word count
  * Uses cache for instant delivery, falls back to generation if cache is empty
+ * 🔧 SECTION 5 FIX: Enhanced with aggressive cache management and faster fallback
  * @param dictionaryService - Dictionary service for word validation
  * @param config - Board generation configuration (optional, uses defaults)
  * @returns GameBoard with validated word count
@@ -501,24 +501,29 @@ export function generateBoard(
 ): GameBoard {
   console.time('generateBoard');
   
-  // Try to serve from cache first
+  // 🔧 SECTION 5 FIX: Always try to serve from cache first for zero-delay start
   if (boardCache.length > 0) {
     const cachedBoard = boardCache.shift()!;
     console.timeEnd('generateBoard');
-    console.log(`[${new Date().toISOString()}] 🚀 Served board from cache (${boardCache.length} remaining)`);
+    console.log(`[${new Date().toISOString()}] 🚀 Served board from cache (${boardCache.length} remaining) - ZERO DELAY`);
     
-    // If cache is low, pre-generate more boards asynchronously
-    if (boardCache.length < 3 && !isPreGenerating && dictionaryService.isReady()) {
-      preGenerateBoards(dictionaryService, 5).catch(console.error);
+    // 🔧 SECTION 5 FIX: Aggressive cache refill - start immediately if cache gets low
+    if (boardCache.length < 5 && !isPreGenerating && dictionaryService.isReady()) {
+      console.log(`[${new Date().toISOString()}] 🔄 Cache low (${boardCache.length}) - starting immediate pre-generation`);
+      preGenerateBoards(dictionaryService, 8).catch(console.error);
     }
     
     return cachedBoard;
   }
 
-  // Fallback to immediate generation
-  console.log(`[${new Date().toISOString()}] ⚠️ Cache empty, generating board on-demand`);
+  // 🔧 SECTION 5 FIX: Emergency fallback with relaxed requirements for speed
+  console.warn(`[${new Date().toISOString()}] ⚠️ Cache empty, using emergency fast generation`);
   
   const boardConfig = { ...DEFAULT_BOARD_CONFIG, ...config };
+  // 🔧 SECTION 5 FIX: Even more relaxed requirements for emergency generation
+  boardConfig.minWordsRequired = Math.min(boardConfig.minWordsRequired, 2); // Accept any board with 2+ words
+  boardConfig.maxGenerationAttempts = Math.min(boardConfig.maxGenerationAttempts, 10); // Max 10 attempts
+  
   let attempts = 0;
   let board: GameBoard;
   let foundWords: string[];
@@ -526,17 +531,31 @@ export function generateBoard(
   do {
     attempts++;
     board = createRandomBoardOptimized();
-    foundWords = findAllValidWordsOptimized(board, dictionaryService);
+    foundWords = findAllValidWordsOptimized(board, dictionaryService, 5); // Stop at 5 words for speed
     
     if (foundWords.length >= boardConfig.minWordsRequired) {
       console.timeEnd('generateBoard');
-      console.log(`[${new Date().toISOString()}] Generated valid board with ${foundWords.length} words in ${attempts} attempts`);
+      console.log(`[${new Date().toISOString()}] ✅ Emergency generated valid board with ${foundWords.length} words in ${attempts} attempts`);
+      
+      // 🔧 SECTION 5 FIX: Immediately start cache refill after emergency generation
+      if (!isPreGenerating && dictionaryService.isReady()) {
+        console.log(`[${new Date().toISOString()}] 🔄 Starting cache refill after emergency generation`);
+        preGenerateBoards(dictionaryService, 10).catch(console.error);
+      }
+      
       return board;
     }
   } while (attempts < boardConfig.maxGenerationAttempts);
 
+  // 🔧 SECTION 5 FIX: Ultimate fallback - return any board to prevent match start failure
   console.timeEnd('generateBoard');
-  console.warn(`[${new Date().toISOString()}] Could not generate board with ${boardConfig.minWordsRequired} words in ${attempts} attempts. Using board with ${foundWords.length} words.`);
+  console.warn(`[${new Date().toISOString()}] ⚠️ Ultimate fallback: Using board with ${foundWords.length} words after ${attempts} attempts`);
+  
+  // Still start cache refill
+  if (!isPreGenerating && dictionaryService.isReady()) {
+    preGenerateBoards(dictionaryService, 10).catch(console.error);
+  }
+  
   return board;
 }
 

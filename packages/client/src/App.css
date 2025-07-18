@@ -44,7 +44,8 @@
   --ui-hover: #FDDC7A;           /* Preserved golden hover */
   
   /* Text Colors - Oceanic Typography */
-  --text-tile-letters: #F9F0C6;  /* Preserved - on tiles */
+  --universal-text: #FAF0C7;     /* Universal text color for consistency */
+  --text-tile-letters: #FAF0C7;  /* Updated - Universal text (on tiles) /* old: #F9F0C6 */
   --text-player-names: var(--oceanic-foam);
   --text-player-scores: var(--sunset-orange);
   --text-button: var(--oceanic-foam);
@@ -292,7 +293,7 @@
 .word-text {
   font-size: 1.2rem;
   font-weight: 600;
-  color: var(--text-player-names);
+  color: var(--universal-text, #FAF0C7); /* Universal text color /* old: var(--text-player-names) */
   font-family: var(--font-heading);
 }
 
@@ -400,7 +401,7 @@
 .instructions {
   margin: 0;
   padding-left: 1.5rem;
-  color: var(--text-player-scores);
+  color: var(--universal-text, #FAF0C7); /* Universal text color /* old: var(--text-player-scores) */
   font-family: var(--font-body);
   line-height: 1.6;
 }

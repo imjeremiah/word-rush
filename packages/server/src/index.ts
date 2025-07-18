@@ -344,13 +344,31 @@ app.use(
   }
 );
 
-// Start server
+// Start the server
 server.listen(PORT, () => {
-  console.log(
-    `[${new Date().toISOString()}] Word Rush server running on port ${PORT}`
-  );
-  console.log(
-    `[${new Date().toISOString()}] Environment: ${process.env.NODE_ENV || 'development'}`
-  );
+  console.log(`[${new Date().toISOString()}] Word Rush server running on port ${PORT}`);
+  console.log(`[${new Date().toISOString()}] Environment: ${process.env.NODE_ENV || 'development'}`);
+  
+  // 🔧 SECTION 5 FIX: Pre-populate board cache on server startup for zero-delay match starts
+  console.log(`[${new Date().toISOString()}] 🔧 SECTION 5 FIX: Pre-populating board cache for instant match starts...`);
+  import('./services/board.js').then(({ preGenerateBoards }) => {
+    // Wait for dictionary to be ready, then pre-generate boards
+    const startCachePopulation = () => {
+      if (dictionaryService.isReady()) {
+        preGenerateBoards(dictionaryService, 15).then(() => {
+          console.log(`[${new Date().toISOString()}] ✅ SECTION 5 FIX: Board cache pre-populated - ready for zero-delay match starts`);
+        }).catch(error => {
+          console.warn(`[${new Date().toISOString()}] ⚠️ SECTION 5 FIX: Board cache pre-population failed:`, error);
+        });
+      } else {
+        // Dictionary not ready yet, try again in 100ms
+        setTimeout(startCachePopulation, 100);
+      }
+    };
+    
+    startCachePopulation();
+  }).catch(error => {
+    console.warn(`[${new Date().toISOString()}] ⚠️ SECTION 5 FIX: Could not import board service for cache pre-population:`, error);
+  });
 });
 

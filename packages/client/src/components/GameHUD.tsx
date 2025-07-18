@@ -89,6 +89,15 @@ export const GameHUD = React.memo<GameHUDProps>(({
   }
 
   /**
+   * 🎯 SECTION 3.3: Helper function to display full difficulty names
+   * @param difficulty - The difficulty level to display
+   * @returns Full difficulty name in uppercase
+   */
+  function displayDifficulty(difficulty: string): string {
+    return difficulty.toUpperCase();
+  }
+
+  /**
    * Sort players by current score for leaderboard
    */
   const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
@@ -104,26 +113,27 @@ export const GameHUD = React.memo<GameHUDProps>(({
   return (
     <div className="game-hud">
       
-      {/* Top Bar with Timer and Round Info */}
-      <div className="hud-top-bar">
+      {/* Left Sidebar with Stacked Cards */}
+      <div className="hud-left-sidebar">
         
-        {/* Round Information */}
-        <div className="round-info">
+        {/* Round Card */}
+        <div className="hud-card round-card">
+          <div className="card-header">
+            <h3>Round</h3>
+          </div>
           <div className="round-display">
-            <span className="round-label">Round</span>
             <span className="round-numbers">
               {timer.currentRound} / {timer.totalRounds}
             </span>
           </div>
         </div>
 
-        {/* Timer Display with Circular SVG Progress */}
-        <div className="timer-section">
+        {/* Timer Card */}
+        <div className="hud-card timer-card">
+          <div className="card-header">
+            <h3>Time Remaining</h3>
+          </div>
           <div className="timer-container">
-            
-            {/* 🎯 PHASE C.4.1: Timer Label moved above for uniform structure with Round */}
-            <div className="timer-label">Time Remaining</div>
-            
             {/* Circular Timer Ring */}
             <div className="circular-timer">
               <svg className="timer-ring" width="120" height="120" viewBox="0 0 120 120">
@@ -168,16 +178,9 @@ export const GameHUD = React.memo<GameHUDProps>(({
           </div>
         </div>
 
-        {/* 🎯 PHASE C.3.1: Shuffle Control removed - functionality eliminated */}
-
-      </div>
-
-      {/* Leaderboard Sidebar */}
-      <div className="hud-leaderboard">
-        <div className="leaderboard-container">
-          
-          {/* Leaderboard Header */}
-          <div className="leaderboard-header">
+        {/* Live Scores Card */}
+        <div className="hud-card leaderboard-card">
+          <div className="card-header">
             <h3>Live Scores</h3>
           </div>
           
@@ -221,7 +224,7 @@ export const GameHUD = React.memo<GameHUDProps>(({
                       className="player-difficulty"
                       style={{ color: getDifficultyColor(player.difficulty || 'medium') }}
                     >
-                      {(player.difficulty || 'medium').charAt(0).toUpperCase()}
+                      {displayDifficulty(player.difficulty || 'medium')}
                     </div>
                   </div>
                   
@@ -239,20 +242,26 @@ export const GameHUD = React.memo<GameHUDProps>(({
           {/* 🎯 PHASE D.2.1: Current Player Stats section removed - live scores now shows only player rankings */}
 
         </div>
+        
       </div>
 
-      {/* Status Messages - Removed "Round Paused" as auto-unpause is now implemented */}
+      {/* Main Content Area */}
+      <div className="hud-main-content">
+        
+        {/* Status Messages - Removed "Round Paused" as auto-unpause is now implemented */}
 
-      {/* Low Time Warning */}
-      {timer.timeRemaining <= 10000 && isGameActive && (
-        <div className="low-time-warning">
-          <div className="warning-text">⚠️ 10 Seconds Remaining! ⚠️</div>
+        {/* Low Time Warning */}
+        {timer.timeRemaining <= 10000 && isGameActive && (
+          <div className="low-time-warning">
+            <div className="warning-text">⚠️ 10 Seconds Remaining! ⚠️</div>
+          </div>
+        )}
+
+        {/* Speed Bonus Indicator */}
+        <div className="speed-bonus-indicator">
+          <div className="bonus-text">Speed Bonus Active! 1.5x</div>
         </div>
-      )}
-
-      {/* Speed Bonus Indicator */}
-      <div className="speed-bonus-indicator">
-        <div className="bonus-text">Speed Bonus Active! 1.5x</div>
+        
       </div>
 
     </div>

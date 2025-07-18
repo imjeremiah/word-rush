@@ -48,7 +48,17 @@ interface RoomModule {
   getAllRooms: () => Map<string, GameRoom>;
   cleanup: () => void;
   deleteRoom: (roomCode: string) => boolean;
+  recordGameActivity: (roomCode: string) => void; // 🔴 PHASE 2B: Export activity recording function
+  // 🔧 SECTION 5 FIX: Add timeout management methods
+  storeMatchStartTimeout: (roomCode: string, timeout: NodeJS.Timeout) => void;
+  clearMatchStartTimeout: (roomCode: string) => void;
 }
+
+// Track transition timeouts to prevent race conditions
+const transitionTimeouts = new Map<string, NodeJS.Timeout>();
+
+// 🔧 SECTION 5 FIX: Track match start timeouts to prevent GO signal hangs
+const matchStartTimeouts = new Map<string, NodeJS.Timeout>();
 
 /**
  * Create a room management service for multiplayer game rooms
@@ -564,6 +574,8 @@ function createRoomService(cleanupIntervalMs: number = 10 * 60 * 1000): RoomModu
       isReady: false,
       roundScore: 0,
       crowns: crownCount,
+      // 🎯 SECTION 3.1: Set default difficulty to 'easy' with safety fallback
+      difficulty: process.env.USE_EASY_DEFAULT !== 'false' ? 'easy' : 'medium', // Feature flag with 'easy' as new default
     };
 
     room.players.push(newPlayer);
@@ -600,7 +612,7 @@ function createRoomService(cleanupIntervalMs: number = 10 * 60 * 1000): RoomModu
 
     // If no players left, delete the room
     if (room.players.length === 0) {
-      rooms.delete(roomCode);
+      rooms.delete(roomCode.toUpperCase());
       console.log(`[${new Date().toISOString()}] Room deleted (empty): ${roomCode}`);
       return undefined;
     }
@@ -711,15 +723,31 @@ function createRoomService(cleanupIntervalMs: number = 10 * 60 * 1000): RoomModu
     room.isGameActive = true;
     room.lastActivity = Date.now();
 
-    // 🔧 TASK 1: Generate board immediately for preloading (before countdown)
+    // 🔧 SECTION 5 FIX: Use cached board generation for instant match start
     const boardGenerationStart = Date.now();
-    const preloadedBoard = generateBoard(dictionaryService);
-    const boardGenerationTime = Date.now() - boardGenerationStart;
+    let preloadedBoard;
     
+    try {
+      // Try to get a cached board first for instant delivery
+      preloadedBoard = generateBoard(dictionaryService); // This now uses cache when available
+      const boardGenerationTime = Date.now() - boardGenerationStart;
+      
+      if (boardGenerationTime > 100) {
+        console.warn(`[${new Date().toISOString()}] ⚠️ Board generation took ${boardGenerationTime}ms for room ${roomCode} - consider pre-generating more boards`);
+      } else {
+        console.log(`[${new Date().toISOString()}] ✅ Fast board generation (${boardGenerationTime}ms) for room ${roomCode}`);
+      }
+      
+    } catch (error) {
+      console.error(`[${new Date().toISOString()}] ❌ Board generation failed for room ${roomCode}:`, error);
+      return undefined; // Fail the match start if board generation fails
+    }
+
     // Generate board checksum for validation
     const boardChecksum = generateBoardChecksum(preloadedBoard);
     
     // Log board generation for verification
+    const boardGenerationTime = Date.now() - boardGenerationStart;
     console.log(`[${new Date().toISOString()}] 🎲 SYNC_DEBUG: Board pre-generated for room ${roomCode}: checksum=${boardChecksum}, generation_time=${boardGenerationTime}ms, tiles_count=${preloadedBoard.width * preloadedBoard.height}`);
 
     // Initialize game state with preloaded board
@@ -776,7 +804,22 @@ function createRoomService(cleanupIntervalMs: number = 10 * 60 * 1000): RoomModu
    */
   function startRound(roomCode: string, io: any, dictionaryService: DictionaryModule): void {
     const room = rooms.get(roomCode.toUpperCase());
-    if (!room || !room.gameState) return;
+    if (!room || !room.gameState) {
+      console.warn(`[${new Date().toISOString()}] ⚠️ Cannot start round - room or gameState not found: ${roomCode}`);
+      return;
+    }
+
+    // 🔧 SAFETY CHECK: Prevent starting rounds when not in active match
+    if (!room.isGameActive || room.gameState.matchStatus !== 'starting') {
+      console.warn(`[${new Date().toISOString()}] ⚠️ Cannot start round - room not in active match state. Room active: ${room.isGameActive}, match status: ${room.gameState.matchStatus}, room: ${roomCode}`);
+      return;
+    }
+
+    // 🔧 SAFETY CHECK: Ensure minimum players 
+    if (room.players.length < 2) {
+      console.warn(`[${new Date().toISOString()}] ⚠️ Cannot start round - insufficient players (${room.players.length}) in room: ${roomCode}`);
+      return;
+    }
 
     console.log(`[${new Date().toISOString()}] Starting round ${room.gameState.currentRound} for room ${roomCode} with ${room.players.length} players`);
 
@@ -785,7 +828,17 @@ function createRoomService(cleanupIntervalMs: number = 10 * 60 * 1000): RoomModu
     room.gameState.isGameActive = true;
     room.isGameActive = true;
     room.gameState.roundStartTime = Date.now();
-    room.gameState.timeRemaining = 90000; // 90 seconds in milliseconds
+    
+    // 🎯 SECTION 4.2: Use settings instead of hardcoded duration with validation
+    let roundDurationMs = (room.settings.roundDuration || 90) * 1000; // Convert seconds to milliseconds
+    
+    // Safety validation: ensure duration is within valid bounds
+    if (roundDurationMs < 15000 || roundDurationMs > 120000) {
+      console.warn(`[${new Date().toISOString()}] Invalid round duration: ${roundDurationMs}ms for room ${roomCode}, falling back to 90s`);
+      roundDurationMs = 90000; // Safety fallback to 90 seconds
+    }
+    
+    room.gameState.timeRemaining = roundDurationMs;
 
     // 🔧 CRITICAL FIX: Use preloaded board for first round, generate new board for subsequent rounds
     let boardChecksum: string;
@@ -826,7 +879,7 @@ function createRoomService(cleanupIntervalMs: number = 10 * 60 * 1000): RoomModu
       }
 
       const elapsed = Date.now() - (room.gameState.roundStartTime || 0);
-      const newTimeRemaining = Math.max(0, 90000 - elapsed);
+      const newTimeRemaining = Math.max(0, roundDurationMs - elapsed);
       const oldTimeRemaining = room.gameState.timeRemaining;
       
       room.gameState.timeRemaining = newTimeRemaining;
@@ -935,15 +988,41 @@ function createRoomService(cleanupIntervalMs: number = 10 * 60 * 1000): RoomModu
     // Check if match is complete
     if (room.gameState.currentRound >= room.gameState.totalRounds) {
       // Match is complete
-      setTimeout(() => {
+      const endMatchTimeout = setTimeout(() => {
+        // 🔧 SAFETY CHECK: Verify room still exists and is in correct state
+        const currentRoom = rooms.get(roomCode.toUpperCase());
+        if (!currentRoom || !currentRoom.gameState || currentRoom.gameState.matchStatus !== 'round-end') {
+          console.warn(`[${new Date().toISOString()}] ⚠️ Skipping endMatch - room state changed: ${roomCode}`);
+          transitionTimeouts.delete(roomCode);
+          return;
+        }
+        
+        transitionTimeouts.delete(roomCode);
         endMatch(roomCode, io);
       }, 5000); // Show round summary for 5 seconds
+      
+      // Store timeout for cleanup
+      transitionTimeouts.set(roomCode, endMatchTimeout);
     } else {
       // Start next round after delay
-      setTimeout(() => {
+      const nextRoundTimeout = setTimeout(() => {
+        // 🔧 SAFETY CHECK: Verify room still exists and is in correct state for next round
+        const currentRoom = rooms.get(roomCode.toUpperCase());
+        if (!currentRoom || !currentRoom.gameState || 
+            currentRoom.gameState.matchStatus !== 'round-end' || 
+            !currentRoom.isGameActive) {
+          console.warn(`[${new Date().toISOString()}] ⚠️ Skipping next round start - room state changed: ${roomCode}`);
+          transitionTimeouts.delete(roomCode);
+          return;
+        }
+        
+        transitionTimeouts.delete(roomCode);
         room.gameState!.currentRound++;
         startRound(roomCode, io, dictionaryService);
       }, 5000); // Show round summary for 5 seconds
+      
+      // Store timeout for cleanup
+      transitionTimeouts.set(roomCode, nextRoundTimeout);
     }
   }
 
@@ -1030,12 +1109,27 @@ function createRoomService(cleanupIntervalMs: number = 10 * 60 * 1000): RoomModu
       boardResyncIntervals.delete(roomCode);
     }
 
+    // 🔧 SAFETY: Clear any pending transition timeouts to prevent race conditions
+    if (transitionTimeouts.has(roomCode)) {
+      clearTimeout(transitionTimeouts.get(roomCode)!);
+      transitionTimeouts.delete(roomCode);
+      console.log(`[${new Date().toISOString()}] ✅ Cleared pending transition timeout for room ${roomCode}`);
+    }
+
+    // 🔧 SECTION 5 FIX: Clear any pending match start timeouts to prevent hanging GO signals
+    if (matchStartTimeouts.has(roomCode)) {
+      clearTimeout(matchStartTimeouts.get(roomCode)!);
+      matchStartTimeouts.delete(roomCode);
+      console.log(`[${new Date().toISOString()}] ✅ Cleared pending match start timeout for room ${roomCode}`);
+    }
+
     // Reset game state
     room.gameState = {
       players: room.players,
       currentRound: 1,
       totalRounds: room.gameState?.totalRounds || 3,
-      timeRemaining: 90000,
+      // 🎯 SECTION 4.2: Use settings for initial time remaining with fallback
+      timeRemaining: (room.settings.roundDuration || 90) * 1000,
       isGameActive: false,
       matchStatus: 'lobby',
       settings: room.gameState?.settings || {
@@ -1096,6 +1190,19 @@ function createRoomService(cleanupIntervalMs: number = 10 * 60 * 1000): RoomModu
       clearInterval(timer);
     });
     roundTimers.clear();
+    
+    // 🔧 SAFETY: Clear all transition timeouts
+    transitionTimeouts.forEach((timeout, roomCode) => {
+      clearTimeout(timeout);
+    });
+    transitionTimeouts.clear();
+    
+    // 🔧 SECTION 5 FIX: Clear all match start timeouts
+    matchStartTimeouts.forEach((timeout, roomCode) => {
+      clearTimeout(timeout);
+    });
+    matchStartTimeouts.clear();
+    
     cleanupInactiveRooms();
   }
 
@@ -1120,6 +1227,13 @@ function createRoomService(cleanupIntervalMs: number = 10 * 60 * 1000): RoomModu
     cleanup,
     deleteRoom,
     recordGameActivity, // 🔴 PHASE 2B: Export activity recording function
+    // 🔧 SECTION 5 FIX: Add timeout management methods
+    storeMatchStartTimeout: (roomCode: string, timeout: NodeJS.Timeout) => {
+      matchStartTimeouts.set(roomCode, timeout);
+    },
+    clearMatchStartTimeout: (roomCode: string) => {
+      matchStartTimeouts.delete(roomCode);
+    }
   };
 }
 
