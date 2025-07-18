@@ -9,6 +9,7 @@ import { Server, Socket } from 'socket.io';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import crypto from 'crypto';
 import { socketRateLimiter } from './services/rate-limiter.js';
 import { dictionaryService } from './services/dictionary.js';
 import { generateBoard, preGenerateBoards, getCacheStats, clearMemoCache } from './services/board.js';
@@ -202,7 +203,18 @@ io.on('connection', (socket) => {
   
   // Send initial board to the player
   const initialBoard = generateBoard(dictionaryService);
-  socket.emit('game:initial-board', { board: initialBoard });
+  
+  // 🔧 TASK 4: Add checksum for validation
+  const boardString = JSON.stringify({
+    width: initialBoard.width,
+    height: initialBoard.height,
+    tiles: initialBoard.tiles.map(row => 
+      row.map(tile => ({ letter: tile.letter, points: tile.points, x: tile.x, y: tile.y }))
+    )
+  });
+  const initialBoardChecksum = crypto.createHash('md5').update(boardString).digest('hex');
+  
+  socket.emit('game:initial-board', { board: initialBoard, boardChecksum: initialBoardChecksum });
 
   // Create services object for handlers
   const services = {

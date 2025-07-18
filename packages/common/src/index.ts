@@ -18,8 +18,8 @@ export interface ServerToClientEvents {
   'word:invalid': (data: { word: string; reason: string }) => void;
   
   // Board events
-  'game:board-update': (data: { board: GameBoard; removedTiles?: { x: number; y: number }[] }) => void;
-  'game:initial-board': (data: { board: GameBoard }) => void;
+  'game:board-update': (data: { board: GameBoard; boardChecksum: string; removedTiles?: { x: number; y: number }[] }) => void;
+  'game:initial-board': (data: { board: GameBoard; boardChecksum: string }) => void;
   'game:tile-changes': (data: TileChanges) => void; // New incremental update event
   'board:resync': (data: { board: GameBoard; boardChecksum: string; timeRemaining: number; sequenceNumber: number; syncType: string }) => void;
   
@@ -43,14 +43,15 @@ export interface ServerToClientEvents {
   'room:not-found': (data: { message: string }) => void;
   
   // Match flow events
-  'match:starting': (data: { countdown: number }) => void;
+  'match:starting': (data: { countdown: number; pendingBoard: GameBoard; boardChecksum: string }) => void;
+  'match:go': () => void;
   'match:started': (data: { board: GameBoard; boardChecksum: string; timeRemaining: number; currentRound: number; totalRounds: number; playerCount: number }) => void;
   'match:round-end': (data: { scores: Array<{ playerId: string; username: string; score: number; roundScore: number }> }) => void;
   'match:finished': (data: { winner: Player; finalScores: Array<{ playerId: string; username: string; totalScore: number }> }) => void;
   'match:timer-update': (data: { timeRemaining: number }) => void;
   
   // Shuffle events
-  'shuffle:result': (data: { board: GameBoard; costDeducted: number; wasDead: boolean }) => void;
+  'shuffle:result': (data: { board: GameBoard; boardChecksum: string; costDeducted: number; wasDead: boolean }) => void;
   'shuffle:failed': (data: { reason: string; currentScore: number; costRequired: number }) => void;
 }
 
@@ -75,6 +76,7 @@ export interface ClientToServerEvents {
   
   // Player actions
   'player:reconnect': (data: { sessionId: string; username?: string }) => void;
+  'player:rejoin': () => void;
   'player:set-difficulty': (data: { difficulty: DifficultyLevel }) => void;
   
   // Match flow events

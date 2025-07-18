@@ -288,7 +288,7 @@ export function onTilePointerOver(
 export function onPointerUp(
   boardState: BoardRenderingState,
   interactionState: InteractionState,
-  gameState?: 'menu' | 'lobby' | 'match' | 'round-end' | 'match-end',
+  gameState?: 'menu' | 'lobby' | 'countdown' | 'match' | 'round-end' | 'match-end',
   getCurrentDifficulty?: () => DifficultyLevel
 ): void {
   if (!interactionState.isSelecting || interactionState.selectedTiles.length === 0) return;
@@ -468,7 +468,7 @@ export function initializeGlobalPointerEvents(
   scene: Phaser.Scene,
   boardState: BoardRenderingState,
   interactionState: InteractionState,
-  getGameState: () => 'menu' | 'lobby' | 'match' | 'round-end' | 'match-end',
+  getGameState: () => 'menu' | 'lobby' | 'countdown' | 'match' | 'round-end' | 'match-end',
   getCurrentDifficulty: () => DifficultyLevel
 ): void {
   // Set up global pointer up event

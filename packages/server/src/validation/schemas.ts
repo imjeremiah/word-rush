@@ -75,6 +75,8 @@ export const ClientEventSchemas = {
     username: z.string().min(1).max(50).optional(),
   }),
 
+  'player:rejoin': z.undefined(),
+
   'player:set-difficulty': z.object({
     difficulty: DifficultyLevelSchema,
   }),

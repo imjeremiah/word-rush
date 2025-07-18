@@ -3,7 +3,7 @@
  * Provides game context and manages the overall application layout
  */
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { GameProvider, useGameContext } from './context/GameContext';
 import GameConnection from './components/GameConnection';
 import { GameHUD } from './components/GameHUD';
@@ -14,6 +14,7 @@ import LobbyScreen from './components/LobbyScreen';
 import CountdownScreen from './components/CountdownScreen';
 import { RoundSummary } from './components/RoundSummary';
 import { MatchComplete } from './components/MatchComplete';
+import MonitoringDashboard from './components/MonitoringDashboard';
 import { notifications } from './services/notifications';
 import './App.css';
 import './styles/lobby.css';
@@ -77,6 +78,22 @@ const AppContent = React.memo((): JSX.Element => {
   const canShuffle = React.useMemo(() => {
     return playerPoints >= 5;
   }, [playerPoints]);
+
+  // 📊 DEPLOY 1: Monitoring dashboard state
+  const [showMonitoringDashboard, setShowMonitoringDashboard] = useState(false);
+
+  // 📊 DEPLOY 1: Monitoring dashboard hotkey (Ctrl+Shift+M)
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.ctrlKey && event.shiftKey && event.key === 'M') {
+        event.preventDefault();
+        setShowMonitoringDashboard(prev => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // 🟡 PHASE 3A: Memoized event handlers to prevent unnecessary re-renders
   const handleShuffle = React.useCallback(() => {
@@ -191,6 +208,12 @@ const AppContent = React.memo((): JSX.Element => {
           onReturnToLobby={handleReturnToLobby}
         />
       )}
+
+      {/* 📊 DEPLOY 1: Monitoring Dashboard (Ctrl+Shift+M to toggle) */}
+      <MonitoringDashboard
+        isVisible={showMonitoringDashboard}
+        onClose={() => setShowMonitoringDashboard(false)}
+      />
     </div>
   );
 });

@@ -38,7 +38,7 @@ interface RoomModule {
   updatePlayerReady: (roomCode: string, playerId: string, isReady: boolean) => GameRoom | undefined;
   updateRoomSettings: (roomCode: string, hostId: string, settings: MatchSettings) => GameRoom | undefined;
   setPlayerDifficulty: (roomCode: string, playerId: string, difficulty: import('@word-rush/common').DifficultyLevel) => GameRoom | undefined;
-  startMatch: (roomCode: string, hostId: string) => GameRoom | undefined;
+  startMatch: (roomCode: string, hostId: string, dictionaryService: DictionaryModule) => GameRoom | undefined;
   startRound: (roomCode: string, io: any, dictionaryService: DictionaryModule) => void;
   endRound: (roomCode: string, io: any, dictionaryService: DictionaryModule) => void;
   endMatch: (roomCode: string, io: any) => void;
@@ -399,6 +399,7 @@ function createRoomService(cleanupIntervalMs: number = 10 * 60 * 1000): RoomModu
 
   /**
    * Handle player rejoin and resync their board state
+   * Handles both active games and countdown state with preloaded boards
    * @param playerId - Socket ID of rejoining player
    * @param socket - Socket instance for the rejoining player
    */
@@ -415,7 +416,43 @@ function createRoomService(cleanupIntervalMs: number = 10 * 60 * 1000): RoomModu
       player.isConnected = true;
     }
 
-    // Send current board state to rejoining player
+    // 🔧 TASK 3: Handle reconnections during countdown phase
+    if (room.gameState.matchStatus === 'starting') {
+      const now = Date.now();
+      const countdownStartTime = room.gameState.roundStartTime || now;
+      const elapsedCountdown = now - countdownStartTime;
+      const remainingCountdown = Math.max(0, 3000 - elapsedCountdown); // 3000ms = 3 seconds
+
+      console.log(`[${new Date().toISOString()}] 🔄 SYNC_DEBUG: Player ${playerId} rejoining during countdown: elapsed=${elapsedCountdown}ms, remaining=${remainingCountdown}ms`);
+
+      // If countdown has already finished, send immediate match:go
+      if (remainingCountdown <= 0) {
+        console.log(`[${new Date().toISOString()}] ⚡ Player ${playerId} rejoined after countdown ended - sending immediate 'match:go'`);
+        socket.emit('match:go');
+        // Continue with normal rejoin logic below
+      } else {
+        // Send preloaded board with countdown information
+        const currentChecksum = generateBoardChecksum(room.gameState.board);
+        const countdownRejoinPayload = {
+          board: room.gameState.board,
+          boardChecksum: currentChecksum,
+          timeRemaining: room.gameState.timeRemaining,
+          currentRound: room.gameState.currentRound,
+          totalRounds: room.gameState.totalRounds,
+          playerScore: player?.score || 0,
+          syncType: 'rejoin-countdown',
+          isInCountdown: true,
+          remainingCountdown: remainingCountdown
+        };
+
+        console.log(`[${new Date().toISOString()}] Player ${playerId} rejoined during countdown in room ${room.roomCode}: sending preloaded board (checksum=${currentChecksum}, countdown=${remainingCountdown}ms)`);
+        socket.emit('board:resync', countdownRejoinPayload);
+        socket.emit('player:rejoin-success', { message: 'Rejoined during countdown - waiting for match start', room });
+        return; // Exit early for countdown state
+      }
+    }
+
+    // Send current board state to rejoining player (normal rejoin)
     const currentChecksum = generateBoardChecksum(room.gameState.board);
     const rejoinPayload = {
       board: room.gameState.board,
@@ -650,12 +687,13 @@ function createRoomService(cleanupIntervalMs: number = 10 * 60 * 1000): RoomModu
 
   /**
    * Start a match in the room (host only)
-   * Validates all players are ready and minimum player count is met
+   * Validates all players are ready, generates board immediately for preloading
    * @param roomCode - Room code to start match in
    * @param hostId - Socket ID of the host (must match room host)
-   * @returns Updated room with active game or undefined if not authorized/ready
+   * @param dictionaryService - Dictionary service for board generation and validation
+   * @returns Updated room with active game and preloaded board, or undefined if not authorized/ready
    */
-  function startMatch(roomCode: string, hostId: string): GameRoom | undefined {
+  function startMatch(roomCode: string, hostId: string, dictionaryService: DictionaryModule): GameRoom | undefined {
     const room = rooms.get(roomCode.toUpperCase());
     if (!room || room.hostId !== hostId) return undefined;
 
@@ -673,7 +711,18 @@ function createRoomService(cleanupIntervalMs: number = 10 * 60 * 1000): RoomModu
     room.isGameActive = true;
     room.lastActivity = Date.now();
 
-    // Initialize game state
+    // 🔧 TASK 1: Generate board immediately for preloading (before countdown)
+    const boardGenerationStart = Date.now();
+    const preloadedBoard = generateBoard(dictionaryService);
+    const boardGenerationTime = Date.now() - boardGenerationStart;
+    
+    // Generate board checksum for validation
+    const boardChecksum = generateBoardChecksum(preloadedBoard);
+    
+    // Log board generation for verification
+    console.log(`[${new Date().toISOString()}] 🎲 SYNC_DEBUG: Board pre-generated for room ${roomCode}: checksum=${boardChecksum}, generation_time=${boardGenerationTime}ms, tiles_count=${preloadedBoard.width * preloadedBoard.height}`);
+
+    // Initialize game state with preloaded board
     room.gameState = {
       players: room.players.map(p => ({ ...p, roundScore: 0 })),
       currentRound: 1,
@@ -683,9 +732,10 @@ function createRoomService(cleanupIntervalMs: number = 10 * 60 * 1000): RoomModu
       matchStatus: 'starting' as MatchStatus,
       settings: room.settings,
       roundStartTime: Date.now(),
+      board: preloadedBoard, // 🔧 Add preloaded board to game state
     };
 
-    console.log(`[${new Date().toISOString()}] Match started in room: ${roomCode}`);
+    console.log(`[${new Date().toISOString()}] Match started in room: ${roomCode} with preloaded board (checksum: ${boardChecksum})`);
     return room;
   }
 
@@ -737,14 +787,23 @@ function createRoomService(cleanupIntervalMs: number = 10 * 60 * 1000): RoomModu
     room.gameState.roundStartTime = Date.now();
     room.gameState.timeRemaining = 90000; // 90 seconds in milliseconds
 
-    // Generate new board for this round - ONCE for all players
-    const boardGenerationStart = Date.now();
-    room.gameState.board = generateBoard(dictionaryService);
-    const boardGenerationTime = Date.now() - boardGenerationStart;
+    // 🔧 CRITICAL FIX: Use preloaded board for first round, generate new board for subsequent rounds
+    let boardChecksum: string;
+    let boardGenerationTime = 0;
     
-    // Generate board checksum for validation
-    const boardChecksum = generateBoardChecksum(room.gameState.board);
-    console.log(`[${new Date().toISOString()}] Board generated for room ${roomCode}: checksum=${boardChecksum}, generation_time=${boardGenerationTime}ms, tiles_count=${room.gameState.board.width * room.gameState.board.height}`);
+    if (room.gameState.currentRound === 1 && room.gameState.board) {
+      // First round: Use the preloaded board from startMatch()
+      boardChecksum = generateBoardChecksum(room.gameState.board);
+      console.log(`[${new Date().toISOString()}] 🎲 Using preloaded board for round 1 in room ${roomCode}: checksum=${boardChecksum}, tiles_count=${room.gameState.board.width * room.gameState.board.height}`);
+    } else {
+      // Subsequent rounds: Generate new board
+      const boardGenerationStart = Date.now();
+      room.gameState.board = generateBoard(dictionaryService);
+      boardGenerationTime = Date.now() - boardGenerationStart;
+      
+      boardChecksum = generateBoardChecksum(room.gameState.board);
+      console.log(`[${new Date().toISOString()}] Board generated for round ${room.gameState.currentRound} in room ${roomCode}: checksum=${boardChecksum}, generation_time=${boardGenerationTime}ms, tiles_count=${room.gameState.board.width * room.gameState.board.height}`);
+    }
 
     // Validate board integrity before sending to players
     if (!room.gameState.board || !room.gameState.board.tiles || room.gameState.board.tiles.length === 0) {

@@ -24,6 +24,7 @@ const DEBUG_SCENE_TRANSITIONS = false; // Toggle for production deployment
 // Types for board rendering state
 export interface BoardRenderingState {
   currentBoard: GameBoard | null;
+  pendingBoard: GameBoard | null; // 🔧 TASK 1: Board preloaded during countdown but not yet rendered
   tileSprites: Phaser.GameObjects.Rectangle[][];
   tileTexts: Phaser.GameObjects.Text[][];
   shadowSprites: Phaser.GameObjects.Rectangle[][]; // Track shadow tiles for proper cleanup

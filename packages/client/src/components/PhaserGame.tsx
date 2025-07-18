@@ -39,7 +39,7 @@ import {
 
 interface PhaserGameProps {
   socket?: Socket<ServerToClientEvents, ClientToServerEvents>;
-  gameState?: 'menu' | 'lobby' | 'match' | 'round-end' | 'match-end';
+  gameState?: 'menu' | 'lobby' | 'countdown' | 'match' | 'round-end' | 'match-end';
 }
 
 // Memoized component to prevent unnecessary re-renders
@@ -254,6 +254,7 @@ export { trackTimeout };
 // Game state variables
 const boardState: BoardRenderingState = {
   currentBoard: null,
+  pendingBoard: null, // 🔧 TASK 1: Preloaded board during countdown
   tileSprites: [],
   tileTexts: [],
   shadowSprites: []
@@ -470,23 +471,112 @@ function preload(this: Phaser.Scene, socket?: Socket<ServerToClientEvents, Clien
 
   // Set up socket event listeners if socket is provided
   if (socket) {
-    socket.on('game:initial-board', (data: { board: GameBoard }) => {
-      boardState.currentBoard = data.board;
-      console.log('Received initial board:', data.board);
+    // 🔍 DEBUG: Enhanced logging for synchronization debugging
+    const DEBUG_SYNC = true;
+    
+    socket.on('game:initial-board', (data: { board: GameBoard; boardChecksum?: string }) => {
+      const receiveTime = Date.now();
       
-      // Update the board display if the scene is ready (check if scene is running)
-      if (this.sys && this.sys.isActive()) {
-        updateBoardDisplayWrapper.call(this);
+      if (DEBUG_SYNC) {
+        console.log(`[${new Date().toISOString()}] 📨 SYNC_DEBUG: Received initial board at ${receiveTime}`);
+      }
+      
+      // 🔧 TASK 2: Validate board if checksum is provided
+      if (data.boardChecksum) {
+        // Import validation service dynamically
+        import('../services/checksumValidation.js').then(({ validateAndResyncBoard }) => {
+          const isValidBoard = validateAndResyncBoard(
+            data.board,
+            data.boardChecksum!,
+            'game:initial-board',
+            socket,
+            true // Enable resync on mismatch
+          );
+          
+          if (!isValidBoard) {
+            console.warn(`[${new Date().toISOString()}] ⚠️ Initial board validation failed - skipping board update`);
+            return;
+          }
+          
+          // Process valid board
+          boardState.currentBoard = data.board;
+          console.log('Received and validated initial board:', data.board);
+          
+          // Update the board display if the scene is ready
+          if (this.sys && this.sys.isActive()) {
+            updateBoardDisplayWrapper.call(this);
+          }
+        }).catch(error => {
+          console.error('Error loading validation service:', error);
+          // Fallback: use board without validation
+          boardState.currentBoard = data.board;
+          console.log('Received initial board (validation failed):', data.board);
+          
+          if (this.sys && this.sys.isActive()) {
+            updateBoardDisplayWrapper.call(this);
+          }
+        });
+      } else {
+        // No checksum provided - use board without validation
+        boardState.currentBoard = data.board;
+        console.log('Received initial board (no checksum):', data.board);
+        
+        if (this.sys && this.sys.isActive()) {
+          updateBoardDisplayWrapper.call(this);
+        }
       }
     });
 
-    socket.on('game:board-update', (data: { board: GameBoard }) => {
-      boardState.currentBoard = data.board;
-      console.log('Received board update (legacy):', data.board);
+    socket.on('game:board-update', (data: { board: GameBoard; boardChecksum?: string }) => {
+      const receiveTime = Date.now();
       
-      // Update the board display if the scene is ready (check if scene is running)
-      if (this.sys && this.sys.isActive()) {
-        updateBoardDisplayWrapper.call(this);
+      if (DEBUG_SYNC) {
+        console.log(`[${new Date().toISOString()}] 📨 SYNC_DEBUG: Received board update at ${receiveTime}`);
+      }
+      
+      // 🔧 TASK 2: Validate board if checksum is provided
+      if (data.boardChecksum) {
+        // Import validation service dynamically
+        import('../services/checksumValidation.js').then(({ validateAndResyncBoard }) => {
+          const isValidBoard = validateAndResyncBoard(
+            data.board,
+            data.boardChecksum!,
+            'game:board-update',
+            socket,
+            true // Enable resync on mismatch
+          );
+          
+          if (!isValidBoard) {
+            console.warn(`[${new Date().toISOString()}] ⚠️ Board update validation failed - skipping board update`);
+            return;
+          }
+          
+          // Process valid board
+          boardState.currentBoard = data.board;
+          console.log('Received and validated board update:', data.board);
+          
+          // Update the board display if the scene is ready
+          if (this.sys && this.sys.isActive()) {
+            updateBoardDisplayWrapper.call(this);
+          }
+        }).catch(error => {
+          console.error('Error loading validation service:', error);
+          // Fallback: use board without validation
+          boardState.currentBoard = data.board;
+          console.log('Received board update (validation failed):', data.board);
+          
+          if (this.sys && this.sys.isActive()) {
+            updateBoardDisplayWrapper.call(this);
+          }
+        });
+      } else {
+        // No checksum provided - use board without validation (legacy)
+        boardState.currentBoard = data.board;
+        console.log('Received board update (legacy - no checksum):', data.board);
+        
+        if (this.sys && this.sys.isActive()) {
+          updateBoardDisplayWrapper.call(this);
+        }
       }
     });
 
@@ -523,7 +613,177 @@ function preload(this: Phaser.Scene, socket?: Socket<ServerToClientEvents, Clien
       // Process changes in sequence order
       processQueuedTileChanges.call(this);
     });
+
+    // 🔧 TASK 1: Check for preloaded board from GameConnection
+    const checkForPendingBoard = () => {
+      const pendingBoard = (window as any).pendingGameBoard;
+      const pendingChecksum = (window as any).pendingBoardChecksum;
+      
+      if (pendingBoard && pendingChecksum) {
+        if (DEBUG_SYNC) {
+          const boardString = JSON.stringify({
+            width: pendingBoard.width,
+            height: pendingBoard.height,
+            tiles: pendingBoard.tiles.map((row: any) => 
+              row.map((tile: any) => ({ letter: tile.letter, points: tile.points, x: tile.x, y: tile.y }))
+            )
+          });
+          const clientChecksum = btoa(boardString).slice(0, 16);
+          console.log(`[${new Date().toISOString()}] 📨 SYNC_DEBUG: Found preloaded board with checksum=${clientChecksum}, server_checksum=${pendingChecksum}`);
+        }
+        
+        // Store pending board but don't render yet
+        boardState.pendingBoard = pendingBoard;
+        console.log(`[${new Date().toISOString()}] 🎲 Pending board loaded from global state with checksum validation.`);
+      } else {
+        console.log(`[${new Date().toISOString()}] ⚠️ No preloaded board found - will wait for match:started event`);
+      }
+    };
+    
+    // Check immediately and set up interval to check periodically during countdown
+    checkForPendingBoard();
+    const pendingBoardInterval = setInterval(checkForPendingBoard, 100);
+    
+    // Clean up interval when game state changes
+    const stopPendingBoardCheck = () => {
+      clearInterval(pendingBoardInterval);
+    };
+    setTimeout(stopPendingBoardCheck, 5000); // Stop checking after 5 seconds
+
+    // 🔧 TASK 2: Reveal Board on Server 'match:go'
+    socket.on('match:go', () => {
+      const goReceiveTime = Date.now();
+      
+      if (DEBUG_SYNC) {
+        console.log(`[${new Date().toISOString()}] 🚀 SYNC_DEBUG: Received 'match:go' at ${goReceiveTime} - revealing preloaded board`);
+      }
+      
+      // Copy pending board to current board and render
+      if (boardState.pendingBoard) {
+        boardState.currentBoard = boardState.pendingBoard;
+        
+        console.log(`[${new Date().toISOString()}] 🎮 Rendering preloaded board on server GO signal`);
+        
+        // Update the board display if the scene is ready
+        if (this.sys && this.sys.isActive()) {
+          updateBoardDisplayWrapper.call(this);
+        }
+        
+        // Clear pending board to prevent memory leaks
+        boardState.pendingBoard = null;
+        
+        // Clear global state
+        (window as any).pendingGameBoard = null;
+        (window as any).pendingBoardChecksum = null;
+      } else {
+        console.warn(`[${new Date().toISOString()}] ⚠️ 'match:go' received but no pendingBoard available - checking for match:started board`);
+        
+        // 🔧 FALLBACK: Check for board from match:started event  
+        const currentBoard = (window as any).currentGameBoard;
+        const currentChecksum = (window as any).currentBoardChecksum;
+        
+        if (currentBoard && currentChecksum) {
+          console.log(`[${new Date().toISOString()}] 🎮 Using board from match:started event (checksum: ${currentChecksum})`);
+          boardState.currentBoard = currentBoard;
+          
+          // Update the board display if the scene is ready
+          if (this.sys && this.sys.isActive()) {
+            updateBoardDisplayWrapper.call(this);
+          }
+          
+          // Clear global state
+          (window as any).currentGameBoard = null;
+          (window as any).currentBoardChecksum = null;
+        } else {
+          // 🚨 EDGE CASE 1: No Board Received by "GO" - Client timeout and resync request
+          console.error(`[${new Date().toISOString()}] ❌ CRITICAL: No board data available from either pendingBoard or match:started!`);
+          
+          // Request emergency board resync with exponential backoff
+          handleNoBoardEmergency.call(this, socket);
+        }
+      }
+    });
   }
+}
+
+/**
+ * 🚨 EDGE CASE 1: Emergency handler for when no board is available during match:go
+ * Implements timeout detection, automatic resync requests, and user notifications
+ * @param socket - Socket connection for requesting resync
+ */
+function handleNoBoardEmergency(this: Phaser.Scene, socket?: Socket<ServerToClientEvents, ClientToServerEvents>) {
+  let retryCount = 0;
+  const maxRetries = 3;
+  const baseDelay = 1000; // 1 second base delay
+  
+  console.log(`[${new Date().toISOString()}] 🚨 Starting emergency board recovery protocol...`);
+  
+  // Notify user immediately
+  import('../services/notifications.js').then(({ notifications }) => {
+    notifications.warning('Board sync issue detected - attempting recovery...', 4000);
+  });
+  
+  const attemptBoardRecovery = async (): Promise<void> => {
+    if (retryCount >= maxRetries) {
+      console.error(`[${new Date().toISOString()}] ❌ Board recovery failed after ${maxRetries} attempts`);
+      
+      // Final fallback - show error and return to lobby
+      import('../services/notifications.js').then(({ notifications }) => {
+        notifications.error('Unable to sync game board. Returning to lobby...', 5000);
+      });
+      
+      // Request return to lobby via global state
+      setTimeout(() => {
+        (window as any).emergencyReturnToLobby?.();
+      }, 2000);
+      
+      return;
+    }
+    
+    retryCount++;
+    const delay = baseDelay * Math.pow(2, retryCount - 1); // Exponential backoff
+    
+    console.log(`[${new Date().toISOString()}] 🔄 Board recovery attempt ${retryCount}/${maxRetries} (delay: ${delay}ms)`);
+    
+    // Request board resync from server using existing event
+    if (socket) {
+      socket.emit('game:request-board'); // Use existing event instead of new one
+      
+      // Set up timeout for this attempt
+      const attemptTimeout = setTimeout(() => {
+        console.warn(`[${new Date().toISOString()}] ⏰ Board recovery attempt ${retryCount} timed out`);
+        attemptBoardRecovery(); // Try again
+      }, delay + 3000); // Wait for response + retry delay
+      
+      // Listen for successful board reception (one-time listener)
+      const onBoardReceived = () => {
+        clearTimeout(attemptTimeout);
+        console.log(`[${new Date().toISOString()}] ✅ Board recovery successful on attempt ${retryCount}`);
+        
+        import('../services/notifications.js').then(({ notifications }) => {
+          notifications.success('Board sync recovered successfully!', 3000);
+        });
+        
+        // Clean up
+        socket.off('game:initial-board', onBoardReceived);
+        socket.off('board:resync', onBoardReceived);
+      };
+      
+      socket.once('game:initial-board', onBoardReceived);
+      socket.once('board:resync', onBoardReceived);
+      
+    } else {
+      console.error(`[${new Date().toISOString()}] ❌ No socket available for board recovery`);
+      
+      // Retry after delay without socket
+      setTimeout(() => {
+        attemptBoardRecovery();
+      }, delay);
+    }
+  };
+  
+  // Start recovery with initial delay
+  setTimeout(attemptBoardRecovery, 500);
 }
 
 /**
@@ -899,7 +1159,7 @@ function getRecoveryMetrics(): {
  * @param socket - Optional Socket.io connection for server communication and board requests
  * @returns void - Establishes complete interactive game scene ready for player input
  */
-function create(this: Phaser.Scene, socket?: Socket<ServerToClientEvents, ClientToServerEvents>, gameState?: 'menu' | 'lobby' | 'match' | 'round-end' | 'match-end', getCurrentDifficulty?: () => DifficultyLevel) {
+function create(this: Phaser.Scene, socket?: Socket<ServerToClientEvents, ClientToServerEvents>, gameState?: 'menu' | 'lobby' | 'countdown' | 'match' | 'round-end' | 'match-end', getCurrentDifficulty?: () => DifficultyLevel) {
   console.log(`[${new Date().toISOString()}] 🎬 Scene CREATE started - optimized initialization...`);
   
   // Force scene readiness for faster startup
@@ -939,9 +1199,30 @@ function create(this: Phaser.Scene, socket?: Socket<ServerToClientEvents, Client
   if (boardState.currentBoard) {
     updateBoardDisplayWrapper.call(this);
   } else {
-    // Request a board from the server if we don't have one
-    if (socket) {
-      socket.emit('game:request-board');
+    // 🔧 Check for any available board data in global state
+    const pendingBoard = (window as any).pendingGameBoard;
+    const currentBoard = (window as any).currentGameBoard;
+    
+    if (pendingBoard) {
+      console.log(`[${new Date().toISOString()}] 🎲 Found pending board in global state - storing for match:go`);
+      boardState.pendingBoard = pendingBoard;
+    } else if (currentBoard && (gameState === 'match')) {
+      console.log(`[${new Date().toISOString()}] 🎮 Found current board in global state - rendering immediately`);
+      boardState.currentBoard = currentBoard;
+      updateBoardDisplayWrapper.call(this);
+      
+      // Clear global state since we've used it
+      (window as any).currentGameBoard = null;
+      (window as any).currentBoardChecksum = null;
+    } else {
+      // 🔧 TASK 3: Disable Individual Board Requests in Multiplayer
+      // In multiplayer modes (countdown/match), rely only on server broadcasts to prevent desync
+      if (socket && gameState !== 'countdown' && gameState !== 'match') {
+        console.log(`[${new Date().toISOString()}] 📨 Requesting board for single-player or lobby mode (gameState: ${gameState})`);
+        socket.emit('game:request-board');
+      } else if (gameState === 'countdown' || gameState === 'match') {
+        console.log(`[${new Date().toISOString()}] 🔒 Skipping board request in multiplayer mode (gameState: ${gameState}) - awaiting server broadcast`);
+      }
     }
   }
   
@@ -969,6 +1250,9 @@ function create(this: Phaser.Scene, socket?: Socket<ServerToClientEvents, Client
 function updateBoardDisplayWrapper(this: Phaser.Scene) {
   console.log(`[${new Date().toISOString()}] 🎯 Updating board display with validation...`);
   
+  // 📊 DEPLOY 1: Track board render performance
+  const renderStartTime = performance.now();
+  
   // Enhanced readiness check with polling before escalating to recovery
   if (!isSceneReady(this)) {
     console.log(`[${new Date().toISOString()}] ⏱️ Scene not ready - polling for readiness before recovery`);
@@ -987,6 +1271,12 @@ function updateBoardDisplayWrapper(this: Phaser.Scene) {
         try {
           updateBoardDisplayModule(scene, boardState, setupTileInteractionWrapper.bind(scene));
           console.log(`[${new Date().toISOString()}] ✅ Board display updated successfully after polling`);
+          
+          // 📊 DEPLOY 1: Record board render time
+          const renderTime = performance.now() - renderStartTime;
+          import('../services/syncMonitoring.js').then(({ syncMonitoring }) => {
+            syncMonitoring.recordBoardRenderTime(renderTime);
+          }).catch(() => {});
         } catch (error) {
           console.error(`[${new Date().toISOString()}] ❌ Board update failed after polling:`, error);
         }

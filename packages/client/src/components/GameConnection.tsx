@@ -11,6 +11,13 @@ import { notifications } from '../services/notifications';
 import { withServerEventValidation } from '../validation/schemas';
 import { wordSubmissionTimestamps } from './interactions';
 
+// 🧪 Load test utilities in development
+if (process.env.NODE_ENV === 'development') {
+  import('../services/checksumTestUtils.js').catch(() => {
+    // Silently ignore if test utils fail to load
+  });
+}
+
 // Debug flag to control socket event logging verbosity
 // Set to false in production to reduce console noise
 const DEBUG_SOCKET_EVENTS = true; // Toggle for production deployment
@@ -241,13 +248,144 @@ function GameConnection(): null {
     if (DEBUG_SOCKET_EVENTS) {
       console.log('🔌 Creating socket connection (should only happen once)');
     }
-    const newSocket = io('http://localhost:3001', {
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-      timeout: 20000,
-    });
+    // 🚨 EDGE CASE 4: Mobile/Variable Networks - Device and connection detection (MOVED UP)
+    const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const connection = (navigator as any).connection || (navigator as any).mozConnection || (navigator as any).webkitConnection;
+    const isSlowConnection = connection && (connection.effectiveType === 'slow-2g' || connection.effectiveType === '2g');
+
+    // 🚨 EDGE CASE 4: Adaptive socket configuration for mobile/variable networks
+    const socketConfig = {
+      reconnectionAttempts: isMobileDevice || isSlowConnection ? 8 : 5, // More attempts for mobile
+      reconnectionDelay: isMobileDevice || isSlowConnection ? 2000 : 1000, // Longer delays for mobile
+      reconnectionDelayMax: isMobileDevice || isSlowConnection ? 10000 : 5000, // Higher max for mobile
+      timeout: isMobileDevice || isSlowConnection ? 30000 : 20000, // Longer timeout for mobile
+    };
+    
+    console.log(`[${new Date().toISOString()}] 📱 Using adaptive socket config:`, socketConfig);
+    
+    const newSocket = io('http://localhost:3001', socketConfig);
     contextRef.current.setSocket(newSocket);
+    
+    console.log(`[${new Date().toISOString()}] 📱 Device detection: mobile=${isMobileDevice}, slow_connection=${isSlowConnection}`);
+    
+    // 🚨 EDGE CASE 2: High latency detection and handling with mobile adaptations
+    let latencyMeasurements: number[] = [];
+    
+    // Adaptive thresholds based on device and connection
+    const HIGH_LATENCY_THRESHOLD = isMobileDevice || isSlowConnection ? 400 : 200; // ms
+    const PING_INTERVAL = isMobileDevice || isSlowConnection ? 8000 : 5000; // Longer intervals for mobile
+    
+    const measureLatency = () => {
+      const pingStart = Date.now();
+      
+      newSocket.emit('ping', { timestamp: pingStart });
+    };
+    
+    // Start periodic latency measurement
+    const latencyInterval = setInterval(measureLatency, PING_INTERVAL);
+    
+    // 🚨 EDGE CASE 4: Variable network monitoring and adaptive behavior
+    let connectionQuality = 'good'; // good, fair, poor
+    let consecutiveSlowResponses = 0;
+    
+    const assessConnectionQuality = (latency: number) => {
+      const threshold1 = isMobileDevice ? 300 : 150; // Fair threshold
+      const threshold2 = isMobileDevice ? 600 : 400; // Poor threshold
+      
+      if (latency > threshold2) {
+        consecutiveSlowResponses++;
+        if (consecutiveSlowResponses >= 3) {
+          connectionQuality = 'poor';
+        }
+      } else if (latency > threshold1) {
+        consecutiveSlowResponses = Math.max(0, consecutiveSlowResponses - 1);
+        connectionQuality = 'fair';
+      } else {
+        consecutiveSlowResponses = 0;
+        connectionQuality = 'good';
+      }
+      
+      // Notify user if connection degrades significantly
+      if (connectionQuality === 'poor' && consecutiveSlowResponses === 3) {
+        import('../services/notifications.js').then(({ notifications }) => {
+          notifications.warning('Poor network connection detected. Game sync may be affected.', 5000);
+        });
+      }
+    };
+    
+    // Monitor network connection changes (if supported)
+    if (connection) {
+      connection.addEventListener('change', () => {
+        const newType = connection.effectiveType;
+        console.log(`[${new Date().toISOString()}] 📶 Network type changed to: ${newType}`);
+        
+        if (newType === 'slow-2g' || newType === '2g') {
+          import('../services/notifications.js').then(({ notifications }) => {
+            notifications.info('Slow network detected. Optimizing for better performance...', 4000);
+          });
+        }
+      });
+    }
+
+    // 🚨 EDGE CASE 3: Server crash detection during countdown with mobile adaptations
+    let lastHeartbeat = Date.now();
+    let heartbeatInterval: NodeJS.Timeout;
+    let countdownCrashDetected = false;
+    const HEARTBEAT_TIMEOUT = isMobileDevice || isSlowConnection ? 15000 : 10000; // Longer timeout for mobile
+    
+    const checkServerHeartbeat = () => {
+      const now = Date.now();
+      const timeSinceHeartbeat = now - lastHeartbeat;
+      
+             if (timeSinceHeartbeat > HEARTBEAT_TIMEOUT) {
+         const currentState = localStorage.getItem('wordRushGameState') || 'menu';
+         
+         // 🚨 TEMPORARY: Disable crash detection during match - too many false positives
+         // Server is responding with timer updates every 3s so it's clearly alive
+         if (currentState === 'countdown' && !countdownCrashDetected) {
+          handleServerCrashDuringCountdown();
+        } else if (currentState === 'match') {
+          console.warn(`[${new Date().toISOString()}] ⚠️ Long heartbeat gap detected (${timeSinceHeartbeat}ms) but server appears active - skipping crash handling`);
+          // handleServerCrashDuringMatch(); // Disabled temporarily
+        }
+      }
+    };
+    
+    // Start heartbeat monitoring
+    heartbeatInterval = setInterval(checkServerHeartbeat, 2000); // Check every 2 seconds
+    
+    // Handle pong responses for latency calculation and heartbeat
+    newSocket.on('pong', (data: { timestamp: number }) => {
+      const latency = Date.now() - data.timestamp;
+      latencyMeasurements.push(latency);
+      
+      // Update heartbeat
+      lastHeartbeat = Date.now();
+      
+      // Keep only last 10 measurements
+      if (latencyMeasurements.length > 10) {
+        latencyMeasurements.shift();
+      }
+      
+      const avgLatency = latencyMeasurements.reduce((a, b) => a + b, 0) / latencyMeasurements.length;
+      
+      // 🚨 EDGE CASE 4: Assess connection quality for mobile/variable networks
+      assessConnectionQuality(latency);
+      
+      // 📊 DEPLOY 1: Record network metrics in monitoring service
+      import('../services/syncMonitoring.js').then(({ syncMonitoring }) => {
+        syncMonitoring.recordNetworkMetrics(latency, false);
+      }).catch(() => {}); // Silent fail if monitoring not available
+      
+      if (DEBUG_SOCKET_EVENTS) {
+        console.log(`[${new Date().toISOString()}] 📊 Network latency: ${latency}ms (avg: ${avgLatency.toFixed(1)}ms) quality: ${connectionQuality}`);
+      }
+      
+      // Check for high latency condition
+      if (avgLatency > HIGH_LATENCY_THRESHOLD) {
+        handleHighLatency(avgLatency);
+      }
+    });
 
     // Connection event handlers (no validation needed for built-in socket events)
     newSocket.on('connect', () => {
@@ -498,16 +636,59 @@ function GameConnection(): null {
       notifications.error(data.message, 4000);
     }));
 
-    // Match flow event handlers
+    // Match flow event handlers  
     newSocket.on('match:starting', withServerEventValidation('match:starting', (data) => {
       console.log(`[${new Date().toISOString()}] 🚀 Match starting countdown:`, data.countdown);
+      
+      // 🔧 TASK 1: Handle both old and new match:starting formats
+      if ((data as any).pendingBoard && (data as any).boardChecksum) {
+        const extendedData = data as any;
+        console.log(`[${new Date().toISOString()}] 🎲 Received pendingBoard with checksum ${extendedData.boardChecksum}`);
+        
+        // Store pendingBoard in global state for PhaserGame to access
+        (window as any).pendingGameBoard = extendedData.pendingBoard;
+        (window as any).pendingBoardChecksum = extendedData.boardChecksum;
+      } else {
+        console.log(`[${new Date().toISOString()}] ⚠️ Received old format match:starting (no pendingBoard) - game will work in legacy mode`);
+        
+        // Clear any stale pending board data for old format
+        (window as any).pendingGameBoard = null;
+        (window as any).pendingBoardChecksum = null;
+      }
+      
       contextRef.current.setGameState('countdown');
       notifications.info(`Match starting in ${data.countdown}...`, data.countdown * 1000);
     }));
 
+    // 🔧 TASK 2: Handle Server 'match:go' Signal to Transition to Match
+    newSocket.on('match:go', () => {
+      const goReceiveTime = Date.now();
+      console.log(`[${new Date().toISOString()}] 🚀 Server GO signal received at ${goReceiveTime}`);
+      
+      // Transition from countdown to match state on server signal
+      contextRef.current.setGameState('match');
+      notifications.success('GO! Match started!', 2000);
+    });
+
     newSocket.on('match:started', withServerEventValidation('match:started', (data) => {
       try {
         const receiveTime = Date.now();
+        
+        // 🚨 EDGE CASE 3: Update heartbeat on any server event
+        lastHeartbeat = Date.now();
+        
+        // 📊 DEPLOY 1: Record board receive timing
+        import('../services/syncMonitoring.js').then(({ syncMonitoring }) => {
+          const boardLatency = receiveTime - (data.timestamp || receiveTime - 50); // Estimate if no timestamp
+          syncMonitoring.recordBoardLatency(boardLatency);
+        }).catch(() => {});
+        
+        // 🔍 DEBUG: Enhanced sync debugging for match:started
+        const DEBUG_SYNC = true;
+        
+        if (DEBUG_SYNC) {
+          console.log(`[${new Date().toISOString()}] 📨 SYNC_DEBUG: 'match:started' received at ${receiveTime} with board checksum=${data.boardChecksum}`);
+        }
         
         // 🔴 PHASE 2A: Add comprehensive error handling and validation
         if (!data || !data.board || !data.currentRound || !data.totalRounds) {
@@ -524,54 +705,66 @@ function GameConnection(): null {
           startTime: Date.now()
         }));
         
-        // Board checksum validation with error handling
-        try {
-          const boardString = JSON.stringify({
-            width: data.board.width,
-            height: data.board.height,
-            tiles: data.board.tiles.map(row => 
-              row.map(tile => ({ letter: tile.letter, points: tile.points, x: tile.x, y: tile.y }))
-            )
+        // 🔧 TASK 2: Enhanced board checksum validation with resync capability
+        
+        // Function to continue match processing
+        const processMatchStart = () => {
+          // Note: Game state already set to 'match' in match:starting handler
+          contextRef.current.setRoundTimer({
+            timeRemaining: data.timeRemaining || 90000,
+            currentRound: data.currentRound,
+            totalRounds: data.totalRounds
           });
+          contextRef.current.setMatchData({
+            currentRound: data.currentRound,
+            totalRounds: data.totalRounds,
+            timeRemaining: data.timeRemaining || 90000,
+            leaderboard: [] // Will be updated separately
+          });
+          notifications.success('Match started! Good luck!', 3000);
+        };
+        
+        try {
+          // 🔧 CRITICAL FIX: Forward board data to PhaserGame first
+          console.log(`[${new Date().toISOString()}] 🎮 Forwarding match:started board to PhaserGame (checksum: ${data.boardChecksum})`);
+          (window as any).currentGameBoard = data.board;
+          (window as any).currentBoardChecksum = data.boardChecksum;
           
-          // Create MD5 hash for client-side validation (simplified version)
-          const clientChecksum = btoa(boardString).slice(0, 16); // Simple hash for client validation
-          
-          // Client-side checksum mismatch detection for match start
-          // TODO: Temporarily disabled due to algorithm mismatch between client/server
-          const matchStartChecksumMismatch = clientChecksum !== data.boardChecksum;
-          const boardSummary = data.board.tiles.map(row => row.map(tile => tile.letter).join('')).join('|');
-          
-          // Condensed match start validation log with all key information (respects debug flag)
-          if (matchStartChecksumMismatch) {
-            // Always log checksum mismatches as they're critical errors
-            console.warn(`[${new Date().toISOString()}] ⚠️ Match started (Round ${data.currentRound}/${data.totalRounds}) - Checksum mismatch detected (validation disabled) | Server: ${data.boardChecksum}, Client: ${clientChecksum} | Board: ${data.board.width}x${data.board.height}, Players: ${data.playerCount} | Layout: ${boardSummary.slice(0, 20)}...`);
-            // Temporarily disabled to prevent infinite loops
-            // newSocket.emit('board:request-resync');
-            // notifications.warning('Board sync error detected at match start', 3000);
-            // Continue processing but flag the issue
-          } else if (DEBUG_SOCKET_EVENTS) {
-            // Only log successful validations when debug is enabled
-            console.log(`[${new Date().toISOString()}] ✅ Match started (Round ${data.currentRound}/${data.totalRounds}) - Checksum validated: ${clientChecksum} | Board: ${data.board.width}x${data.board.height}, Players: ${data.playerCount} | Layout: ${boardSummary.slice(0, 20)}...`);
-          }
+          // Import validation service dynamically (using .then() instead of await)
+          import('../services/checksumValidation.js').then(({ validateAndResyncBoard }) => {
+            // Validate board checksum with automatic resync
+            const isValidBoard = validateAndResyncBoard(
+              data.board,
+              data.boardChecksum,
+              'match:started',
+              newSocket,
+              true // Enable resync on mismatch
+            );
+            
+            // Generate board summary for logging
+            const boardSummary = data.board.tiles.map(row => row.map(tile => tile.letter).join('')).join('|');
+            
+            // Log match start result with full context
+            if (isValidBoard) {
+              console.log(`[${new Date().toISOString()}] ✅ Match started (Round ${data.currentRound}/${data.totalRounds}) - Board validated | Server: ${data.boardChecksum} | Board: ${data.board.width}x${data.board.height}, Players: ${data.playerCount} | Layout: ${boardSummary.slice(0, 20)}...`);
+            } else {
+              console.warn(`[${new Date().toISOString()}] ⚠️ Match started (Round ${data.currentRound}/${data.totalRounds}) - Board validation failed, resync requested | Server: ${data.boardChecksum} | Board: ${data.board.width}x${data.board.height}, Players: ${data.playerCount} | Layout: ${boardSummary.slice(0, 20)}...`);
+              notifications.warning('Board sync error detected - requesting resync', 3000);
+              // Note: Continue processing even if validation fails for better UX
+            }
+            
+            // Continue with match setup regardless of validation result
+            processMatchStart();
+          }).catch(error => {
+            console.error('Error loading validation service:', error);
+            // Continue without validation
+            processMatchStart();
+          });
         } catch (boardError) {
           console.error(`[${new Date().toISOString()}] ❌ Board checksum validation failed:`, boardError);
-          // Continue anyway, as this is non-critical
+          // Continue anyway, as this is non-critical - call processMatchStart
+          processMatchStart();
         }
-        
-        // Note: Game state already set to 'match' in match:starting handler
-        contextRef.current.setRoundTimer({
-          timeRemaining: data.timeRemaining || 90000,
-          currentRound: data.currentRound,
-          totalRounds: data.totalRounds
-        });
-        contextRef.current.setMatchData({
-          currentRound: data.currentRound,
-          totalRounds: data.totalRounds,
-          timeRemaining: data.timeRemaining || 90000,
-          leaderboard: [] // Will be updated separately
-        });
-        notifications.success('Match started! Good luck!', 3000);
       } catch (error) {
         console.error(`[${new Date().toISOString()}] ❌ Error processing match:started event:`, error, 'Data:', data);
         notifications.error('Failed to start match', 3000);
@@ -585,10 +778,13 @@ function GameConnection(): null {
     const RESYNC_THROTTLE_MS = 2000; // Minimum 2 seconds between processing resyncs
     let resyncStats = { total: 0, throttled: 0, processed: 0 };
     
-          newSocket.on('board:resync', (data: { board: any; boardChecksum: string; timeRemaining: number; sequenceNumber: number; syncType: string }) => {
-        try {
-          const currentTime = Date.now();
-          resyncStats.total++;
+              newSocket.on('board:resync', (data: { board: any; boardChecksum: string; timeRemaining: number; sequenceNumber: number; syncType: string }) => {
+      try {
+        const currentTime = Date.now();
+        resyncStats.total++;
+        
+        // 🚨 EDGE CASE 3: Update heartbeat on any server event
+        lastHeartbeat = Date.now();
           
           // Throttle periodic resyncs to reduce processing overhead
           if (data.syncType === 'periodic' && (currentTime - lastResyncTime) < RESYNC_THROTTLE_MS) {
@@ -607,49 +803,62 @@ function GameConnection(): null {
           return;
         }
         
-        // Validate and apply the synchronized board state
-        const boardString = JSON.stringify({
-          width: data.board.width,
-          height: data.board.height,
-          tiles: data.board.tiles.map((row: any[]) => 
-            row.map(tile => ({ letter: tile.letter, points: tile.points, x: tile.x, y: tile.y }))
-          )
+        // 🔧 TASK 2: Enhanced board validation for resync events
+        import('../services/checksumValidation.js').then(({ validateAndResyncBoard }) => {
+          // Validate board with limited resync to prevent infinite loops
+          const isValidBoard = validateAndResyncBoard(
+            data.board,
+            data.boardChecksum,
+            `board:resync-${data.syncType}`,
+            null, // Don't auto-resync for resync events to prevent loops
+            false // Disable resync for resync events
+          );
+          
+          // Continue with resync processing
+          processResync(isValidBoard);
+        }).catch(error => {
+          console.error('Error loading validation service for resync:', error);
+          // Continue without validation
+          processResync(true);
         });
         
-        const clientChecksum = btoa(boardString).slice(0, 16);
-        
-        // Client-side checksum mismatch detection and recovery
-        // TODO: Temporarily disabled due to algorithm mismatch between client/server
-        // Server uses MD5, client uses base64 - need to align before enabling
-        const checksumMismatch = clientChecksum !== data.boardChecksum;
-        if (checksumMismatch) {
-          console.warn(`[${new Date().toISOString()}] ⚠️ Checksum mismatch detected (validation disabled)`);
-          console.warn(`[${new Date().toISOString()}] 🔄 Server: ${data.boardChecksum}, Client: ${clientChecksum}`);
-          // Temporarily disabled to prevent infinite loops
-          // newSocket.emit('board:request-resync');
-          // notifications.warning('Board sync error detected - requesting update', 3000);
-          // return; // Don't process the mismatched data
-        } else {
-          console.log(`[${new Date().toISOString()}] ✅ Board checksum validated: ${clientChecksum}`);
-        }
-        
-        if (data.syncType === 'rejoin') {
-          console.log(`[${new Date().toISOString()}] 🔄 Rejoined game successfully: board synchronized`);
-          contextRef.current.setGameState('match');
-          contextRef.current.setRoundTimer({
-            timeRemaining: data.timeRemaining,
-            currentRound: (data as any).currentRound || 1,
-            totalRounds: (data as any).totalRounds || 3
-          });
-          notifications.success('Rejoined game successfully!', 3000);
-        } else if (data.syncType === 'periodic') {
-          // Silent periodic sync - just validate
-          console.log(`[${new Date().toISOString()}] 🔄 Periodic board sync: checksum validated`);
-        }
-        
-        // Update round timer if available
-        if (data.timeRemaining && roundTimer) {
-          contextRef.current.setRoundTimerOptimized(data.timeRemaining);
+        function processResync(isValidBoard: boolean) {
+          if (!isValidBoard) {
+            console.warn(`[${new Date().toISOString()}] ⚠️ Board resync validation failed - skipping board update`);
+            notifications.warning('Board resync validation failed', 3000);
+            return; // Don't process invalid board data
+          }
+          
+          if (data.syncType === 'rejoin') {
+            // 🔧 TASK 4: Handle Rejoins During Countdown
+            const extendedData = data as any;
+            
+            if (extendedData.isInCountdown) {
+              console.log(`[${new Date().toISOString()}] 🔄 Rejoined during countdown - remaining time: ${extendedData.remainingCountdown}ms`);
+              contextRef.current.setGameState('countdown');
+              
+              // Notify user they're joining countdown in progress
+              const remainingSeconds = Math.ceil(extendedData.remainingCountdown / 1000);
+              notifications.info(`Rejoined! Match starting in ${remainingSeconds}s...`, extendedData.remainingCountdown);
+            } else {
+              console.log(`[${new Date().toISOString()}] 🔄 Rejoined game successfully: board synchronized`);
+              contextRef.current.setGameState('match');
+              contextRef.current.setRoundTimer({
+                timeRemaining: data.timeRemaining,
+                currentRound: extendedData.currentRound || 1,
+                totalRounds: extendedData.totalRounds || 3
+              });
+              notifications.success('Rejoined game successfully!', 3000);
+            }
+          } else if (data.syncType === 'periodic') {
+            // Silent periodic sync - just validate
+            console.log(`[${new Date().toISOString()}] 🔄 Periodic board sync: checksum validated`);
+          }
+          
+          // Update round timer if available
+          if (data.timeRemaining && roundTimer) {
+            contextRef.current.setRoundTimerOptimized(data.timeRemaining);
+          }
         }
       } catch (error) {
         console.error(`[${new Date().toISOString()}] ❌ Error processing board:resync event:`, error, 'Data:', data);
@@ -660,6 +869,9 @@ function GameConnection(): null {
     newSocket.on('match:timer-update', withServerEventValidation('match:timer-update', (data) => {
       // 🕰️ PHASE 27: Enhanced timer updates with client-side interpolation
       console.log(`[${new Date().toISOString()}] ⏰ Server timer update: ${Math.ceil(data.timeRemaining / 1000)}s`);
+      
+      // 🚨 EDGE CASE 3: Update heartbeat on any server event
+      lastHeartbeat = Date.now();
       
       // Update immediately with server value (no debouncing)
       contextRef.current.setRoundTimerOptimized(data.timeRemaining);
@@ -753,6 +965,144 @@ function GameConnection(): null {
 
 
 
+    // 🚨 EDGE CASE 2: High latency handling function
+    let highLatencyDetected = false;
+    let countdownExtensionRequested = false;
+    
+    const handleHighLatency = (avgLatency: number) => {
+      if (highLatencyDetected) return; // Prevent spam
+      
+      highLatencyDetected = true;
+      console.warn(`[${new Date().toISOString()}] 🌐 High latency detected: ${avgLatency.toFixed(1)}ms (threshold: ${HIGH_LATENCY_THRESHOLD}ms)`);
+      
+      // Notify user about network issues
+      import('../services/notifications.js').then(({ notifications }) => {
+        notifications.warning(`High network latency detected (${avgLatency.toFixed(0)}ms). Game sync may be affected.`, 4000);
+      });
+      
+             // If we're in countdown state, request extension  
+       // Note: Access gameState through localStorage as contextRef doesn't expose it
+       const currentState = localStorage.getItem('wordRushGameState') || 'menu';
+       if (currentState === 'countdown' && !countdownExtensionRequested) {
+        console.log(`[${new Date().toISOString()}] 🕰️ Requesting countdown extension due to high latency`);
+        
+        countdownExtensionRequested = true;
+        newSocket.emit('request-countdown-extension', {
+          reason: 'high_latency',
+          averageLatency: avgLatency,
+          timestamp: Date.now()
+        });
+        
+        // Implement client-side fallback timestamp synchronization
+        enableTimestampFallback(avgLatency);
+      }
+      
+      // Reset flag after some time
+      setTimeout(() => {
+        highLatencyDetected = false;
+      }, 30000); // 30 seconds
+    };
+    
+    // 🚨 EDGE CASE 2: Timestamp-based fallback synchronization for high latency
+    const enableTimestampFallback = (latency: number) => {
+      console.log(`[${new Date().toISOString()}] 🕰️ Enabling timestamp-based fallback sync (latency: ${latency}ms)`);
+      
+      // Store server-provided timestamps for fallback calculations
+      (window as any).enableTimestampSync = true;
+      (window as any).networkLatency = latency;
+      
+             import('../services/notifications.js').then(({ notifications }) => {
+         notifications.info('Enabled high-latency sync mode for better timing accuracy', 3000);
+       });
+     };
+     
+     // 🚨 EDGE CASE 3: Server crash handling functions
+     const handleServerCrashDuringCountdown = () => {
+       countdownCrashDetected = true;
+       console.error(`[${new Date().toISOString()}] 💥 Server crash detected during countdown!`);
+       
+       import('../services/notifications.js').then(({ notifications }) => {
+         notifications.error('Server connection lost during countdown. Attempting to reconnect...', 6000);
+       });
+       
+       // Attempt reconnection
+       setTimeout(() => {
+         if (newSocket.disconnected) {
+           console.log(`[${new Date().toISOString()}] 🔄 Attempting server reconnection...`);
+           newSocket.connect();
+           
+           // If reconnection fails after 5 seconds, return to menu
+           setTimeout(() => {
+             if (newSocket.disconnected) {
+               console.error(`[${new Date().toISOString()}] ❌ Server reconnection failed - returning to menu`);
+               
+               import('../services/notifications.js').then(({ notifications }) => {
+                 notifications.error('Could not reconnect to server. Returning to main menu.', 5000);
+               });
+               
+               contextRef.current.setGameState('menu');
+               contextRef.current.setCurrentRoom(null);
+             }
+           }, 5000);
+         }
+       }, 2000);
+     };
+     
+           // 🚨 TEMPORARILY UNUSED: Server crash handler disabled due to false positives
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const handleServerCrashDuringMatch = () => {
+        console.error(`[${new Date().toISOString()}] 💥 Server crash detected during match!`);
+        
+        import('../services/notifications.js').then(({ notifications }) => {
+          notifications.error('Server connection lost! Game will be paused while reconnecting...', 6000);
+        });
+        
+        // Pause the game by transitioning to a safe state
+        contextRef.current.setGameState('round-end');
+        
+        // Attempt to save current progress
+        const roomCode = localStorage.getItem('wordRushRoomCode');
+        if (roomCode) {
+          localStorage.setItem('wordRushEmergencyState', JSON.stringify({
+            roomCode: roomCode,
+            timestamp: Date.now(),
+            reason: 'server_crash'
+          }));
+        }
+      };
+
+    // 🚨 EDGE CASE 1: Emergency return to lobby mechanism
+    (window as any).emergencyReturnToLobby = () => {
+      console.log(`[${new Date().toISOString()}] 🚨 Emergency return to lobby triggered`);
+      
+      // Reset game state and return to lobby
+      contextRef.current.setGameState('lobby');
+      
+      // Clear any problematic board data
+      (window as any).pendingGameBoard = null;
+      (window as any).currentGameBoard = null;
+      (window as any).pendingBoardChecksum = null;
+      (window as any).currentBoardChecksum = null;
+      
+      // Request fresh room state
+      const roomCode = localStorage.getItem('wordRushRoomCode');
+      if (newSocket && roomCode) {
+        newSocket.emit('room:request-state');
+      }
+    };
+    
+    // 🚨 EDGE CASE 4: Store device and network info globally for other components
+    (window as any).deviceInfo = {
+      isMobile: isMobileDevice,
+      isSlowConnection: isSlowConnection,
+      connectionQuality: () => connectionQuality,
+      adaptiveTimeouts: {
+        ping: PING_INTERVAL,
+        heartbeat: HEARTBEAT_TIMEOUT,
+        latencyThreshold: HIGH_LATENCY_THRESHOLD
+      }
+    };
+
     // Cleanup on unmount
     return () => {
       if (DEBUG_SOCKET_EVENTS) {
@@ -761,6 +1111,20 @@ function GameConnection(): null {
       
       // 🕰️ PHASE 27: Clean up client-side timer interpolation
       stopClientSideTimerInterpolation();
+      
+      // 🚨 EDGE CASE 2: Clean up latency measurement
+      clearInterval(latencyInterval);
+      
+      // 🚨 EDGE CASE 3: Clean up heartbeat monitoring
+      clearInterval(heartbeatInterval);
+      
+      // Clean up emergency handler
+      (window as any).emergencyReturnToLobby = null;
+      (window as any).enableTimestampSync = false;
+      (window as any).networkLatency = null;
+      
+      // 🚨 EDGE CASE 4: Clean up device info
+      (window as any).deviceInfo = null;
       
       newSocket.close();
     };

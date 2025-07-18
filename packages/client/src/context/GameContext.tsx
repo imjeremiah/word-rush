@@ -314,7 +314,7 @@ export function GameProvider({ children }: GameProviderProps): JSX.Element {
   const currentTimerRef = useRef<RoundTimer | null>(null);
   
   // State persistence refs to prevent resets during re-renders
-  const gameStateRef = useRef<'menu' | 'lobby' | 'match' | 'round-end' | 'match-end'>(gameState);
+  const gameStateRef = useRef<'menu' | 'lobby' | 'countdown' | 'match' | 'round-end' | 'match-end'>(gameState);
   const currentRoomRef = useRef<GameRoom | null>(currentRoom);
   const matchDataRef = useRef<typeof matchData>(matchData);
   
@@ -423,7 +423,7 @@ export function GameProvider({ children }: GameProviderProps): JSX.Element {
 
   // 🟡 PHASE 3B: Batch state update helper for complex operations
   const batchUpdateGameState = useCallback((updates: {
-    gameState?: 'menu' | 'lobby' | 'match' | 'round-end' | 'match-end';
+    gameState?: 'menu' | 'lobby' | 'countdown' | 'match' | 'round-end' | 'match-end';
     currentRoom?: GameRoom | null;
     matchData?: typeof matchData;
     roundTimer?: RoundTimer | null;

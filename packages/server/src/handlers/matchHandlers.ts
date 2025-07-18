@@ -85,8 +85,8 @@ export function handleMatchStartNewMatch(
     return;
   }
 
-  // Start match using existing room service method
-  const updatedRoom = roomService.startMatch(data.roomCode, socket.id);
+  // Start match using existing room service method with dictionary service
+  const updatedRoom = roomService.startMatch(data.roomCode, socket.id, dictionaryService);
   if (!updatedRoom) {
     socket.emit('server:error', { message: 'Failed to start match', code: 'MATCH_START_FAILED' });
     return;

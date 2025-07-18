@@ -5,6 +5,7 @@
  */
 
 import { Socket } from 'socket.io';
+import crypto from 'crypto';
 import { 
   ServerToClientEvents, 
   ClientToServerEvents, 
@@ -344,22 +345,30 @@ export function handleRoomUpdateSettings(
 }
 
 /**
- * Handle match start request (host only)
- * Initiates the match if all players are ready and minimum requirements are met
- * Generates initial board and broadcasts match start to all room members
- * @param socket - Socket.io connection from the host player
- * @param roomServiceInstance - Room management service for starting matches
- * @param generateBoardFn - Board generation function for creating the initial game board
- * @param dictionaryService - Dictionary service for board generation validation
- * @returns void - Sends match:starting then match:started to all room members or error events
+ * Handle match start request from room host
+ * Validates host permissions and player readiness, then initiates match countdown and board generation
+ * @param socket - Socket.io connection from the requesting host
+ * @param roomServiceInstance - Room management service for match operations
+ * @param generateBoard - Board generation function for creating game boards
+ * @param dictionaryService - Dictionary service for board validation
+ * @param io - Socket.io server instance for broadcasting to room members
+ * @returns void - Sends appropriate success/error events and initiates match flow
  */
 export function handleMatchStart(
   socket: Socket<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>,
   roomServiceInstance: RoomServiceType,
-  generateBoardFn: typeof generateBoard,
+  _generateBoardFn: typeof generateBoard, // Unused but kept for interface compatibility
   dictionaryService: DictionaryModule,
   io: any
 ): void {
+  // 🔍 DEBUG: Enhanced logging for synchronization debugging
+  const DEBUG_SYNC = true;
+  const matchStartTime = Date.now();
+  
+  if (DEBUG_SYNC) {
+    console.log(`[${new Date().toISOString()}] 🚀 SYNC_DEBUG: Match start requested by ${socket.id} at ${matchStartTime}`);
+  }
+
   try {
     const room = roomServiceInstance.getRoomByPlayerId(socket.id);
     
@@ -405,8 +414,8 @@ export function handleMatchStart(
       return;
     }
 
-    // Start the match
-    const updatedRoom = roomServiceInstance.startMatch(room.roomCode, socket.id);
+    // Start the match with dictionary service for board generation
+    const updatedRoom = roomServiceInstance.startMatch(room.roomCode, socket.id, dictionaryService);
     
     if (!updatedRoom || !updatedRoom.gameState) {
       socket.emit('server:error', {
@@ -416,15 +425,61 @@ export function handleMatchStart(
       return;
     }
 
-    // Notify all players that match is starting (with countdown)
-    socket.to(room.roomCode).emit('match:starting', { countdown: 3 });
-    socket.emit('match:starting', { countdown: 3 });
+    const validationTime = Date.now() - matchStartTime;
+    if (DEBUG_SYNC) {
+      console.log(`[${new Date().toISOString()}] 🔍 SYNC_DEBUG: Match validation completed in ${validationTime}ms for room ${room.roomCode}`);
+    }
 
-    // After short delay, start the first round using the new round management system
+    // 🔧 TASK 2: Include preloaded board in match:starting for client preloading
+    if (!updatedRoom.gameState?.board) {
+      socket.emit('server:error', {
+        message: 'Failed to generate game board',
+        code: 'BOARD_GENERATION_ERROR'
+      });
+      return;
+    }
+
+    // Generate board checksum for validation using crypto module
+    const boardString = JSON.stringify({
+      width: updatedRoom.gameState.board.width,
+      height: updatedRoom.gameState.board.height,
+      tiles: updatedRoom.gameState.board.tiles.map(row => 
+        row.map(tile => ({ letter: tile.letter, points: tile.points, x: tile.x, y: tile.y }))
+      )
+    });
+    const boardChecksum = crypto.createHash('md5').update(boardString).digest('hex');
+
+    // Notify all players that match is starting (with countdown AND preloaded board)
+    const countdownStartTime = Date.now();
+    const matchStartingPayload = {
+      countdown: 3,
+      pendingBoard: updatedRoom.gameState.board,
+      boardChecksum: boardChecksum
+    };
+
+    socket.to(room.roomCode).emit('match:starting', matchStartingPayload);
+    socket.emit('match:starting', matchStartingPayload);
+    
+    if (DEBUG_SYNC) {
+      console.log(`[${new Date().toISOString()}] 📡 SYNC_DEBUG: 'match:starting' emitted to ${room.players.length} players at ${countdownStartTime} with preloaded board (checksum: ${boardChecksum})`);
+    }
+
+    // 🔧 TASK 2: Server-controlled countdown with 'match:go' event
     setTimeout(() => {
+      const goEmitTime = Date.now();
+      const exactCountdownDuration = goEmitTime - countdownStartTime;
+      
+      if (DEBUG_SYNC) {
+        console.log(`[${new Date().toISOString()}] 🚀 SYNC_DEBUG: Emitting 'match:go' after ${exactCountdownDuration}ms countdown for room ${room.roomCode}`);
+      }
+      
+      // Emit server-authoritative GO signal
+      io.to(room.roomCode).emit('match:go');
+      
+      // Start the round timing and game logic (but board is already preloaded on clients)
       roomServiceInstance.startRound(room.roomCode, io, dictionaryService);
-      console.log(`[${new Date().toISOString()}] Match started in room ${room.roomCode}`);
-    }, 3000); // 3 second countdown
+      console.log(`[${new Date().toISOString()}] Match go signal sent for room ${room.roomCode}`);
+    }, 3000); // Exact 3 second countdown
 
   } catch (error) {
     console.error(`[${new Date().toISOString()}] Error starting match:`, error);

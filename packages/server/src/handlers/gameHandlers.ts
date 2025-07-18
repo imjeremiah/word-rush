@@ -5,6 +5,7 @@
  */
 
 import { Socket } from 'socket.io';
+import crypto from 'crypto';
 import { ServerToClientEvents, ClientToServerEvents, InterServerEvents, SocketData } from '@word-rush/common';
 import type { DictionaryModule } from '../services/dictionary.js';
 import { generateBoard, isBoardDead } from '../services/board.js';
@@ -28,7 +29,18 @@ export function handleBoardRequest(
   generateBoardFn: typeof generateBoard
 ): void {
   const newBoard = generateBoardFn(dictionaryService);
-  socket.emit('game:initial-board', { board: newBoard });
+  
+  // 🔧 TASK 4: Add checksum for validation
+  const boardString = JSON.stringify({
+    width: newBoard.width,
+    height: newBoard.height,
+    tiles: newBoard.tiles.map(row => 
+      row.map(tile => ({ letter: tile.letter, points: tile.points, x: tile.x, y: tile.y }))
+    )
+  });
+  const boardChecksum = crypto.createHash('md5').update(boardString).digest('hex');
+  
+  socket.emit('game:initial-board', { board: newBoard, boardChecksum: boardChecksum });
 }
 
 /**
@@ -118,16 +130,28 @@ export function handleShuffleRequest(
   // Update game state board
   room.gameState.board = newBoard;
 
+  // 🔧 TASK 4: Generate checksum for validation
+  const boardString = JSON.stringify({
+    width: newBoard.width,
+    height: newBoard.height,
+    tiles: newBoard.tiles.map(row => 
+      row.map(tile => ({ letter: tile.letter, points: tile.points, x: tile.x, y: tile.y }))
+    )
+  });
+  const shuffleBoardChecksum = crypto.createHash('md5').update(boardString).digest('hex');
+
   // Send shuffle result to requesting player only
   socket.emit('shuffle:result', {
     board: newBoard,
+    boardChecksum: shuffleBoardChecksum,
     costDeducted,
     wasDead: boardIsDead
   });
 
   // Broadcast new board to all other players in room
   socket.to(room.roomCode).emit('game:board-update', {
-    board: newBoard
+    board: newBoard,
+    boardChecksum: shuffleBoardChecksum
   });
 
   // If cost was deducted, send score update

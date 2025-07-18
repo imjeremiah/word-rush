@@ -2,6 +2,7 @@
  * Countdown Screen Component
  * Displays 3-2-1-GO countdown sequence before match starts
  * Provides visual preparation period for players
+ * 🔧 TASK 1: Updated to receive server countdown and wait for 'match:go' signal
  */
 
 import { useEffect, useState } from 'react';
@@ -9,31 +10,28 @@ import { useGameContext } from '../context/GameContext';
 
 /**
  * Countdown Screen component for pre-match preparation
- * Shows large countdown numbers and automatically transitions to match
+ * Shows large countdown numbers for visual feedback only - waits for server signals
  * @returns JSX element containing the countdown interface
  */
 function CountdownScreen(): JSX.Element {
   const [count, setCount] = useState(3);
   const [showGO, setShowGO] = useState(false);
-  const { setGameState } = useGameContext();
+  const { gameState } = useGameContext(); // Remove setGameState - handled by GameConnection
 
   useEffect(() => {
-    console.log(`[${new Date().toISOString()}] 🚀 Starting match countdown sequence...`);
+    console.log(`[${new Date().toISOString()}] 🚀 Starting visual countdown sequence (server-authoritative)...`);
     
-    // Start countdown sequence
+    // 🔧 TASK 1: Visual-only countdown - actual match start controlled by server 'match:go'
     const countdownInterval = setInterval(() => {
       setCount(prev => {
-        console.log(`[${new Date().toISOString()}] ⏰ Countdown: ${prev}`);
+        console.log(`[${new Date().toISOString()}] ⏰ Visual countdown: ${prev}`);
         
         if (prev <= 1) {
           clearInterval(countdownInterval);
           setShowGO(true);
           
-          // Show "GO!" for 1 second then transition to match
-          setTimeout(() => {
-            console.log(`[${new Date().toISOString()}] 🎮 Transitioning to match state...`);
-            setGameState('match');
-          }, 1000);
+          // Show "GO!" and wait for server signal (no automatic transition)
+          console.log(`[${new Date().toISOString()}] 🕰️ Visual countdown complete - waiting for server 'match:go' signal`);
           
           return 0;
         }
@@ -47,7 +45,14 @@ function CountdownScreen(): JSX.Element {
         clearInterval(countdownInterval);
       }
     };
-  }, [setGameState]);
+  }, []); // Remove setGameState dependency
+
+  // 🔧 TASK 1: Monitor game state changes from server (GameConnection handles transitions)
+  useEffect(() => {
+    if (gameState === 'match') {
+      console.log(`[${new Date().toISOString()}] 🎮 Server triggered transition to match state received!`);
+    }
+  }, [gameState]);
 
   /**
    * Get display text for current countdown state
