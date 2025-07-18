@@ -21,7 +21,7 @@
 }
 
 .round-summary-container {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #002441 0%, #01606A 100%); /* Oceanic gradient: Deepest Ocean → Ocean Blue */
   border-radius: 20px;
   padding: 2rem;
   max-width: 800px;
@@ -51,14 +51,15 @@
 }
 
 .round-summary-rankings {
-  background: rgba(255, 255, 255, 0.1);
+  background: #013B4F; /* Deep Ocean */
   border-radius: 15px;
   padding: 1.5rem;
   margin-bottom: 2rem;
+  border: 1px solid #0888AD; /* Ocean Foam border */
 }
 
 .round-summary-rankings h3 {
-  color: white;
+  color: #0888AD; /* Ocean Foam */
   text-align: center;
   margin: 0 0 1.5rem 0;
   font-size: 1.8rem;
@@ -73,15 +74,15 @@
 .ranking-item {
   display: flex;
   align-items: center;
-  background: rgba(255, 255, 255, 0.15);
+  background: #0B6281; /* Ocean Surface */
   border-radius: 12px;
   padding: 1rem;
   transition: all 0.3s ease;
 }
 
 .ranking-item.current-player {
-  background: rgba(255, 215, 0, 0.3);
-  border: 2px solid rgba(255, 215, 0, 0.6);
+  background: rgba(242, 116, 43, 0.3); /* Coral Orange background */
+  border: 2px solid #F2742B; /* Coral Orange border */
   transform: scale(1.02);
 }
 
@@ -254,7 +255,7 @@
 }
 
 .match-complete-container {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #002441 0%, #01606A 50%, #0888AD 100%); /* Celebratory oceanic gradient */
   border-radius: 20px;
   padding: 2.5rem;
   max-width: 900px;
@@ -268,7 +269,7 @@
 .winner-announcement {
   text-align: center;
   margin-bottom: 2.5rem;
-  color: white;
+  color: #0888AD; /* Ocean Foam */
 }
 
 .winner-crown {
@@ -280,12 +281,13 @@
 .match-complete-title {
   font-size: 3rem;
   margin: 0 0 2rem 0;
+  color: #0888AD; /* Ocean Foam */
   text-shadow: 0 3px 6px rgba(0, 0, 0, 0.5);
 }
 
 .winner-card {
-  background: linear-gradient(135deg, #ffd700, #ffed4e);
-  color: #333;
+  background: #F2742B; /* Coral Orange background */
+  color: white;
   border-radius: 20px;
   padding: 2rem;
   display: flex;

@@ -7,7 +7,6 @@ import React, { useState, useEffect } from 'react';
 import { GameProvider, useGameContext } from './context/GameContext';
 import GameConnection from './components/GameConnection';
 import { GameHUD } from './components/GameHUD';
-import GameControls from './components/GameControls';
 import PhaserGame from './components/PhaserGame';
 import MainMenu from './components/MainMenu';
 import LobbyScreen from './components/LobbyScreen';
@@ -156,7 +155,10 @@ const AppContent = React.memo((): JSX.Element => {
       {shouldRenderPhaser && (
         <>
           <header className="app-header">
-            <h1>Word Rush - Multiplayer Match</h1>
+            <h1>
+              <span className="game-title">Word Rush</span>
+              <span className="match-subtitle"> - Multiplayer Match</span>
+            </h1>
             <div className="room-indicator">
               Room: {currentRoom!.roomCode}
             </div>
@@ -175,7 +177,6 @@ const AppContent = React.memo((): JSX.Element => {
                   onShuffle={handleShuffle}
                   isGameActive={isGameActive}
                 />
-                <GameControls />
               </div>
 
               <div className="game-section">

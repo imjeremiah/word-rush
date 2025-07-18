@@ -27,15 +27,17 @@ export function createGameLayout(
 ): void {
   const { width, height } = scene.scale.gameSize;
   
-  // Add title
-  layoutState.titleText = scene.add
-    .text(width / 2, Math.min(50, height * 0.08), 'Word Rush - MVP Game Board', {
-      fontSize: Math.min(28, width * 0.035) + 'px',
-      color: '#ffffff',
-      fontFamily: FONTS.heading,
-      fontStyle: 'bold',
-    })
-    .setOrigin(0.5);
+  // Add title - using premium title font for brand consistency
+  // 🎯 PHASE 2.1: Board title text removed for cleaner layout
+  // layoutState.titleText = scene.add
+  //   .text(width / 2, Math.min(50, height * 0.08), 'Word Rush - MVP Game Board', {
+  //     fontSize: Math.min(32, width * 0.04) + 'px',
+  //     color: '#FEDE5F', // Golden color to match title gradient top
+  //     fontFamily: FONTS.title,
+  //     fontStyle: 'normal', // Luckiest Guy doesn't need bold styling
+  //   })
+  //   .setOrigin(0.5);
+  layoutState.titleText = null; // Set to null since we're not creating it
 
   // Add current word display
   interactionState.currentWordText = scene.add
@@ -54,7 +56,8 @@ export function createGameLayout(
       height - Math.min(80, height * 0.08),
       'Drag over adjacent tiles to form words. Release to submit!',
       {
-        fontSize: Math.min(16, width * 0.02) + 'px',
+        fontSize: Math.min(22, width * 0.028) + 'px', // 🎯 PHASE 2.2: Increased from 16px/0.02 for better readability
+        fontStyle: 'bold', // 🎯 PHASE 2.2: Added bold weight for prominence
         color: COLORS.textSubtle,
         fontFamily: FONTS.body,
         align: 'center',
@@ -82,13 +85,14 @@ export function resizeGame(
   const { width, height } = scene.scale.gameSize;
   
   // Update title position and size
-  if (layoutState.titleText) {
-    layoutState.titleText.setPosition(width / 2, Math.min(50, height * 0.08));
-    layoutState.titleText.setStyle({ 
-      fontSize: Math.min(28, width * 0.035) + 'px',
-      fontFamily: FONTS.heading
-    });
-  }
+  // 🎯 PHASE 2.1: Title text resize handling removed (title text disabled)
+  // if (layoutState.titleText) {
+  //   layoutState.titleText.setPosition(width / 2, Math.min(50, height * 0.08));
+  //   layoutState.titleText.setStyle({ 
+  //     fontSize: Math.min(28, width * 0.035) + 'px',
+  //     fontFamily: FONTS.heading
+  //   });
+  // }
   
   // Update current word display
   if (interactionState.currentWordText) {
@@ -103,7 +107,8 @@ export function resizeGame(
   if (layoutState.instructionText) {
     layoutState.instructionText.setPosition(width / 2, height - Math.min(80, height * 0.08));
     layoutState.instructionText.setStyle({ 
-      fontSize: Math.min(16, width * 0.02) + 'px',
+      fontSize: Math.min(22, width * 0.028) + 'px', // 🎯 PHASE 2.2: Enhanced sizing for readability
+      fontStyle: 'bold', // 🎯 PHASE 2.2: Enhanced weight for prominence
       fontFamily: FONTS.body,
       wordWrap: { width: width * 0.8 }
     });

@@ -509,7 +509,7 @@ export function generateBoard(
     
     // If cache is low, pre-generate more boards asynchronously
     if (boardCache.length < 3 && !isPreGenerating && dictionaryService.isReady()) {
-      preGenerateBoards(dictionaryService, 8).catch(console.error);
+      preGenerateBoards(dictionaryService, 5).catch(console.error);
     }
     
     return cachedBoard;

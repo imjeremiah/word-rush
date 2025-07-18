@@ -1,10 +1,27 @@
 /**
- * Word Rush Premium Theme System - Phase 4
- * Sophisticated 7-tier color system mapped to Scrabble point values
- * Creates a visually stunning, premium gaming experience
+ * Word Rush Oceanic Depth Theme System
+ * Creates a cohesive oceanic depth experience that complements the perfect tile colors
+ * Colors flow from deepest ocean to bright surface with coral accents
  */
 
-// TILE_COLORS - Scrabble Point Value Gradient (7-Tier System)
+// OCEANIC COLOR PALETTE - Primary System
+export const OCEANIC_PALETTE = {
+  // Primary Oceanic Blues (Dark to Light)
+  deepestOcean: '#002441',    // Deepest Ocean - backgrounds/edges
+  deepOcean: '#013B4F',       // Deep Ocean - secondary backgrounds
+  oceanDepth: '#003C53',      // Ocean Depth - alternative dark
+  midOcean: '#004F5E',        // Mid Ocean - primary panels
+  oceanBlue: '#01606A',       // Ocean Blue - secondary panels
+  oceanSurface: '#0B6281',    // Ocean Surface - interactive elements
+  oceanFoam: '#0888AD',       // Ocean Foam - active states
+  oceanTeal: '#1F7D81',       // Ocean Teal - accents/highlights
+  
+  // Accent Colors
+  coralOrange: '#F2742B',     // Coral Orange - primary actions
+  sunsetOrange: '#F79A2D',    // Sunset Orange - secondary actions
+} as const;
+
+// TILE_COLORS - Preserved Perfect Tile System (DO NOT CHANGE)
 export const TILE_COLORS = {
   points1: '#045476',    // Dark Blue (E, A, I, O, U, L, N, S, T, R)
   points2: '#0A7497',    // Blue (D, G)
@@ -15,85 +32,89 @@ export const TILE_COLORS = {
   points10: '#F1742A',   // Red Orange (Q, Z)
 } as const;
 
-// BACKGROUND SYSTEM - Deep Water Gradient Atmosphere
+// BACKGROUND SYSTEM - Oceanic Depth Atmosphere
 export const BACKGROUNDS = {
   main: {
-    deep: '#01243F',     // Oxford Blue (gradient start)
-    light: '#01616C',    // Caribbean Current (gradient end)
+    deep: OCEANIC_PALETTE.deepestOcean,     // Primary background start
+    light: OCEANIC_PALETTE.deepOcean,       // Primary background end
   },
-  title: '#002643',      // Prussian Blue (title card background)
-  leaderboard: '#002840', // Prussian Blue (UI panels)
-  bottomBar: '#003C53',  // Indigo Dye (bottom status bar)
-  boardOutline: '#09637B', // Midnight Green (board border)
-  emptyTile: '#00435D',  // Indigo Dye (empty tile spaces)
+  title: OCEANIC_PALETTE.midOcean,          // Title card background
+  leaderboard: OCEANIC_PALETTE.oceanDepth,  // UI panels
+  bottomBar: OCEANIC_PALETTE.oceanDepth,    // Bottom status bar
+  boardOutline: OCEANIC_PALETTE.oceanSurface, // Board border
+  emptyTile: OCEANIC_PALETTE.oceanBlue,     // Empty tile spaces
 } as const;
 
-// GOLDEN TITLE GRADIENT - Premium AAA Treatment
+// GOLDEN TITLE GRADIENT - Preserved Premium Treatment
 export const TITLE_GRADIENT = {
-  light: '#FFE265',      // Naples Yellow
-  mid: '#FFB92F',        // Selective Yellow  
-  deep: '#FF8F1D',       // Dark Orange Web
+  light: '#FEDE5F',      // Exact specification from checklist
+  mid: '#FEBA2E',        // Exact specification from checklist  
+  deep: '#FE8E1D',       // Exact specification from checklist
 } as const;
 
-// INTERACTIVE ELEMENTS - UI Controls
+// INTERACTIVE ELEMENTS - Oceanic UI Controls
 export const UI_ELEMENTS = {
-  shuffleButton: '#0C5C7E',    // Lapis Lazuli
-  timerRing: '#038BB0',        // Bondi Blue (background)
-  timerProgress: '#2CFFFF',    // Aqua (active progress)
-  tileSelected: '#FDDC7A',     // Golden yellow (selection glow)
-  tileHover: '#FDDC7A',        // Golden yellow (hover state)
+  shuffleButton: OCEANIC_PALETTE.sunsetOrange,    // Sunset Orange
+  timerRing: OCEANIC_PALETTE.oceanBlue,           // Ocean Blue (background)
+  timerProgress: OCEANIC_PALETTE.oceanTeal,       // Ocean Teal (active progress)
+  tileSelected: '#FDDC7A',                        // Preserved golden yellow (selection glow)
+  tileHover: '#FDDC7A',                           // Preserved golden yellow (hover state)
 } as const;
 
-// TEXT COLORS - Hierarchical Typography System
+// TEXT COLORS - Oceanic Typography System
 export const TEXT_COLORS = {
-  tileLetters: '#F9F0C6',      // Lemon Chiffon (on tiles)
-  playerNames: '#E1F5E4',      // Honeydew (leaderboard names)
-  playerScores: '#8CE6EC',     // Electric Blue (score numbers)
-  buttonText: '#D2E9D3',       // Nyanza (button labels)
-  timerNumbers: '#E2EEDD',     // Honeydew (timer display)
-  goldHighlight: '#FFE265',    // Naples Yellow (golden highlights)
+  tileLetters: '#F9F0C6',                         // Preserved - Lemon Chiffon (on tiles)
+  playerNames: OCEANIC_PALETTE.oceanFoam,         // Ocean Foam (leaderboard names)
+  playerScores: OCEANIC_PALETTE.sunsetOrange,     // Sunset Orange (score numbers)
+  buttonText: OCEANIC_PALETTE.oceanFoam,          // Ocean Foam (button labels)
+  timerNumbers: OCEANIC_PALETTE.oceanTeal,        // Ocean Teal (timer display)
+  goldHighlight: TITLE_GRADIENT.light,            // Golden highlights
+  headings: OCEANIC_PALETTE.oceanFoam,            // Headings
+  bodyText: OCEANIC_PALETTE.oceanSurface,         // Body text
+  secondaryText: OCEANIC_PALETTE.oceanTeal,       // Secondary text
+  disabledText: OCEANIC_PALETTE.deepOcean,        // Disabled text
 } as const;
 
-// PARTICLE EFFECTS - "Juicy" Visual Feedback
+// PARTICLE EFFECTS - "Juicy" Visual Feedback with Oceanic Theme
 export const PARTICLE_COLORS = {
-  goldBurst: ['#FCE495', '#FDE053'],    // Jasmine + Naples Yellow
-  electricBlue: ['#A0F5F2', '#74F5F6'], // Ice Blue + Electric Blue
-  speedBonus: ['#FFE265', '#FF8F1D'],   // Golden gradient mix
-  cascadeShimmer: ['#2CFFFF', '#74F5F6'], // Aqua shimmer effect
+  goldBurst: [TITLE_GRADIENT.light, TITLE_GRADIENT.mid],    // Golden gradient burst
+  oceanicBlue: [OCEANIC_PALETTE.oceanFoam, OCEANIC_PALETTE.oceanTeal], // Oceanic shimmer
+  speedBonus: [OCEANIC_PALETTE.coralOrange, OCEANIC_PALETTE.sunsetOrange],   // Coral energy
+  cascadeShimmer: [OCEANIC_PALETTE.oceanTeal, OCEANIC_PALETTE.oceanFoam], // Ocean cascade effect
 } as const;
 
-// CROWN SYSTEM - King of the Hill Progression
+// CROWN SYSTEM - Preserved King of the Hill Progression
 export const CROWN_COLORS = {
-  gold: '#FFE265',           // Naples Yellow (crown base)
-  goldDeep: '#FF8F1D',       // Dark Orange Web (crown shadow)
-  glow: '#FCE495',           // Jasmine (crown glow effect)
+  gold: TITLE_GRADIENT.light,           // Preserved golden crown
+  goldDeep: TITLE_GRADIENT.deep,        // Preserved crown shadow
+  glow: '#FCE495',                      // Preserved crown glow effect
 } as const;
 
-// LEGACY COMPATIBILITY - Backward compatibility with existing components
+// LEGACY COMPATIBILITY - Oceanic Theme with Backward Compatibility
 export const COLORS = {
-  // Primary tile system (mapped to point values)
+  // Primary tile system (preserved - mapped to point values)
   tileBackground: TILE_COLORS.points1,  // Default to 1-point color
   tileText: TEXT_COLORS.tileLetters,
   tileSelected: UI_ELEMENTS.tileSelected,
   tileHover: UI_ELEMENTS.tileHover,
   
-  // UI Elements
-  primary: '#1599BB',          // Blue Green (main brand)
-  accent: '#FAA827',           // Orange Web (accent)
+  // UI Elements - Oceanic System
+  primary: OCEANIC_PALETTE.oceanSurface,          // Ocean Surface (main brand)
+  accent: OCEANIC_PALETTE.coralOrange,            // Coral Orange (accent)
   background: BACKGROUNDS.main.light,
   cardBg: BACKGROUNDS.leaderboard,
   border: BACKGROUNDS.boardOutline,
   
-  // Text hierarchy
+  // Text hierarchy - Oceanic
   text: TEXT_COLORS.playerNames,
   textSubtle: TEXT_COLORS.playerScores,
   
-  // Feedback colors
-  success: '#1DD1A1',
-  error: '#FF5252',
-  warning: '#FFC107',
+  // Feedback colors (preserved)
+  success: '#1DD1A1',          // Keep green for success
+  error: '#FF5252',            // Keep red for errors
+  warning: '#FFC107',          // Keep yellow for warnings
   
-  // King of the Hill
+  // King of the Hill (preserved)
   gold: CROWN_COLORS.gold,
 } as const;
 
@@ -101,6 +122,7 @@ export const COLORS = {
 export const FONTS = {
   heading: 'Nunito',
   body: 'Inter',
+  title: 'Luckiest Guy',  // Premium title font for brand consistency
   
   // Font weights for premium feel
   weights: {
@@ -140,12 +162,12 @@ export const SHADOWS = {
   golden: '0 4px 8px rgba(0, 0, 0, 0.3)',           // Golden title shadow
 } as const;
 
-// DIFFICULTY LEVEL COLORS - Using tile gradient system
+// DIFFICULTY LEVEL COLORS - Oceanic Progression
 export const DIFFICULTY_COLORS = {
-  easy: TILE_COLORS.points1,      // Blue Green
-  medium: TILE_COLORS.points3,    // Persian Green  
-  hard: TILE_COLORS.points5,      // Orange Web
-  extreme: TILE_COLORS.points10,  // Orange Crayola
+  easy: OCEANIC_PALETTE.oceanSurface,     // Ocean Surface
+  medium: OCEANIC_PALETTE.oceanTeal,      // Ocean Teal  
+  hard: OCEANIC_PALETTE.sunsetOrange,     // Sunset Orange
+  extreme: OCEANIC_PALETTE.coralOrange,   // Coral Orange
 } as const;
 
 /**
@@ -172,13 +194,29 @@ export function getTileColorByPoints(points: number): string {
  * @returns CSS linear-gradient string
  */
 export function getGoldenGradient(): string {
-  return `linear-gradient(135deg, ${TITLE_GRADIENT.light} 0%, ${TITLE_GRADIENT.mid} 50%, ${TITLE_GRADIENT.deep} 100%)`;
+  return `linear-gradient(to bottom, ${TITLE_GRADIENT.light} 0%, ${TITLE_GRADIENT.mid} 50%, ${TITLE_GRADIENT.deep} 100%)`;
 }
 
 /**
- * Generate CSS background for main app
- * @returns CSS radial-gradient string
+ * Generate CSS background for main app - Oceanic Depth
+ * @returns CSS linear-gradient string
  */
 export function getMainBackground(): string {
-  return `radial-gradient(ellipse at center, ${BACKGROUNDS.main.light} 0%, ${BACKGROUNDS.main.deep} 100%)`;
+  return `linear-gradient(135deg, ${BACKGROUNDS.main.deep} 0%, ${BACKGROUNDS.main.light} 100%)`;
+}
+
+/**
+ * Generate oceanic depth gradient for panels
+ * @returns CSS linear-gradient string
+ */
+export function getOceanicDepthGradient(): string {
+  return `linear-gradient(45deg, ${OCEANIC_PALETTE.deepOcean} 0%, ${OCEANIC_PALETTE.midOcean} 100%)`;
+}
+
+/**
+ * Generate celebratory oceanic gradient for match complete
+ * @returns CSS linear-gradient string
+ */
+export function getCelebratoryGradient(): string {
+  return `linear-gradient(135deg, ${OCEANIC_PALETTE.deepestOcean} 0%, ${OCEANIC_PALETTE.oceanBlue} 50%, ${OCEANIC_PALETTE.oceanFoam} 100%)`;
 } 

@@ -104,7 +104,7 @@ app.get('/health', (_, res) => {
 // Initialize board pre-generation cache after dictionary is ready
 // This caches boards upfront to prevent on-demand generation delays
 console.log(`[${new Date().toISOString()}] 🎲 Starting board pre-generation cache...`);
-preGenerateBoards(dictionaryService, 10).catch(error => {
+preGenerateBoards(dictionaryService, 5).catch(error => {
   console.error(`[${new Date().toISOString()}] ❌ Board pre-generation failed:`, error);
 });
 
@@ -118,7 +118,7 @@ setInterval(() => {
   
   // Trigger board pre-generation if cache is running low
   if (cacheStats.cacheSize < 3 && !cacheStats.isPreGenerating && dictionaryService.isReady()) {
-    preGenerateBoards(dictionaryService, 3).catch(console.error);
+    preGenerateBoards(dictionaryService, 5).catch(console.error);
   }
 }, 30 * 60 * 1000); // Every 30 minutes
 
