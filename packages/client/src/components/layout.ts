@@ -53,7 +53,7 @@ export function createGameLayout(
   layoutState.instructionText = scene.add
     .text(
       width / 2,
-      height - Math.min(80, height * 0.08),
+      height - Math.min(120, height * 0.12), // 🎯 PHASE B.4: Increased from 80px/0.08 to 120px/0.12 for larger board
       'Drag over adjacent tiles to form words. Release to submit!',
       {
         fontSize: Math.min(22, width * 0.028) + 'px', // 🎯 PHASE 2.2: Increased from 16px/0.02 for better readability
@@ -105,7 +105,7 @@ export function resizeGame(
   
   // Update instructions
   if (layoutState.instructionText) {
-    layoutState.instructionText.setPosition(width / 2, height - Math.min(80, height * 0.08));
+    layoutState.instructionText.setPosition(width / 2, height - Math.min(120, height * 0.12)); // 🎯 PHASE B.4: Increased from 80px/0.08 to 120px/0.12 for larger board
     layoutState.instructionText.setStyle({ 
       fontSize: Math.min(22, width * 0.028) + 'px', // 🎯 PHASE 2.2: Enhanced sizing for readability
       fontStyle: 'bold', // 🎯 PHASE 2.2: Enhanced weight for prominence

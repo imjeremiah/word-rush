@@ -498,12 +498,12 @@ export function updateBoardDisplay(
   const boardHeight = state.currentBoard.height;
   
   // Calculate responsive tile size
-  const maxBoardWidth = width * 0.8;
-  const maxBoardHeight = height * 0.6;
+  const maxBoardWidth = width * 0.9; // 🎯 PHASE B.3.1: Increased from 0.8 to 0.9 for larger board
+  const maxBoardHeight = height * 0.8; // 🎯 PHASE B.3.2: Increased from 0.6 to 0.8 for larger board
   const tileSize = Math.min(
     Math.floor(maxBoardWidth / boardWidth),
     Math.floor(maxBoardHeight / boardHeight),
-    80 // Maximum tile size
+    100 // 🎯 PHASE B.3.3: Increased from 80 to 100 maximum tile size
   );
   
   const gridStartX = width / 2 - (boardWidth * tileSize) / 2;
@@ -560,12 +560,12 @@ export function processTileChanges(
     const boardWidth = state.currentBoard?.width || 4;
     const boardHeight = state.currentBoard?.height || 4;
     
-    const maxBoardWidth = width * 0.8;
-    const maxBoardHeight = height * 0.6;
+    const maxBoardWidth = width * 0.9; // 🎯 PHASE B.3.1: Increased from 0.8 to 0.9 for larger board
+    const maxBoardHeight = height * 0.8; // 🎯 PHASE B.3.2: Increased from 0.6 to 0.8 for larger board
     const tileSize = Math.min(
       Math.floor(maxBoardWidth / boardWidth),
       Math.floor(maxBoardHeight / boardHeight),
-      80
+      100 // 🎯 PHASE B.3.3: Increased from 80 to 100 maximum tile size
     );
     
     const gridStartX = width / 2 - (boardWidth * tileSize) / 2;
@@ -1043,12 +1043,12 @@ function animateBoardUpdate(
   const boardHeight = state.currentBoard.height;
   
   // Calculate responsive tile size
-  const maxBoardWidth = width * 0.8;
-  const maxBoardHeight = height * 0.6;
+  const maxBoardWidth = width * 0.9; // 🎯 PHASE B.3.1: Increased from 0.8 to 0.9 for larger board
+  const maxBoardHeight = height * 0.8; // 🎯 PHASE B.3.2: Increased from 0.6 to 0.8 for larger board
   const tileSize = Math.min(
     Math.floor(maxBoardWidth / boardWidth),
     Math.floor(maxBoardHeight / boardHeight),
-    80
+    100 // 🎯 PHASE B.3.3: Increased from 80 to 100 maximum tile size
   );
   
   const gridStartX = width / 2 - (boardWidth * tileSize) / 2;
@@ -1236,12 +1236,12 @@ function animateTileRemovalAndCascade(
   const boardHeight = state.currentBoard.height;
   
   // Calculate responsive tile size
-  const maxBoardWidth = width * 0.8;
-  const maxBoardHeight = height * 0.6;
+  const maxBoardWidth = width * 0.9; // 🎯 PHASE B.3.1: Increased from 0.8 to 0.9 for larger board
+  const maxBoardHeight = height * 0.8; // 🎯 PHASE B.3.2: Increased from 0.6 to 0.8 for larger board
   const tileSize = Math.min(
     Math.floor(maxBoardWidth / boardWidth),
     Math.floor(maxBoardHeight / boardHeight),
-    80
+    100 // 🎯 PHASE B.3.3: Increased from 80 to 100 maximum tile size
   );
   
   const gridStartX = width / 2 - (boardWidth * tileSize) / 2;
@@ -1797,12 +1797,12 @@ export function refreshVisualStateFromLogical(
     const boardHeight = state.currentBoard.height;
     
     // Calculate responsive tile size
-    const maxBoardWidth = width * 0.8;
-    const maxBoardHeight = height * 0.6;
+    const maxBoardWidth = width * 0.9; // 🎯 PHASE B.3.1: Increased from 0.8 to 0.9 for larger board
+    const maxBoardHeight = height * 0.8; // 🎯 PHASE B.3.2: Increased from 0.6 to 0.8 for larger board
     const tileSize = Math.min(
       Math.floor(maxBoardWidth / boardWidth),
       Math.floor(maxBoardHeight / boardHeight),
-      80 // Maximum tile size
+      100 // 🎯 PHASE B.3.3: Increased from 80 to 100 maximum tile size
     );
     
     const gridStartX = width / 2 - (boardWidth * tileSize) / 2;
@@ -1854,12 +1854,12 @@ export function correctVisualStateTileByTile(
   const boardHeight = state.currentBoard.height;
   
   // Calculate tile positioning
-  const maxBoardWidth = width * 0.8;
-  const maxBoardHeight = height * 0.6;
+  const maxBoardWidth = width * 0.9; // 🎯 PHASE B.3.1: Increased from 0.8 to 0.9 for larger board
+  const maxBoardHeight = height * 0.8; // 🎯 PHASE B.3.2: Increased from 0.6 to 0.8 for larger board
   const tileSize = Math.min(
     Math.floor(maxBoardWidth / boardWidth),
     Math.floor(maxBoardHeight / boardHeight),
-    80
+    100 // 🎯 PHASE B.3.3: Increased from 80 to 100 maximum tile size
   );
   
   const gridStartX = width / 2 - (boardWidth * tileSize) / 2;
@@ -2385,7 +2385,7 @@ function forceSyncVisualToLogicalPositions(scene: Phaser.Scene, state: BoardRend
   const { width, height } = scene.scale.gameSize;
   const boardWidth = state.currentBoard.width;
   const boardHeight = state.currentBoard.height;
-  const tileSize = Math.min(Math.floor(width * 0.8 / boardWidth), Math.floor(height * 0.6 / boardHeight), 80);
+  const tileSize = Math.min(Math.floor(width * 0.9 / boardWidth), Math.floor(height * 0.8 / boardHeight), 100); // 🎯 PHASE B.3: Increased scaling from 0.8→0.9, 0.6→0.8, 80→100
   const gridStartX = width / 2 - (boardWidth * tileSize) / 2;
   const gridStartY = height / 2 - (boardHeight * tileSize) / 2;
   
