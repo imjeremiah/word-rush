@@ -36,6 +36,84 @@ export function areCascadeAnimationsRunning(): boolean {
   return cascadeAnimationsRunning;
 }
 
+/**
+ * 🔧 FIX 2: Force reposition points after animations to prevent snapping
+ * Ensures all point texts are correctly positioned in bottom-right corner of tiles
+ * @param scene - Phaser scene
+ * @param state - Board rendering state
+ * @param tileSize - Current tile size for positioning calculations
+ */
+export function repositionPoints(scene: Phaser.Scene, state: BoardRenderingState, tileSize: number): void {
+  if (!state.currentBoard) return;
+  
+  let repositionedCount = 0;
+  const boardHeight = state.currentBoard.height;
+  const boardWidth = state.currentBoard.width;
+  
+  console.log(`[${new Date().toISOString()}] 🔧 Force repositioning points for ${boardWidth}x${boardHeight} board...`);
+  
+  for (let row = 0; row < boardHeight; row++) {
+    for (let col = 0; col < boardWidth; col++) {
+      const tileSprite = state.tileSprites[row]?.[col];
+      const pointText = state.pointTexts[row]?.[col];
+      
+      if (tileSprite && pointText) {
+        // Calculate correct bottom-right position relative to tile center
+        const correctX = tileSprite.x + (tileSize * 0.4);
+        const correctY = tileSprite.y + (tileSize * 0.4);
+        
+        // Check if repositioning is needed
+        const currentX = pointText.x;
+        const currentY = pointText.y;
+        const tolerance = 2; // Allow 2px tolerance for floating point differences
+        
+        if (Math.abs(currentX - correctX) > tolerance || Math.abs(currentY - correctY) > tolerance) {
+          console.log(`[Fix2] Repositioning point text at [${row}][${col}] from (${currentX.toFixed(1)}, ${currentY.toFixed(1)}) to (${correctX}, ${correctY})`);
+          
+          pointText.setPosition(correctX, correctY);
+          pointText.setOrigin(1, 1); // Ensure bottom-right anchor
+          pointText.setVisible(true); // Ensure visibility
+          repositionedCount++;
+        }
+      }
+    }
+  }
+  
+  if (repositionedCount > 0) {
+    console.log(`[${new Date().toISOString()}] ✅ Repositioned ${repositionedCount} point texts to correct positions`);
+  } else {
+    console.log(`[${new Date().toISOString()}] ✅ All point texts already correctly positioned`);
+  }
+}
+
+// Debounced repositioning to prevent excessive calls
+let repositionDebounceTimer: NodeJS.Timeout | null = null;
+
+/**
+ * 🔧 FIX 2: Debounced version of repositionPoints to prevent excessive calls
+ * @param scene - Phaser scene
+ * @param state - Board rendering state  
+ * @param tileSize - Current tile size for positioning calculations
+ * @param delayMs - Debounce delay in milliseconds (default: 100ms)
+ */
+export function debouncedRepositionPoints(
+  scene: Phaser.Scene, 
+  state: BoardRenderingState, 
+  tileSize: number, 
+  delayMs: number = 100
+): void {
+  // Clear existing timer
+  if (repositionDebounceTimer) {
+    clearTimeout(repositionDebounceTimer);
+  }
+  
+  // Set new timer
+  repositionDebounceTimer = setTimeout(() => {
+    repositionPoints(scene, state, tileSize);
+    repositionDebounceTimer = null;
+  }, delayMs);
+}
+
 // Types for board rendering state
 export interface BoardRenderingState {
   currentBoard: GameBoard | null;
@@ -445,6 +523,9 @@ export function updateBoardDisplay(
     // Update existing tiles efficiently - reuse instead of recreate
     updateExistingTiles(scene, state, gridStartX, gridStartY, tileSize, setupTileInteraction);
   }
+  
+  // 🔧 FIX 2: Ensure points are correctly positioned after any board display update
+  debouncedRepositionPoints(scene, state, tileSize, 200);
 }
 
 /**
@@ -523,6 +604,9 @@ export function processTileChanges(
         
         // 🔧 PHASE 25: Force position synchronization after cascade completes
         forceSyncVisualToLogicalPositions(scene, state);
+        
+        // 🔧 FIX 2: Force reposition points after all cascade animations complete
+        debouncedRepositionPoints(scene, state, tileSize, 50);
         
         // 🎬 PHASE 1A: Disable tile animation bypass after cascade completes
         setTileAnimationBypass(false);
@@ -804,7 +888,13 @@ function animateTileFalling(
       }
     }
 
-    Promise.all(fallingPromises).then(() => resolve());
+    Promise.all(fallingPromises).then(() => {
+      // 🔧 FIX 2: Reposition points after falling animations complete
+      console.log(`[${new Date().toISOString()}] 🔧 Falling animations complete - checking point positions...`);
+      // Use immediate repositioning (no debounce) since this is after a specific animation sequence
+      repositionPoints(scene, state, tileSize);
+      resolve();
+    });
   });
 }
 
@@ -925,7 +1015,13 @@ function animateNewTileAppearance(
       appearancePromises.push(appearancePromise);
     }
 
-    Promise.all(appearancePromises).then(() => resolve());
+    Promise.all(appearancePromises).then(() => {
+      // 🔧 FIX 2: Reposition points after new tile appearance animations complete
+      console.log(`[${new Date().toISOString()}] 🔧 New tile appearance complete - checking point positions...`);
+      // Use immediate repositioning (no debounce) since this is after a specific animation sequence
+      repositionPoints(scene, state, tileSize);
+      resolve();
+    });
   });
 }
 
