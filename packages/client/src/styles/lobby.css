@@ -215,7 +215,7 @@
   padding: 12px 16px;
   border: 2px solid #0B6281; /* Ocean Surface border */
   background: #01606A; /* Ocean Blue background */
-  color: #0888AD; /* Ocean Foam text */
+  color: #FAF0C7; /* Universal text color for better readability */
   border-radius: 6px;
   font-size: 1rem;
   transition: border-color 0.2s;
@@ -408,53 +408,9 @@
   background: rgba(255, 193, 7, 0.15);
 }
 
-.player-card.king-of-the-hill {
-  background: linear-gradient(135deg, rgba(255, 226, 101, 0.4), rgba(255, 185, 47, 0.3));
-  border: 2px solid #FFE265 !important;
-  box-shadow: 0 0 15px rgba(255, 226, 101, 0.5);
-  animation: kingGlow 2s ease-in-out infinite alternate;
-}
 
-@keyframes kingGlow {
-  from {
-    box-shadow: 0 0 15px rgba(255, 226, 101, 0.5);
-  }
-  to {
-    box-shadow: 0 0 25px rgba(255, 226, 101, 0.8);
-  }
-}
 
-.king-crown {
-  display: inline-block;
-  margin-left: 0.3rem;
-  font-size: 1.1rem;
-  animation: crownPulse 1.5s ease-in-out infinite;
-  filter: drop-shadow(0 0 4px #FFE265);
-}
 
-@keyframes crownPulse {
-  0%, 100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.1);
-  }
-}
-
-.crown-count {
-  display: inline-block;
-  margin-left: 0.4rem;
-  background: linear-gradient(135deg, #FFE265 0%, #FFB92F 50%, #FF8F1D 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  font-size: 0.8rem;
-  font-weight: bold;
-  padding: 0.1rem 0.3rem;
-  border-radius: 4px;
-  border: 1px solid rgba(255, 226, 101, 0.5);
-  background-color: rgba(255, 226, 101, 0.1);
-}
 
 .player-info {
   display: flex;
@@ -463,9 +419,32 @@
   margin-bottom: 10px;
 }
 
+.player-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.player-avatar {
+  font-size: 1.5rem;
+  color: #0888AD; /* Ocean Foam */
+}
+
 .player-name {
   font-weight: 600;
   color: #E1F5E4; /* Honeydew */
+}
+
+.host-badge {
+  background: #F2742B; /* Coral Orange */
+  color: #FAF0C7; /* Universal text color */
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .difficulty {
@@ -478,26 +457,26 @@
 
 .difficulty.easy {
   background: rgba(11, 98, 129, 0.3); /* Ocean Surface */
-  color: #0B6281;
+  color: #FAF0C7; /* Universal text color */
 }
 
 .difficulty.medium {
   background: rgba(31, 125, 129, 0.3); /* Ocean Teal */
-  color: #1F7D81;
+  color: #FAF0C7; /* Universal text color */
 }
 
 .difficulty.hard {
   background: rgba(247, 154, 45, 0.3); /* Sunset Orange */
-  color: #F79A2D;
+  color: #FAF0C7; /* Universal text color */
 }
 
 .difficulty.extreme {
   background: rgba(242, 116, 43, 0.3); /* Coral Orange */
-  color: #F2742B;
+  color: #FAF0C7; /* Universal text color */
 }
 
 .difficulty-not-set {
-  color: #1F7D81; /* Ocean Teal */
+  color: #FAF0C7; /* Universal text color */
   font-style: italic;
 }
 
@@ -508,7 +487,7 @@
 }
 
 .difficulty-section h3 {
-  color: #0888AD; /* Ocean Foam */
+  color: #FFE265; /* Golden highlight to match Match Settings */
   margin: 0 0 15px 0;
 }
 
@@ -549,6 +528,15 @@
 .difficulty-details {
   font-size: 0.8rem;
   color: #1F7D81; /* Ocean Teal */
+}
+
+/* Selected difficulty button text styling for better readability */
+.difficulty-button.selected .difficulty-name {
+  color: #FAF0C7; /* Universal text color for better readability when selected */
+}
+
+.difficulty-button.selected .difficulty-details {
+  color: #FAF0C7; /* Universal text color for better readability when selected */
 }
 
 .settings-header {
@@ -648,25 +636,25 @@
 }
 
 .not-ready-button {
-  background: #FFC107;
-  color: #01243F; /* Deep background for contrast */
-}
-
-.not-ready-button:hover {
-  background: #FFB300;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(255, 193, 7, 0.4);
-}
-
-.start-match-button {
   background: #0C5C7E; /* Lapis Lazuli */
   color: #D2E9D3; /* Nyanza button text */
 }
 
-.start-match-button:hover:not(:disabled) {
+.not-ready-button:hover {
   background: #0e6b91;
   transform: translateY(-2px);
   box-shadow: 0 8px 16px rgba(14, 107, 145, 0.4);
+}
+
+.start-match-button {
+  background: #FFC107;
+  color: #D2E9D3; /* Nyanza button text - matches Mark as Ready */
+}
+
+.start-match-button:hover:not(:disabled) {
+  background: #FFB300;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(255, 193, 7, 0.4);
 }
 
 .start-match-button:disabled {
@@ -677,7 +665,7 @@
 }
 
 .waiting-for-host {
-  color: #8CE6EC; /* Electric Blue */
+  color: #D2E9D3; /* Nyanza button text - matches Mark as Ready */
   font-style: italic;
   text-align: center;
 }

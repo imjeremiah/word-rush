@@ -90,13 +90,15 @@ function MainMenu(): JSX.Element {
 function CreateGameScreen({ onBack }: { onBack: () => void }): JSX.Element {
   const { socket, setCurrentRoom, setGameState, gameState, currentRoom, connectionStatus } = useGameContext();
   const [playerName, setPlayerName] = useState('');
+  // Default game settings
   const [settings, setSettings] = useState({
     totalRounds: 3,
-    roundDuration: 90,
-    shuffleCost: 10, // Required by server validation, but hidden from UI
+    roundDuration: 90, // seconds
+    shuffleCost: 10, // Re-added to prevent server validation error, but hidden from UI
     speedBonusMultiplier: 1.5,
     speedBonusWindow: 3,
     deadBoardThreshold: 5,
+    gameMode: 'standard' as const // Add required gameMode property
   });
   const [isCreating, setIsCreating] = useState(false);
 

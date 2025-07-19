@@ -4,15 +4,13 @@
  * Shows final scores, winner, and options to play again or return to lobby
  */
 
-import { MatchComplete as MatchCompleteType } from '@word-rush/common';
-
 /**
- * Match completion data structure with optional properties to prevent crashes
+ * Match completion data structure with enhanced stats
  */
 interface MatchCompleteData {
   winner: {
-    playerId: string;
-    playerName: string;
+    id: string;
+    username: string;
     score: number;
     difficulty?: string;
   } | null;
@@ -22,6 +20,12 @@ interface MatchCompleteData {
     playerName: string;
     score: number;
     difficulty?: string;
+    // Enhanced stats
+    wordsFound?: number;
+    longestWord?: string;
+    highestScoringWord?: string;
+    highestWordScore?: number;
+    averageWordLength?: number;
   }>;
   totalRounds: number;
 }
@@ -58,14 +62,14 @@ export function MatchComplete({
   
   // Add null checks for winner
   const winner = matchComplete.winner || { 
-    playerId: '', 
-    playerName: 'Unknown', 
+    id: '', 
+    username: 'Unknown', 
     score: 0, 
     difficulty: 'medium' 
   };
   
   // Check if current player is the winner
-  const isWinner = winner.playerId === currentPlayerId;
+  const isWinner = winner.id === currentPlayerId;
   
   // Find current player's final rank with fallback
   const currentPlayerResult = matchComplete.finalScores.find(p => p.playerId === currentPlayerId);
@@ -104,23 +108,13 @@ export function MatchComplete({
   }
 
   /**
-   * Get trophy icon based on rank
+   * Get trophy/medal icon and styling based on rank
    */
-  function getTrophyIcon(rank: number): string {
-    if (rank === 1) return '🏆';
-    if (rank === 2) return '🥈';
-    if (rank === 3) return '🥉';
-    return '🏅';
-  }
-
-  /**
-   * Get rank class for styling
-   */
-  function getRankClass(rank: number): string {
-    if (rank === 1) return 'rank-gold';
-    if (rank === 2) return 'rank-silver';
-    if (rank === 3) return 'rank-bronze';
-    return 'rank-other';
+  function getRankInfo(rank: number) {
+    if (rank === 1) return { icon: '🏆', class: 'rank-winner', title: 'WINNER' };
+    if (rank === 2) return { icon: '🥈', class: 'rank-runner-up', title: 'RUNNER-UP' };
+    if (rank === 3) return { icon: '🥉', class: 'rank-third', title: '3RD PLACE' };
+    return { icon: '🏅', class: 'rank-other', title: `${rank}${getRankSuffix(rank)} PLACE` };
   }
 
   return (
@@ -129,33 +123,24 @@ export function MatchComplete({
         
         {/* Winner Announcement */}
         <div className="winner-announcement">
-          <div className="winner-crown">👑</div>
           <h1 className="match-complete-title">Match Complete!</h1>
           
           <div className="winner-card">
             <div className="winner-trophy">🏆</div>
             <div className="winner-info">
-              <h2 className="winner-name">{winner.playerName}</h2>
-              <div className="winner-details">
-                <span 
-                  className="winner-difficulty"
-                  style={{ color: getDifficultyColor(winner.difficulty) }}
-                >
-                  {getDifficultyDisplay(winner.difficulty)}
-                </span>
-                <span className="winner-score">{winner.score} points</span>
+              <h2 className="winner-name">{winner.username}</h2>
+              <div className="winner-score">{winner.score} points</div>
+              <div 
+                className="winner-difficulty"
+                style={{ color: getDifficultyColor(winner.difficulty) }}
+              >
+                {getDifficultyDisplay(winner.difficulty)} Difficulty
               </div>
             </div>
           </div>
-          
-          {isWinner && (
-            <div className="victory-message">
-              <h3>🎉 Congratulations! You won! 🎉</h3>
-            </div>
-          )}
         </div>
 
-        {/* Final Rankings */}
+        {/* Final Rankings with Clear Winner/Loser Distinction */}
         <div className="final-rankings">
           <h3>Final Rankings</h3>
           <div className="match-stats">
@@ -165,18 +150,20 @@ export function MatchComplete({
           <div className="rankings-list">
             {matchComplete.finalScores.map((player) => {
               const isCurrentPlayer = player.playerId === currentPlayerId;
+              const rankInfo = getRankInfo(player.rank);
               
               return (
                 <div 
                   key={player.playerId}
-                  className={`final-ranking-item ${getRankClass(player.rank)} ${isCurrentPlayer ? 'current-player' : ''}`}
+                  className={`final-ranking-item ${rankInfo.class} ${isCurrentPlayer ? 'current-player' : ''}`}
                 >
                   
-                  {/* Rank with Trophy */}
+                  {/* Rank with Trophy/Medal */}
                   <div className="rank-display">
-                    <div className="trophy-icon">{getTrophyIcon(player.rank)}</div>
-                    <div className="rank-text">
-                      {player.rank}{getRankSuffix(player.rank)}
+                    <div className="rank-icon">{rankInfo.icon}</div>
+                    <div className="rank-info">
+                      <div className="rank-title">{rankInfo.title}</div>
+                      <div className="rank-position">{player.rank}{getRankSuffix(player.rank)}</div>
                     </div>
                   </div>
                   
@@ -190,7 +177,7 @@ export function MatchComplete({
                       className="player-difficulty"
                       style={{ color: getDifficultyColor(player.difficulty) }}
                     >
-                      {getDifficultyDisplay(player.difficulty)} Difficulty
+                      {getDifficultyDisplay(player.difficulty)}
                     </div>
                   </div>
                   
@@ -206,6 +193,63 @@ export function MatchComplete({
           </div>
         </div>
 
+        {/* Enhanced Player Stats */}
+        <div className="enhanced-stats">
+          <h3>Match Statistics</h3>
+          <div className="stats-grid">
+            {matchComplete.finalScores.map((player) => {
+              const isCurrentPlayer = player.playerId === currentPlayerId;
+              const rankInfo = getRankInfo(player.rank);
+              
+              return (
+                <div 
+                  key={player.playerId}
+                  className={`player-stats-card ${rankInfo.class} ${isCurrentPlayer ? 'current-player' : ''}`}
+                >
+                  <div className="stats-header">
+                    <span className="stats-rank-icon">{rankInfo.icon}</span>
+                    <span className="stats-player-name">
+                      {player.playerName}
+                      {isCurrentPlayer && ' (You)'}
+                    </span>
+                  </div>
+                  
+                  <div className="stats-grid-content">
+                    <div className="stat-item">
+                      <span className="stat-icon">📝</span>
+                      <span className="stat-label">Words Found:</span>
+                      <span className="stat-value">{player.wordsFound || 0}</span>
+                    </div>
+                    
+                    <div className="stat-item">
+                      <span className="stat-icon">📏</span>
+                      <span className="stat-label">Longest Word:</span>
+                      <span className="stat-value">{player.longestWord || 'None'}</span>
+                    </div>
+                    
+                    <div className="stat-item">
+                      <span className="stat-icon">💎</span>
+                      <span className="stat-label">Best Word:</span>
+                      <span className="stat-value">
+                        {player.highestScoringWord || 'None'}
+                        {player.highestWordScore ? ` (${player.highestWordScore}pts)` : ''}
+                      </span>
+                    </div>
+                    
+                    <div className="stat-item">
+                      <span className="stat-icon">📊</span>
+                      <span className="stat-label">Avg Length:</span>
+                      <span className="stat-value">
+                        {player.averageWordLength ? `${player.averageWordLength.toFixed(1)} letters` : 'N/A'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Personal Performance Summary */}
         {currentPlayerResult && (
           <div className="personal-summary">
@@ -213,10 +257,11 @@ export function MatchComplete({
               <h4>Your Match Performance</h4>
               <div className="summary-stats">
                 <div className="summary-stat">
-                  <span className="stat-icon">{getTrophyIcon(currentPlayerRank)}</span>
+                  <span className="stat-icon">{getRankInfo(currentPlayerRank).icon}</span>
                   <span className="stat-label">Final Rank:</span>
                   <span className="stat-value">
                     {currentPlayerRank}{getRankSuffix(currentPlayerRank)} Place
+                    {isWinner && <span className="winner-badge">🎉 WINNER! 🎉</span>}
                   </span>
                 </div>
                 <div className="summary-stat">
@@ -267,11 +312,6 @@ export function MatchComplete({
               <p>Waiting for host to start a new match or return to lobby...</p>
             </div>
           )}
-        </div>
-
-        {/* Auto Return Notice */}
-        <div className="auto-return-notice">
-          <p>Returning to lobby automatically in a few seconds...</p>
         </div>
 
       </div>

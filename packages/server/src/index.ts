@@ -276,7 +276,7 @@ io.on('connection', (socket) => {
     roomService.handlePlayerRejoin(socket.id, socket);
   }));
 
-  socket.on('player:rejoin', withErrorHandling(socket, 'player:rejoin', (data) => {
+  socket.on('player:rejoin', withErrorHandlingNoData(socket, () => {
     roomService.handlePlayerRejoin(socket.id, socket);
   }));
 

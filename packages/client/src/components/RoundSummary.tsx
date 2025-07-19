@@ -4,8 +4,6 @@
  * Shows scores, submitted words, and controls for next round
  */
 
-import { RoundSummary as RoundSummaryType } from '@word-rush/common';
-
 /**
  * Round summary data structure
  */

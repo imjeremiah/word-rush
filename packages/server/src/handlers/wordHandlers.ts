@@ -84,8 +84,7 @@ export function handleWordSubmit(
     roomService?: RoomServiceType;
   }
 ): void {
-  const { word, tiles } = data;
-  const { dictionaryService, sessionService, roomService } = services;
+  const { dictionaryService, roomService } = services;
   
   // Start latency measurement
   const startTime = Date.now();
@@ -189,6 +188,29 @@ function handleMultiplayerWordSubmit(
     player.score = newTotalScore;
     player.roundScore = newRoundScore;
     player.lastWordTimestamp = now;
+
+    // 🎯 ENHANCED STATS: Track detailed player statistics
+    if (!(player as any).wordsFound) (player as any).wordsFound = 0;
+    if (!(player as any).totalWordLength) (player as any).totalWordLength = 0;
+    if (!(player as any).longestWord) (player as any).longestWord = '';
+    if (!(player as any).highestScoringWord) (player as any).highestScoringWord = '';
+    if (!(player as any).highestWordScore) (player as any).highestWordScore = 0;
+
+    // Update enhanced stats
+    (player as any).wordsFound++;
+    (player as any).totalWordLength += word.length;
+    (player as any).averageWordLength = (player as any).totalWordLength / (player as any).wordsFound;
+
+    // Track longest word
+    if (word.length > (player as any).longestWord.length) {
+      (player as any).longestWord = word;
+    }
+
+    // Track highest scoring word
+    if (points > (player as any).highestWordScore) {
+      (player as any).highestScoringWord = word;
+      (player as any).highestWordScore = points;
+    }
 
     // Calculate tile changes and update board
     if (room.gameState.board) {

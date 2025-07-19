@@ -5,7 +5,7 @@
  */
 
 import { useEffect, useRef, useCallback, startTransition } from 'react';
-import { io } from 'socket.io-client';
+import { io, Socket } from 'socket.io-client';
 import { useGameContext } from '../context/GameContext';
 import { notifications } from '../services/notifications';
 import { withServerEventValidation } from '../validation/schemas';
@@ -979,12 +979,8 @@ function GameConnection(): null {
       const winnerName = data.winner?.username || 'Unknown';
       notifications.success(`Match over! Winner: ${winnerName}`, 5000);
       
-      // Auto-return to lobby after showing results
-      setTimeout(() => {
-        localStorage.setItem('wordRushGameState', 'lobby');  // Track return to lobby
-        contextRef.current.setGameState('lobby');
-        notifications.info('Returning to lobby...', 2000);
-      }, 10000);  // 10 second delay to show results
+      // 🎯 USER REQUEST: Removed auto-return - let players stay on results page to study stats
+      // Players can use the "Return to Lobby" or "Start New Match" buttons when ready
     }));
 
     newSocket.on('game:leaderboard-update', withServerEventValidation('game:leaderboard-update', (data) => {
