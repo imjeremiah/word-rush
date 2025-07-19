@@ -228,7 +228,7 @@ function triggerCircuitBreaker(reason: string): void {
  */
 function shouldBypassValidation(scene?: Phaser.Scene): boolean {
   // Tightened: Only bypass if destroying or inactive > 2s
-  if (scene && scene.scene.isDestroying) {
+  if (scene && scene.scene && (scene.scene as any).isDestroying) {
     return true;
   }
   
@@ -357,8 +357,8 @@ function updateExistingTiles(
       if (existingSprite && existingText) {
         // Reuse existing tile - update properties instead of recreating
         const tileColor = getTileColorByPoints(tileData.points);
-        const letterSize = Math.max(12, Math.min(32, tileSize * 0.4));
-        const pointSize = Math.max(8, Math.min(12, tileSize * 0.15));
+        const letterSize = Math.max(14, Math.min(40, tileSize * 0.55)); // Larger letters to fill more space
+        const pointSize = Math.max(9, Math.min(14, tileSize * 0.18)); // Slightly larger but secondary
 
         // Update sprite properties
         existingSprite.setPosition(x, y);
@@ -380,12 +380,18 @@ function updateExistingTiles(
           existingPointText.setFontSize(pointSize);
         } else {
           // Create missing point text
-          const pointText = scene.add.text(x + tileSize * 0.4, y + tileSize * 0.4, tileData.points.toString(), {
+          const pointText = safeSceneOperation(scene, () => scene.add.text(x + tileSize * 0.4, y + tileSize * 0.4, tileData.points.toString(), {
             fontSize: pointSize + 'px',
-            color: TEXT_COLORS.playerScores,
+            color: TEXT_COLORS.universalText || '#FAF0C7', // Universal text color instead of orange
             fontFamily: FONTS.body,
             fontStyle: 'bold',
-          }).setOrigin(1, 1);
+          }).setOrigin(1, 1), 'create missing point text');
+
+          if (!pointText) {
+            console.warn(`[SceneGuard] Failed to create point text for tile at [${row}][${col}] - skipping`);
+            continue; // Skip this tile and continue with others
+          }
+
           state.pointTexts[row][col] = pointText;
         }
 
@@ -395,51 +401,69 @@ function updateExistingTiles(
       } else {
         // Create new tile only if needed
         const tileColor = getTileColorByPoints(tileData.points);
-        const letterSize = Math.max(12, Math.min(32, tileSize * 0.4));
-        const pointSize = Math.max(8, Math.min(12, tileSize * 0.15));
+        const letterSize = Math.max(14, Math.min(40, tileSize * 0.55)); // Larger letters to fill more space
+        const pointSize = Math.max(9, Math.min(14, tileSize * 0.18)); // Slightly larger but secondary
 
         // Create new tile background
-        const tile = scene.add.rectangle(
+        const tile = safeSceneOperation(scene, () => scene.add.rectangle(
           x, y,
           tileSize - 6, tileSize - 6,
           parseInt(tileColor.replace('#', ''), 16)
-        );
+        ), 'create new tile');
+
+        if (!tile) {
+          console.warn(`[SceneGuard] Failed to create new tile at [${row}][${col}] - skipping`);
+          continue; // Skip this tile
+        }
+
         tile.setStrokeStyle(2, parseInt(BACKGROUNDS.boardOutline.replace('#', ''), 16));
         tile.setInteractive();
 
         // Add subtle depth shadow effect
-        const shadowTile = scene.add.rectangle(
+        const shadowTile = safeSceneOperation(scene, () => scene.add.rectangle(
           x + 2, y + 2,
           tileSize - 6, tileSize - 6,
           0x000000
-        );
-        shadowTile.setAlpha(0.2);
-        shadowTile.setDepth(-1);
+        ), 'create new shadow');
+
+        if (shadowTile) {
+          shadowTile.setAlpha(0.2);
+          shadowTile.setDepth(-1);
+        }
 
         // Create new text
-        const letterText = scene.add.text(x, y - 4, tileData.letter, {
+        const letterText = safeSceneOperation(scene, () => scene.add.text(x, y - 4, tileData.letter, {
           fontSize: letterSize + 'px',
-          color: TEXT_COLORS.tileLetters,
+          color: TEXT_COLORS.tileLetters || '#FAF0C7', // Safety fallback for universal text
           fontFamily: FONTS.body,
           fontStyle: 'bold',
-        }).setOrigin(0.5);
+        }).setOrigin(0.5), 'create new letter text');
 
         // Create and store point value text
-        const pointText = scene.add.text(x + tileSize * 0.4, y + tileSize * 0.4, tileData.points.toString(), {
+        const pointText = safeSceneOperation(scene, () => scene.add.text(x + tileSize * 0.4, y + tileSize * 0.4, tileData.points.toString(), {
           fontSize: pointSize + 'px',
-          color: TEXT_COLORS.playerScores,
+          color: TEXT_COLORS.universalText || '#FAF0C7', // Universal text color instead of orange
           fontFamily: FONTS.body,
           fontStyle: 'bold',
-        }).setOrigin(1, 1);
+        }).setOrigin(1, 1), 'create point text');
+
+        if (!letterText || !pointText) {
+          console.warn(`[SceneGuard] Failed to create text for tile at [${row}][${col}] - skipping text setup`);
+          // Continue with tile setup even if text fails, but don't store null values
+        } else {
+          // Only store text objects if they were successfully created
+          state.tileTexts[row][col] = letterText;
+          state.pointTexts[row][col] = pointText;
+        }
 
         // Store sprites and track shadow tiles (prevents artifacts)
         state.tileSprites[row][col] = tile;
-        state.tileTexts[row][col] = letterText;
-        state.pointTexts[row][col] = pointText;
         
         // Ensure shadow array exists and store shadow tile
         if (!state.shadowSprites[row]) state.shadowSprites[row] = [];
-        state.shadowSprites[row][col] = shadowTile;
+        if (shadowTile) {
+          state.shadowSprites[row][col] = shadowTile;
+        }
 
         setupTileInteraction(tile, row, col, tileData);
         tilesCreated++;
@@ -498,12 +522,12 @@ export function updateBoardDisplay(
   const boardHeight = state.currentBoard.height;
   
   // Calculate responsive tile size
-  const maxBoardWidth = width * 0.8;
-  const maxBoardHeight = height * 0.6;
+  const maxBoardWidth = width * 0.9; // 🎯 PHASE B.3.1: Increased from 0.8 to 0.9 for larger board
+  const maxBoardHeight = height * 0.8; // 🎯 PHASE B.3.2: Increased from 0.6 to 0.8 for larger board
   const tileSize = Math.min(
     Math.floor(maxBoardWidth / boardWidth),
     Math.floor(maxBoardHeight / boardHeight),
-    80 // Maximum tile size
+    100 // 🎯 PHASE B.3.3: Increased from 80 to 100 maximum tile size
   );
   
   const gridStartX = width / 2 - (boardWidth * tileSize) / 2;
@@ -560,12 +584,12 @@ export function processTileChanges(
     const boardWidth = state.currentBoard?.width || 4;
     const boardHeight = state.currentBoard?.height || 4;
     
-    const maxBoardWidth = width * 0.8;
-    const maxBoardHeight = height * 0.6;
+    const maxBoardWidth = width * 0.9; // 🎯 PHASE B.3.1: Increased from 0.8 to 0.9 for larger board
+    const maxBoardHeight = height * 0.8; // 🎯 PHASE B.3.2: Increased from 0.6 to 0.8 for larger board
     const tileSize = Math.min(
       Math.floor(maxBoardWidth / boardWidth),
       Math.floor(maxBoardHeight / boardHeight),
-      80
+      100 // 🎯 PHASE B.3.3: Increased from 80 to 100 maximum tile size
     );
     
     const gridStartX = width / 2 - (boardWidth * tileSize) / 2;
@@ -934,74 +958,97 @@ function animateNewTileAppearance(
         const startY = finalY - tileSize * 1.5; // Reduced fall distance for speed
 
         // Calculate responsive text sizes
-        const letterSize = Math.max(12, Math.min(32, tileSize * 0.4));
-        const pointSize = Math.max(8, Math.min(12, tileSize * 0.15));
+        const letterSize = Math.max(14, Math.min(40, tileSize * 0.55)); // Larger letters to fill more space
+        const pointSize = Math.max(9, Math.min(14, tileSize * 0.18)); // Slightly larger but secondary
 
         // Get premium color based on Scrabble point value
         const tileColor = getTileColorByPoints(points);
 
         // Create tile background with premium point-based coloring
-        const tile = scene.add.rectangle(
+        const tile = safeSceneOperation(scene, () => scene.add.rectangle(
           x,
           startY,
           tileSize - 6, // Consistent with createBoardTiles spacing
           tileSize - 6,
           parseInt(tileColor.replace('#', ''), 16)
-        );
+        ), 'create new tile');
+
+        if (!tile) {
+          console.warn(`[SceneGuard] Failed to create new tile at [${position.y}][${position.x}] - skipping`);
+          animResolve(); // Complete this animation promise
+          return; // Exit this promise callback
+        }
+
         tile.setStrokeStyle(2, parseInt(BACKGROUNDS.boardOutline.replace('#', ''), 16));
         tile.setInteractive();
 
         // Add subtle depth shadow effect
-        const shadowTile = scene.add.rectangle(
+        const shadowTile = safeSceneOperation(scene, () => scene.add.rectangle(
           x + 2, startY + 2,
           tileSize - 6, tileSize - 6,
           0x000000
-        );
-        shadowTile.setAlpha(0.2);
-        shadowTile.setDepth(-1);
+        ), 'create new shadow');
+
+        if (shadowTile) {
+          shadowTile.setAlpha(0.2);
+          shadowTile.setDepth(-1);
+        }
 
         // Create letter text with premium colors
-        const letterText = scene.add
+        const letterText = safeSceneOperation(scene, () => scene.add
           .text(x, startY - 4, letter, {
             fontSize: letterSize + 'px',
             color: TEXT_COLORS.tileLetters,
             fontFamily: FONTS.body,
             fontStyle: 'bold',
           })
-          .setOrigin(0.5);
+          .setOrigin(0.5), 'create new letter text');
         
-        // Create point value text with premium electric blue
-        const pointText = scene.add
+        // Create point value text with universal text color
+        const pointText = safeSceneOperation(scene, () => scene.add
           .text(x + tileSize * 0.4, startY + tileSize * 0.4, points.toString(), {
             fontSize: pointSize + 'px',
-            color: TEXT_COLORS.playerScores,
+            color: TEXT_COLORS.universalText || '#FAF0C7', // Universal text color instead of orange
             fontFamily: FONTS.body,
             fontStyle: 'bold',
           })
-          .setOrigin(1, 1);
+          .setOrigin(1, 1), 'create point text');
 
         // 🐛 PREP LOGGING: Track new tile creation
-        console.log(`[Cascade] Creating new tile ${id} at position (${position.x}, ${position.y}). Initial point position: x=${pointText.x}, y=${pointText.y}`);
+        if (pointText) {
+          console.log(`[Cascade] Creating new tile ${id} at position (${position.x}, ${position.y}). Initial point position: x=${pointText.x}, y=${pointText.y}`);
+        } else {
+          console.log(`[Cascade] Creating new tile ${id} at position (${position.x}, ${position.y}). Point text creation failed.`);
+        }
 
         // Animate tile falling into place - optimized for <400ms performance
+        const animTargets = [tile];
+        if (letterText) animTargets.push(letterText);
+        if (pointText) animTargets.push(pointText);
+        if (shadowTile) animTargets.push(shadowTile);
+
         scene.tweens.add({
-          targets: [tile, letterText, pointText, shadowTile], // Include shadow in animation
-          y: [startY, finalY, finalY - 4, finalY + tileSize * 0.4, finalY + 2], // Different targets for different elements
+          targets: animTargets,
+          y: [startY, finalY, finalY - 4, finalY + tileSize * 0.4, finalY + 2], // Different final positions for different elements
           duration: 120, // Reduced from 150ms to 120ms for faster completion
           ease: 'Cubic.easeOut', // Optimized for smooth 60fps performance
           delay: position.x * 10, // Reduced stagger from 20ms to 10ms for faster completion
           onComplete: () => {
             // 🐛 PREP LOGGING: Track final positioning
-            console.log(`[Cascade] New tile ${id} animation completed. Final point position: x=${pointText.x}, y=${pointText.y}`);
+            if (pointText) {
+              console.log(`[Cascade] New tile ${id} animation completed. Final point position: x=${pointText.x}, y=${pointText.y}`);
+            } else {
+              console.log(`[Cascade] New tile ${id} animation completed. Point text was null.`);
+            }
             
             // Store in state arrays efficiently (includes shadow tracking)
             state.tileSprites[position.y][position.x] = tile;
-            state.tileTexts[position.y][position.x] = letterText;
-            state.pointTexts[position.y][position.x] = pointText;
+            if (letterText) state.tileTexts[position.y][position.x] = letterText;
+            if (pointText) state.pointTexts[position.y][position.x] = pointText;
             
             // Ensure shadow array exists and store shadow tile
             if (!state.shadowSprites[position.y]) state.shadowSprites[position.y] = [];
-            state.shadowSprites[position.y][position.x] = shadowTile;
+            if (shadowTile) state.shadowSprites[position.y][position.x] = shadowTile;
             
             // Setup interactions
             const tileData: LetterTile = { letter, points, x: position.x, y: position.y, id };
@@ -1043,12 +1090,12 @@ function animateBoardUpdate(
   const boardHeight = state.currentBoard.height;
   
   // Calculate responsive tile size
-  const maxBoardWidth = width * 0.8;
-  const maxBoardHeight = height * 0.6;
+  const maxBoardWidth = width * 0.9; // 🎯 PHASE B.3.1: Increased from 0.8 to 0.9 for larger board
+  const maxBoardHeight = height * 0.8; // 🎯 PHASE B.3.2: Increased from 0.6 to 0.8 for larger board
   const tileSize = Math.min(
     Math.floor(maxBoardWidth / boardWidth),
     Math.floor(maxBoardHeight / boardHeight),
-    80
+    100 // 🎯 PHASE B.3.3: Increased from 80 to 100 maximum tile size
   );
   
   const gridStartX = width / 2 - (boardWidth * tileSize) / 2;
@@ -1141,51 +1188,60 @@ function createNewBoardWithAnimation(
       const tileData = state.currentBoard.tiles[row][col];
 
       // Calculate responsive text sizes
-      const letterSize = Math.max(12, Math.min(32, tileSize * 0.4));
-      const pointSize = Math.max(8, Math.min(12, tileSize * 0.15));
+      const letterSize = Math.max(14, Math.min(40, tileSize * 0.55)); // Larger letters to fill more space
+      const pointSize = Math.max(9, Math.min(14, tileSize * 0.18)); // Slightly larger but secondary
 
       // Get premium color based on Scrabble point value
       const tileColor = getTileColorByPoints(tileData.points);
 
       // Create new tile background with premium coloring
-      const tile = scene.add.rectangle(
+      const tile = safeSceneOperation(scene, () => scene.add.rectangle(
         x,
         startY,
         tileSize - 6, // Consistent spacing
         tileSize - 6,
         parseInt(tileColor.replace('#', ''), 16)
-      );
+      ), 'create new tile');
+
+      if (!tile) {
+        console.warn(`[SceneGuard] Failed to create new tile at [${row}][${col}] - skipping`);
+        continue; // Skip this tile
+      }
+
       tile.setStrokeStyle(2, parseInt(BACKGROUNDS.boardOutline.replace('#', ''), 16));
       tile.setInteractive();
 
       // Add subtle depth shadow effect
-      const shadowTile = scene.add.rectangle(
+      const shadowTile = safeSceneOperation(scene, () => scene.add.rectangle(
         x + 2, startY + 2,
         tileSize - 6, tileSize - 6,
         0x000000
-      );
-      shadowTile.setAlpha(0.2);
-      shadowTile.setDepth(-1);
+      ), 'create new shadow');
+
+      if (shadowTile) {
+        shadowTile.setAlpha(0.2);
+        shadowTile.setDepth(-1);
+      }
 
       // Create new tile text with premium colors
-      const letterText = scene.add
+      const letterText = safeSceneOperation(scene, () => scene.add
         .text(x, startY - 4, tileData.letter, {
           fontSize: letterSize + 'px',
           color: TEXT_COLORS.tileLetters,
           fontFamily: FONTS.body,
           fontStyle: 'bold',
         })
-        .setOrigin(0.5);
+        .setOrigin(0.5), 'create new letter text');
       
-      // Add point value in corner with premium electric blue
-      const pointText = scene.add
+      // Add point value in corner with universal text color
+      const pointText = safeSceneOperation(scene, () => scene.add
         .text(x + tileSize * 0.4, startY + tileSize * 0.4, tileData.points.toString(), {
           fontSize: pointSize + 'px',
-          color: TEXT_COLORS.playerScores,
+          color: TEXT_COLORS.universalText || '#FAF0C7', // Universal text color instead of orange
           fontFamily: FONTS.body,
           fontStyle: 'bold',
         })
-        .setOrigin(1, 1);
+        .setOrigin(1, 1), 'create point text');
 
       state.tileSprites[row][col] = tile;
       
@@ -1194,8 +1250,13 @@ function createNewBoardWithAnimation(
       state.shadowSprites[row][col] = shadowTile;
 
       // Animate tiles falling into place (optimized)
+      const animTargets = [tile];
+      if (letterText) animTargets.push(letterText);
+      if (pointText) animTargets.push(pointText);
+      if (shadowTile) animTargets.push(shadowTile);
+
       scene.tweens.add({
-        targets: [tile, letterText, pointText, shadowTile], // Include shadow in animation
+        targets: animTargets,
         y: [startY, y, y - 4, y + tileSize * 0.4, y + 2], // Different final positions for different elements
         duration: 150 + (row * 25), // Reduced from 300+50ms to 150+25ms
         ease: 'Cubic.easeOut', // Faster than Bounce.easeOut
@@ -1236,12 +1297,12 @@ function animateTileRemovalAndCascade(
   const boardHeight = state.currentBoard.height;
   
   // Calculate responsive tile size
-  const maxBoardWidth = width * 0.8;
-  const maxBoardHeight = height * 0.6;
+  const maxBoardWidth = width * 0.9; // 🎯 PHASE B.3.1: Increased from 0.8 to 0.9 for larger board
+  const maxBoardHeight = height * 0.8; // 🎯 PHASE B.3.2: Increased from 0.6 to 0.8 for larger board
   const tileSize = Math.min(
     Math.floor(maxBoardWidth / boardWidth),
     Math.floor(maxBoardHeight / boardHeight),
-    80
+    100 // 🎯 PHASE B.3.3: Increased from 80 to 100 maximum tile size
   );
   
   const gridStartX = width / 2 - (boardWidth * tileSize) / 2;
@@ -1417,51 +1478,60 @@ function animateCascadingTilesWithRemovedPositions(
       const startY = gridStartY - tileSize; // Start just above the board
       
       // Calculate responsive text sizes
-      const letterSize = Math.max(12, Math.min(32, tileSize * 0.4));
-      const pointSize = Math.max(8, Math.min(12, tileSize * 0.15));
+      const letterSize = Math.max(14, Math.min(40, tileSize * 0.55)); // Larger letters to fill more space
+      const pointSize = Math.max(9, Math.min(14, tileSize * 0.18)); // Slightly larger but secondary
 
       // Get premium color based on Scrabble point value
       const tileColor = getTileColorByPoints(tileData.points);
 
       // Create new tile background with premium coloring
-      const tile = scene.add.rectangle(
+      const tile = safeSceneOperation(scene, () => scene.add.rectangle(
         x,
         startY,
         tileSize - 6, // Consistent spacing
         tileSize - 6,
         parseInt(tileColor.replace('#', ''), 16)
-      );
+      ), 'create new tile');
+
+      if (!tile) {
+        console.warn(`[SceneGuard] Failed to create new tile at [${newRow}][${col}] - skipping`);
+        continue; // Skip this tile
+      }
+
       tile.setStrokeStyle(2, parseInt(BACKGROUNDS.boardOutline.replace('#', ''), 16));
       tile.setInteractive();
 
       // Add subtle depth shadow effect
-      const shadowTile = scene.add.rectangle(
+      const shadowTile = safeSceneOperation(scene, () => scene.add.rectangle(
         x + 2, startY + 2,
         tileSize - 6, tileSize - 6,
         0x000000
-      );
-      shadowTile.setAlpha(0.2);
-      shadowTile.setDepth(-1);
+      ), 'create new shadow');
+
+      if (shadowTile) {
+        shadowTile.setAlpha(0.2);
+        shadowTile.setDepth(-1);
+      }
 
       // Create new tile text with premium colors
-      const letterText = scene.add
+      const letterText = safeSceneOperation(scene, () => scene.add
         .text(x, startY - 4, tileData.letter, {
           fontSize: letterSize + 'px',
           color: TEXT_COLORS.tileLetters,
           fontFamily: FONTS.body,
           fontStyle: 'bold',
         })
-        .setOrigin(0.5);
+        .setOrigin(0.5), 'create new letter text');
       
       // Create and store point value text
-      const pointText = scene.add
+      const pointText = safeSceneOperation(scene, () => scene.add
         .text(x + tileSize * 0.4, startY + tileSize * 0.4, tileData.points.toString(), {
           fontSize: pointSize + 'px',
-          color: TEXT_COLORS.playerScores,
+          color: TEXT_COLORS.universalText || '#FAF0C7', // Universal text color instead of orange
           fontFamily: FONTS.body,
           fontStyle: 'bold',
         })
-        .setOrigin(1, 1);
+        .setOrigin(1, 1), 'create point text');
 
       // Update state arrays (includes shadow tracking)
       state.tileSprites[newRow][col] = tile;
@@ -1578,13 +1648,19 @@ function createBoardTiles(
   const boardHeight = state.currentBoard.height;
 
   // Create premium grid background with atmospheric styling
-  const gridBackground = scene.add.rectangle(
+  const gridBackground = safeSceneOperation(scene, () => scene.add.rectangle(
     width / 2,
     gridStartY + (boardHeight * tileSize) / 2,
     boardWidth * tileSize + 20,
     boardHeight * tileSize + 20,
     parseInt(BACKGROUNDS.boardOutline.replace('#', ''), 16)
-  );
+  ), 'create grid background');
+
+  if (!gridBackground) {
+    console.warn(`[SceneGuard] Failed to create grid background - skipping`);
+    return; // Skip this step if grid background creation fails
+  }
+
   gridBackground.setStrokeStyle(3, parseInt(BACKGROUNDS.boardOutline.replace('#', ''), 16));
 
   // Create letter tiles from server data with premium colors
@@ -1602,27 +1678,34 @@ function createBoardTiles(
       const tileColor = getTileColorByPoints(tileData.points);
 
       // Create tile background with premium point-based coloring and depth
-      const tile = scene.add.rectangle(
+      const tile = safeSceneOperation(scene, () => scene.add.rectangle(
         x,
         y,
         tileSize - 6, // Slightly smaller for better spacing
         tileSize - 6,
         parseInt(tileColor.replace('#', ''), 16)
-      );
-      
-      // Add premium border and depth styling
+      ), 'create tile');
+
+      if (!tile) {
+        console.warn(`[SceneGuard] Failed to create tile at [${row}][${col}] - skipping`);
+        continue; // Skip this tile and continue with others
+      }
+
       tile.setStrokeStyle(2, parseInt(BACKGROUNDS.boardOutline.replace('#', ''), 16));
       tile.setInteractive();
       
       // Add subtle depth shadow effect (simulated with darker stroke)
-      const shadowTile = scene.add.rectangle(
+      const shadowTile = safeSceneOperation(scene, () => scene.add.rectangle(
         x + 2, y + 2,
         tileSize - 6, tileSize - 6,
         0x000000
-      );
-      shadowTile.setAlpha(0.2);
-      shadowTile.setDepth(-1); // Place shadow behind main tile
-      
+      ), 'create shadow');
+
+      if (shadowTile) {
+        shadowTile.setAlpha(0.2);
+        shadowTile.setDepth(-1); // Place shadow behind main tile
+      }
+
       state.tileSprites[row][col] = tile;
       
       // Ensure shadow array exists and store shadow tile
@@ -1630,27 +1713,27 @@ function createBoardTiles(
       state.shadowSprites[row][col] = shadowTile;
 
       // Add letter and point value with premium typography
-      const letterSize = Math.max(12, Math.min(32, tileSize * 0.4));
-      const pointSize = Math.max(8, Math.min(12, tileSize * 0.15));
+      const letterSize = Math.max(14, Math.min(40, tileSize * 0.55)); // Larger letters to fill more space
+      const pointSize = Math.max(9, Math.min(14, tileSize * 0.18)); // Slightly larger but secondary
       
-      const letterText = scene.add
+      const letterText = safeSceneOperation(scene, () => scene.add
         .text(x, y - 4, tileData.letter, {
           fontSize: letterSize + 'px',
           color: TEXT_COLORS.tileLetters,
           fontFamily: FONTS.body,
           fontStyle: 'bold',
         })
-        .setOrigin(0.5);
+        .setOrigin(0.5), 'create letter text');
       
-      // Add point value in corner with premium text color
-      const pointText = scene.add
+      // Add point value in corner with universal text color
+      const pointText = safeSceneOperation(scene, () => scene.add
         .text(x + tileSize * 0.4, y + tileSize * 0.4, tileData.points.toString(), {
           fontSize: pointSize + 'px',
-          color: TEXT_COLORS.playerScores, // Use electric blue for point values
+          color: TEXT_COLORS.universalText || '#FAF0C7', // Universal text color instead of orange
           fontFamily: FONTS.body,
           fontStyle: 'bold',
         })
-        .setOrigin(1, 1);
+        .setOrigin(1, 1), 'create point text');
 
       state.tileTexts[row][col] = letterText;
       state.pointTexts[row][col] = pointText;
@@ -1797,12 +1880,12 @@ export function refreshVisualStateFromLogical(
     const boardHeight = state.currentBoard.height;
     
     // Calculate responsive tile size
-    const maxBoardWidth = width * 0.8;
-    const maxBoardHeight = height * 0.6;
+    const maxBoardWidth = width * 0.9; // 🎯 PHASE B.3.1: Increased from 0.8 to 0.9 for larger board
+    const maxBoardHeight = height * 0.8; // 🎯 PHASE B.3.2: Increased from 0.6 to 0.8 for larger board
     const tileSize = Math.min(
       Math.floor(maxBoardWidth / boardWidth),
       Math.floor(maxBoardHeight / boardHeight),
-      80 // Maximum tile size
+      100 // 🎯 PHASE B.3.3: Increased from 80 to 100 maximum tile size
     );
     
     const gridStartX = width / 2 - (boardWidth * tileSize) / 2;
@@ -1854,12 +1937,12 @@ export function correctVisualStateTileByTile(
   const boardHeight = state.currentBoard.height;
   
   // Calculate tile positioning
-  const maxBoardWidth = width * 0.8;
-  const maxBoardHeight = height * 0.6;
+  const maxBoardWidth = width * 0.9; // 🎯 PHASE B.3.1: Increased from 0.8 to 0.9 for larger board
+  const maxBoardHeight = height * 0.8; // 🎯 PHASE B.3.2: Increased from 0.6 to 0.8 for larger board
   const tileSize = Math.min(
     Math.floor(maxBoardWidth / boardWidth),
     Math.floor(maxBoardHeight / boardHeight),
-    80
+    100 // 🎯 PHASE B.3.3: Increased from 80 to 100 maximum tile size
   );
   
   const gridStartX = width / 2 - (boardWidth * tileSize) / 2;
@@ -1881,42 +1964,57 @@ export function correctVisualStateTileByTile(
             // Get premium color based on Scrabble point value
             const tileColor = getTileColorByPoints(logicalTile.points);
 
-            // Create tile sprite with premium coloring
-            const tile = scene.add.rectangle(
+            // 🔧 CRITICAL FIX: Use safe scene operation to prevent null reference errors
+            const tile = safeSceneOperation(scene, () => scene.add.rectangle(
               x, y,
               tileSize - 6, tileSize - 6, // Consistent spacing
               parseInt(tileColor.replace('#', ''), 16)
-            );
+            ), 'create correction tile');
+
+            if (!tile) {
+              console.warn(`[SceneGuard] Failed to create correction tile at [${row}][${col}] - skipping`);
+              continue; // Skip this tile and continue with others
+            }
+
             tile.setStrokeStyle(2, parseInt(BACKGROUNDS.boardOutline.replace('#', ''), 16));
             tile.setInteractive();
 
-            // Add subtle depth shadow effect
-            const shadowTile = scene.add.rectangle(
+            // 🔧 CRITICAL FIX: Use safe scene operation for shadow tile
+            const shadowTile = safeSceneOperation(scene, () => scene.add.rectangle(
               x + 2, y + 2,
               tileSize - 6, tileSize - 6,
               0x000000
-            );
-            shadowTile.setAlpha(0.2);
-            shadowTile.setDepth(-1);
+            ), 'create correction shadow');
+
+            if (shadowTile) {
+              shadowTile.setAlpha(0.2);
+              shadowTile.setDepth(-1);
+            }
 
             // Create text with premium colors
-            const letterSize = Math.max(12, Math.min(32, tileSize * 0.4));
-            const pointSize = Math.max(8, Math.min(12, tileSize * 0.15));
+            const letterSize = Math.max(14, Math.min(40, tileSize * 0.55)); // Larger letters to fill more space
+            const pointSize = Math.max(9, Math.min(14, tileSize * 0.18)); // Slightly larger but secondary
             
-            const letterText = scene.add.text(x, y - 4, logicalTile.letter, {
+            // 🔧 CRITICAL FIX: Use safe scene operation for letter text
+            const letterText = safeSceneOperation(scene, () => scene.add.text(x, y - 4, logicalTile.letter, {
               fontSize: letterSize + 'px',
               color: TEXT_COLORS.tileLetters,
               fontFamily: FONTS.body,
               fontStyle: 'bold',
-            }).setOrigin(0.5);
+            }).setOrigin(0.5), 'create correction letter text');
 
-            // Create point text
-            const pointText = scene.add.text(x + tileSize * 0.4, y + tileSize * 0.4, logicalTile.points.toString(), {
+            // 🔧 CRITICAL FIX: Use safe scene operation for point text
+            const pointText = safeSceneOperation(scene, () => scene.add.text(x + tileSize * 0.4, y + tileSize * 0.4, logicalTile.points.toString(), {
               fontSize: pointSize + 'px',
-              color: TEXT_COLORS.playerScores,
+              color: TEXT_COLORS.universalText || '#FAF0C7', // Universal text color instead of orange
               fontFamily: FONTS.body,
               fontStyle: 'bold',
-            }).setOrigin(1, 1);
+            }).setOrigin(1, 1), 'create correction point text');
+
+            if (!letterText || !pointText) {
+              console.warn(`[SceneGuard] Failed to create text for tile at [${row}][${col}] - skipping text setup`);
+              // Continue with tile setup even if text fails
+            }
 
             // Ensure arrays exist
             if (!state.tileSprites[row]) state.tileSprites[row] = [];
@@ -2385,7 +2483,7 @@ function forceSyncVisualToLogicalPositions(scene: Phaser.Scene, state: BoardRend
   const { width, height } = scene.scale.gameSize;
   const boardWidth = state.currentBoard.width;
   const boardHeight = state.currentBoard.height;
-  const tileSize = Math.min(Math.floor(width * 0.8 / boardWidth), Math.floor(height * 0.6 / boardHeight), 80);
+  const tileSize = Math.min(Math.floor(width * 0.9 / boardWidth), Math.floor(height * 0.8 / boardHeight), 100); // 🎯 PHASE B.3: Increased scaling from 0.8→0.9, 0.6→0.8, 80→100
   const gridStartX = width / 2 - (boardWidth * tileSize) / 2;
   const gridStartY = height / 2 - (boardHeight * tileSize) / 2;
   
@@ -2659,3 +2757,61 @@ function debugPointTextPositioning(): void {
 
 // Make debug function globally available
 (window as any).debugPointTextPositioning = debugPointTextPositioning;
+
+/**
+ * 🔧 UPDATED FIX: More targeted scene readiness validation 
+ * Focuses on the actual null scene.add issue rather than broader scene state
+ * @param scene - Phaser scene to validate
+ * @returns Boolean indicating if scene is safe to use for game object operations
+ */
+function isSceneReadyForGameObjects(scene: Phaser.Scene): boolean {
+  try {
+    // Check if scene exists and has required properties
+    if (!scene || !scene.sys) {
+      console.warn(`[SceneGuard] Scene or scene.sys is null`);
+      return false;
+    }
+
+    // 🔧 CRITICAL FIX: Check if scene.add exists (prevents the null error)
+    if (!scene.add) {
+      console.warn(`[SceneGuard] scene.add is null - scene has been destroyed`);
+      return false;
+    }
+
+    // Check if essential scene systems are available (more lenient than before)
+    if (!scene.sys.displayList || !scene.sys.updateList) {
+      console.warn(`[SceneGuard] Scene display or update list is null`);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error(`[SceneGuard] Error checking scene readiness:`, error);
+    return false;
+  }
+}
+
+/**
+ * Safe wrapper for scene.add operations with error handling
+ * @param scene - Phaser scene
+ * @param operation - Function that performs scene.add operations
+ * @param operationName - Name for logging
+ * @returns Result of operation or null if failed
+ */
+function safeSceneOperation<T>(
+  scene: Phaser.Scene, 
+  operation: () => T, 
+  operationName: string
+): T | null {
+  if (!isSceneReadyForGameObjects(scene)) {
+    console.warn(`[SceneGuard] Skipping ${operationName} - scene not ready`);
+    return null;
+  }
+
+  try {
+    return operation();
+  } catch (error) {
+    console.error(`[SceneGuard] Failed ${operationName}:`, error);
+    return null;
+  }
+}

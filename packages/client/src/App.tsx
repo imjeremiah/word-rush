@@ -7,7 +7,6 @@ import React, { useState, useEffect } from 'react';
 import { GameProvider, useGameContext } from './context/GameContext';
 import GameConnection from './components/GameConnection';
 import { GameHUD } from './components/GameHUD';
-import GameControls from './components/GameControls';
 import PhaserGame from './components/PhaserGame';
 import MainMenu from './components/MainMenu';
 import LobbyScreen from './components/LobbyScreen';
@@ -71,13 +70,9 @@ const AppContent = React.memo((): JSX.Element => {
     return socket?.id || '';
   }, [socket?.id]);
 
-  const playerPoints = React.useMemo(() => {
-    return playerSession?.score || 0;
-  }, [playerSession?.score]);
+  // 🎯 PHASE D.2.3: Removed playerPoints calculation - no longer needed after stats section removal
 
-  const canShuffle = React.useMemo(() => {
-    return playerPoints >= 5;
-  }, [playerPoints]);
+  // 🎯 PHASE C.3.3: Removed canShuffle calculation - shuffle functionality eliminated
 
   // 📊 DEPLOY 1: Monitoring dashboard state
   const [showMonitoringDashboard, setShowMonitoringDashboard] = useState(false);
@@ -96,11 +91,7 @@ const AppContent = React.memo((): JSX.Element => {
   }, []);
 
   // 🟡 PHASE 3A: Memoized event handlers to prevent unnecessary re-renders
-  const handleShuffle = React.useCallback(() => {
-    if (socket) {
-      socket.emit('game:shuffle-request');
-    }
-  }, [socket]);
+  // 🎯 PHASE C.3.3: Removed handleShuffle function - shuffle functionality eliminated
 
   const handleContinue = React.useCallback(() => {
     // Manual unpause fallback for host
@@ -156,7 +147,10 @@ const AppContent = React.memo((): JSX.Element => {
       {shouldRenderPhaser && (
         <>
           <header className="app-header">
-            <h1>Word Rush - Multiplayer Match</h1>
+            <h1>
+              <span className="game-title">Word Rush</span>
+              <span className="match-subtitle"> - Multiplayer Match</span>
+            </h1>
             <div className="room-indicator">
               Room: {currentRoom!.roomCode}
             </div>
@@ -165,17 +159,14 @@ const AppContent = React.memo((): JSX.Element => {
           <main className="app-main">
             <div className="game-container">
               <div className="ui-section">
+                {/* 🎯 PHASE C.3.3: Removed shuffle props: canShuffle, shuffleCost, onShuffle */}
+                {/* 🎯 PHASE D.2.3: Removed playerPoints prop - no longer needed after stats section removal */}
                 <GameHUD 
                   timer={roundTimer!}
                   players={currentRoom!.players}
                   currentPlayerId={currentPlayerId}
-                  canShuffle={canShuffle}
-                  playerPoints={playerPoints}
-                  shuffleCost={5}
-                  onShuffle={handleShuffle}
                   isGameActive={isGameActive}
                 />
-                <GameControls />
               </div>
 
               <div className="game-section">

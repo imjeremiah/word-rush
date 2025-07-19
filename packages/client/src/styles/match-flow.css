@@ -21,7 +21,7 @@
 }
 
 .round-summary-container {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #002441 0%, #01606A 100%); /* Oceanic gradient: Deepest Ocean → Ocean Blue */
   border-radius: 20px;
   padding: 2rem;
   max-width: 800px;
@@ -51,14 +51,15 @@
 }
 
 .round-summary-rankings {
-  background: rgba(255, 255, 255, 0.1);
+  background: #013B4F; /* Deep Ocean */
   border-radius: 15px;
   padding: 1.5rem;
   margin-bottom: 2rem;
+  border: 1px solid #0888AD; /* Ocean Foam border */
 }
 
 .round-summary-rankings h3 {
-  color: white;
+  color: #0888AD; /* Ocean Foam */
   text-align: center;
   margin: 0 0 1.5rem 0;
   font-size: 1.8rem;
@@ -73,15 +74,15 @@
 .ranking-item {
   display: flex;
   align-items: center;
-  background: rgba(255, 255, 255, 0.15);
+  background: #0B6281; /* Ocean Surface */
   border-radius: 12px;
   padding: 1rem;
   transition: all 0.3s ease;
 }
 
 .ranking-item.current-player {
-  background: rgba(255, 215, 0, 0.3);
-  border: 2px solid rgba(255, 215, 0, 0.6);
+  background: rgba(242, 116, 43, 0.3); /* Coral Orange background */
+  border: 2px solid #F2742B; /* Coral Orange border */
   transform: scale(1.02);
 }
 
@@ -254,7 +255,7 @@
 }
 
 .match-complete-container {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #002441 0%, #01606A 50%, #0888AD 100%); /* Celebratory oceanic gradient */
   border-radius: 20px;
   padding: 2.5rem;
   max-width: 900px;
@@ -268,7 +269,7 @@
 .winner-announcement {
   text-align: center;
   margin-bottom: 2.5rem;
-  color: white;
+  color: #0888AD; /* Ocean Foam */
 }
 
 .winner-crown {
@@ -280,12 +281,13 @@
 .match-complete-title {
   font-size: 3rem;
   margin: 0 0 2rem 0;
+  color: #0888AD; /* Ocean Foam */
   text-shadow: 0 3px 6px rgba(0, 0, 0, 0.5);
 }
 
 .winner-card {
-  background: linear-gradient(135deg, #ffd700, #ffed4e);
-  color: #333;
+  background: #F2742B; /* Coral Orange background */
+  color: white;
   border-radius: 20px;
   padding: 2rem;
   display: flex;
@@ -523,6 +525,40 @@
   position: relative;
   height: 100%;
   display: flex;
+  flex-direction: row; /* Horizontal layout: sidebar + main content */
+  gap: 0.5rem; /* REDUCED spacing between sidebar and game board */
+}
+
+/* Left Sidebar with Stacked Cards */
+.hud-left-sidebar {
+  width: 280px; /* REDUCED width for tighter layout */
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Individual Cards */
+.hud-card {
+  background: #002840; /* Premium leaderboard background */
+  border: 2px solid #09637B; /* Midnight Green border */
+  border-radius: 15px;
+  padding: 1rem;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Card Headers - ALL use same style as original Live Scores */
+.card-header h3 {
+  margin: 0 0 1rem 0;
+  text-align: center;
+  color: #FAF0C7; /* Universal text color - CONSISTENT */
+  font-size: 1.3rem;
+  font-weight: normal;
+}
+
+/* Main Content Area */
+.hud-main-content {
+  flex: 1; /* Take remaining space */
+  display: flex;
   flex-direction: column;
 }
 
@@ -552,22 +588,11 @@
   gap: 0.25rem;
 }
 
-.round-label {
-  font-size: 0.9rem;
-  opacity: 0.8;
-  color: #8CE6EC; /* Electric Blue */
-}
-
 .round-numbers {
   font-size: 1.5rem;
   font-weight: bold;
   color: #FFE265; /* Golden highlight */
-}
-
-.timer-section {
-  flex: 1;
-  display: flex;
-  justify-content: center;
+  text-align: center;
 }
 
 .timer-container {
@@ -606,83 +631,20 @@
 }
 
 .timer-text-svg {
-  fill: #E2EEDD; /* Honeydew timer numbers */
+  fill: var(--universal-text, #FAF0C7); /* Universal text color /* old: #E2EEDD */
   font-family: 'Inter', monospace;
   font-weight: bold;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-.timer-label {
-  font-size: 0.9rem;
-  color: #8CE6EC; /* Electric Blue */
-  text-align: center;
-}
+/* Timer label now handled by card-header h3 */
 
-.shuffle-control {
-  display: flex;
-  align-items: center;
-}
+/* 🎯 PHASE C.3.4: Removed shuffle CSS classes - functionality eliminated
+   Removed: .shuffle-control, .shuffle-button, .shuffle-icon, .shuffle-text, .shuffle-label, .shuffle-cost */
 
-.shuffle-button {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: #0C5C7E; /* Lapis Lazuli */
-  color: #D2E9D3; /* Nyanza button text */
-  border: none;
-  padding: 0.8rem 1.2rem;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-weight: bold;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
+/* Leaderboard now handled by .hud-card class */
 
-.shuffle-button:hover:not(:disabled) {
-  background: #0e6b91;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(14, 107, 145, 0.4);
-}
-
-.shuffle-button:disabled {
-  background: #003C53; /* Indigo Dye */
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.shuffle-icon {
-  font-size: 1.2rem;
-}
-
-.shuffle-text {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-}
-
-.shuffle-label {
-  font-size: 0.9rem;
-}
-
-.shuffle-cost {
-  font-size: 0.8rem;
-  opacity: 0.8;
-}
-
-.hud-leaderboard {
-  background: #002840; /* Premium leaderboard background */
-  border: 2px solid #09637B; /* Midnight Green border */
-  border-radius: 15px;
-  padding: 1rem;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.leaderboard-header h3 {
-  margin: 0 0 1rem 0;
-  text-align: center;
-  color: #E1F5E4; /* Honeydew */
-  font-size: 1.3rem;
-}
+/* Leaderboard header now handled by .card-header h3 */
 
 .leaderboard-list {
   display: flex;
@@ -771,35 +733,8 @@
   font-size: 0.8rem;
 }
 
-.current-player-stats {
-  border-top: 1px solid #09637B; /* Midnight Green */
-  padding-top: 1rem;
-}
-
-.stats-container {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.current-player-stats .stat-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-
-.current-player-stats .stat-label {
-  color: #8CE6EC; /* Electric Blue */
-  font-size: 0.8rem;
-  margin-bottom: 0.25rem;
-}
-
-.current-player-stats .stat-value {
-  color: #FFE265; /* Golden highlight */
-  font-weight: bold;
-  font-size: 1.1rem;
-}
+/* 🎯 PHASE D.3.1: Removed current-player-stats CSS classes - stats section eliminated
+   Removed: .current-player-stats, .stats-container, .stat-item, .stat-label, .stat-value */
 
 .game-status-overlay {
   position: absolute;

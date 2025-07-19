@@ -119,7 +119,7 @@ export function RoundSummary({
                       className="player-difficulty"
                       style={{ color: getDifficultyColor(player.difficulty) }}
                     >
-                      {player.difficulty.charAt(0).toUpperCase() + player.difficulty.slice(1)}
+                      {player.difficulty.toUpperCase()}
                     </div>
                   </div>
                   

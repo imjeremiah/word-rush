@@ -94,8 +94,8 @@ export function handleWordSubmit(
   const room = roomService?.getRoomByPlayerId(socket.id);
   const isMultiplayer = !!room;
   
-  if (isMultiplayer && room) {
-    handleMultiplayerWordSubmit(socket, data, services, room, startTime);
+  if (isMultiplayer && room && roomService) {
+    handleMultiplayerWordSubmit(socket, data, { dictionaryService, roomService }, room, startTime);
   } else {
     handleSinglePlayerWordSubmit(socket, data, services, startTime);
   }

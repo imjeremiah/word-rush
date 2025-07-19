@@ -430,7 +430,7 @@ export function handleMatchStart(
       console.log(`[${new Date().toISOString()}] 🔍 SYNC_DEBUG: Match validation completed in ${validationTime}ms for room ${room.roomCode}`);
     }
 
-    // 🔧 TASK 2: Include preloaded board in match:starting for client preloading
+    // 🔧 SECTION 5 FIX: Ensure board is available (should be pre-generated in startMatch)
     if (!updatedRoom.gameState?.board) {
       socket.emit('server:error', {
         message: 'Failed to generate game board',
@@ -449,11 +449,11 @@ export function handleMatchStart(
     });
     const boardChecksum = crypto.createHash('md5').update(boardString).digest('hex');
 
-    // Notify all players that match is starting (with countdown AND preloaded board)
+    // 🔧 SECTION 5 FIX: Always include pendingBoard for zero-delay countdown starts
     const countdownStartTime = Date.now();
     const matchStartingPayload = {
       countdown: 3,
-      pendingBoard: updatedRoom.gameState.board,
+      pendingBoard: updatedRoom.gameState.board, // Always include preloaded board
       boardChecksum: boardChecksum
     };
 
@@ -464,14 +464,17 @@ export function handleMatchStart(
       console.log(`[${new Date().toISOString()}] 📡 SYNC_DEBUG: 'match:starting' emitted to ${room.players.length} players at ${countdownStartTime} with preloaded board (checksum: ${boardChecksum})`);
     }
 
-    // 🔧 TASK 2: Server-controlled countdown with 'match:go' event
-    setTimeout(() => {
+    // 🔧 SECTION 5 FIX: Simplified server-controlled countdown with stored timeout reference
+    const matchGoTimeout = setTimeout(() => {
       const goEmitTime = Date.now();
       const exactCountdownDuration = goEmitTime - countdownStartTime;
       
       if (DEBUG_SYNC) {
         console.log(`[${new Date().toISOString()}] 🚀 SYNC_DEBUG: Emitting 'match:go' after ${exactCountdownDuration}ms countdown for room ${room.roomCode}`);
       }
+      
+      // Clear timeout reference
+      roomServiceInstance.clearMatchStartTimeout(room.roomCode);
       
       // Emit server-authoritative GO signal
       io.to(room.roomCode).emit('match:go');
@@ -480,12 +483,15 @@ export function handleMatchStart(
       roomServiceInstance.startRound(room.roomCode, io, dictionaryService);
       console.log(`[${new Date().toISOString()}] Match go signal sent for room ${room.roomCode}`);
     }, 3000); // Exact 3 second countdown
+    
+    // 🔧 SECTION 5 FIX: Store timeout reference for cleanup
+    roomServiceInstance.storeMatchStartTimeout(room.roomCode, matchGoTimeout);
 
   } catch (error) {
-    console.error(`[${new Date().toISOString()}] Error starting match:`, error);
+    console.error(`[${new Date().toISOString()}] ❌ Match start handler error:`, error);
     socket.emit('server:error', {
-      message: 'Failed to start match',
-      code: 'MATCH_START_ERROR'
+      message: 'Match start failed',
+      code: 'MATCH_START_HANDLER_ERROR'
     });
   }
 }

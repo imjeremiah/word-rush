@@ -34,8 +34,10 @@ import {
 import { 
   LayoutState, 
   createGameLayout,
-  initializeResizeHandler
+  initializeResizeHandler,
+  repositionWordBuilderText
 } from './layout.js';
+import { notifications } from '../services/notifications.js';
 
 interface PhaserGameProps {
   socket?: Socket<ServerToClientEvents, ClientToServerEvents>;
@@ -506,6 +508,8 @@ function preload(this: Phaser.Scene, socket?: Socket<ServerToClientEvents, Clien
           // Update the board display if the scene is ready
           if (this.sys && this.sys.isActive()) {
             updateBoardDisplayWrapper.call(this);
+            // Reposition word builder text above the board
+            repositionWordBuilderText(this, interactionState, boardState);
           }
         }).catch(error => {
           console.error('Error loading validation service:', error);
@@ -515,6 +519,8 @@ function preload(this: Phaser.Scene, socket?: Socket<ServerToClientEvents, Clien
           
           if (this.sys && this.sys.isActive()) {
             updateBoardDisplayWrapper.call(this);
+            // Reposition word builder text above the board
+            repositionWordBuilderText(this, interactionState, boardState);
           }
         });
       } else {
@@ -524,6 +530,8 @@ function preload(this: Phaser.Scene, socket?: Socket<ServerToClientEvents, Clien
         
         if (this.sys && this.sys.isActive()) {
           updateBoardDisplayWrapper.call(this);
+          // Reposition word builder text above the board
+          repositionWordBuilderText(this, interactionState, boardState);
         }
       }
     });
@@ -559,6 +567,8 @@ function preload(this: Phaser.Scene, socket?: Socket<ServerToClientEvents, Clien
           // Update the board display if the scene is ready
           if (this.sys && this.sys.isActive()) {
             updateBoardDisplayWrapper.call(this);
+            // Reposition word builder text above the board
+            repositionWordBuilderText(this, interactionState, boardState);
           }
         }).catch(error => {
           console.error('Error loading validation service:', error);
@@ -568,6 +578,8 @@ function preload(this: Phaser.Scene, socket?: Socket<ServerToClientEvents, Clien
           
           if (this.sys && this.sys.isActive()) {
             updateBoardDisplayWrapper.call(this);
+            // Reposition word builder text above the board
+            repositionWordBuilderText(this, interactionState, boardState);
           }
         });
       } else {
@@ -577,6 +589,8 @@ function preload(this: Phaser.Scene, socket?: Socket<ServerToClientEvents, Clien
         
         if (this.sys && this.sys.isActive()) {
           updateBoardDisplayWrapper.call(this);
+          // Reposition word builder text above the board
+          repositionWordBuilderText(this, interactionState, boardState);
         }
       }
     });
@@ -917,6 +931,13 @@ function attemptTileRefresh(scene: Phaser.Scene): boolean {
       setSceneTransitionBypass(true);
       
       try {
+        // 🔧 CRITICAL FIX: Check scene readiness before tile correction
+        if (!isSceneReadyForOperations(scene)) {
+          console.warn(`[PhaserGuard] Skipping tile correction - scene not ready`);
+          attempt.success = false;
+          return;
+        }
+
         const correctedCount = correctVisualStateTileByTile(
           scene,
           boardState,
@@ -1025,7 +1046,12 @@ function attemptSceneRestart(scene: Phaser.Scene): boolean {
         boardState.shadowSprites = [];
         
         // Recreate layout elements
-        createGameLayout(scene, layoutState, interactionState);
+        if (!isSceneReadyForOperations(scene)) {
+          console.warn(`[PhaserGuard] Skipping layout creation - scene not ready`);
+          return;
+        }
+        
+        createGameLayout(scene, layoutState, interactionState, boardState);
         
         // If we have board data, recreate the visual state
         if (boardState.currentBoard) {
@@ -1188,7 +1214,12 @@ function create(this: Phaser.Scene, socket?: Socket<ServerToClientEvents, Client
   boardState.shadowSprites = [];
 
   // Create initial layout
-  createGameLayout(this, layoutState, interactionState);
+  if (!isSceneReadyForOperations(this)) {
+    console.warn(`[PhaserGuard] Skipping initial layout creation - scene not ready`);
+    return;
+  }
+  
+  createGameLayout(this, layoutState, interactionState, boardState);
 
   // Initialize resize handler
   initializeResizeHandler(this, layoutState, interactionState, boardState, updateBoardDisplayWrapper.bind(this));
@@ -1315,6 +1346,12 @@ function updateBoardDisplayWrapper(this: Phaser.Scene) {
         console.warn(`[${new Date().toISOString()}] ⚠️ Visual state validation failed after board update: ${validation.summary}`);
         console.log(`[${new Date().toISOString()}] 🔍 Attempting automatic correction...`);
         
+        // 🔧 CRITICAL FIX: Check scene readiness before tile correction
+        if (!isSceneReadyForOperations(this)) {
+          console.warn(`[PhaserGuard] Skipping auto-correction - scene not ready`);
+          return;
+        }
+
         const correctedCount = correctVisualStateTileByTile(
           this,
           boardState,
@@ -1841,3 +1878,38 @@ export const AudioControls = {
 
 export default PhaserGame; 
 
+/**
+ * 🔧 UPDATED FIX: More targeted scene readiness validation for PhaserGame operations
+ * Focuses on the actual null scene.add issue rather than broader scene state
+ */
+function isSceneReadyForOperations(scene: Phaser.Scene | null): boolean {
+  try {
+    if (!scene) {
+      console.warn(`[PhaserGuard] Scene is null`);
+      return false;
+    }
+
+    // 🔧 CRITICAL: Focus on the actual issue - scene.add being null
+    if (!scene.add) {
+      console.warn(`[PhaserGuard] scene.add is null - scene has been destroyed`);
+      return false;
+    }
+
+    // Check if essential scene systems are available (more lenient than isActive)
+    if (!scene.sys) {
+      console.warn(`[PhaserGuard] scene.sys is null`);
+      return false;
+    }
+
+    // Additional check for completely destroyed game instance
+    if (scene.sys.game && scene.sys.game.isDestroyed) {
+      console.warn(`[PhaserGuard] Game instance is destroyed`);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error(`[PhaserGuard] Error checking scene readiness:`, error);
+    return false;
+  }
+}

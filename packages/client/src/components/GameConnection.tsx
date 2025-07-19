@@ -696,12 +696,34 @@ function GameConnection(): null {
       
       contextRef.current.setGameState('countdown');
       notifications.info(`Match starting in ${data.countdown}...`, data.countdown * 1000);
+      
+      // 🔧 SECTION 5 FIX: Set failsafe timeout for match:go signal to prevent hanging
+      const goSignalTimeout = setTimeout(() => {
+        console.warn(`[${new Date().toISOString()}] ⚠️ SECTION 5 FIX: match:go signal timeout after 5 seconds - forcing transition to prevent hang`);
+        
+        // Force transition to match state if GO signal never arrives
+        contextRef.current.setGameState('match');
+        notifications.warning('Connection delayed - starting match anyway', 3000);
+        
+        // Clear the timeout reference
+        (window as any).goSignalTimeout = null;
+      }, 5000); // 5-second failsafe timeout (2 seconds after expected 3-second countdown)
+      
+      // Store timeout reference for cleanup
+      (window as any).goSignalTimeout = goSignalTimeout;
     }));
 
     // 🔧 TASK 2: Handle Server 'match:go' Signal to Transition to Match
     newSocket.on('match:go', () => {
       const goReceiveTime = Date.now();
       console.log(`[${new Date().toISOString()}] 🚀 Server GO signal received at ${goReceiveTime}`);
+      
+      // 🔧 SECTION 5 FIX: Clear the failsafe timeout since we received the proper signal
+      if ((window as any).goSignalTimeout) {
+        clearTimeout((window as any).goSignalTimeout);
+        (window as any).goSignalTimeout = null;
+        console.log(`[${new Date().toISOString()}] ✅ SECTION 5 FIX: Cleared GO signal failsafe timeout`);
+      }
       
       // Transition from countdown to match state on server signal
       contextRef.current.setGameState('match');
@@ -1165,6 +1187,12 @@ function GameConnection(): null {
       (window as any).emergencyReturnToLobby = null;
       (window as any).enableTimestampSync = false;
       (window as any).networkLatency = null;
+      
+      // 🔧 SECTION 5 FIX: Clean up GO signal timeout
+      if ((window as any).goSignalTimeout) {
+        clearTimeout((window as any).goSignalTimeout);
+        (window as any).goSignalTimeout = null;
+      }
       
       // 🚨 EDGE CASE 4: Clean up device info
       (window as any).deviceInfo = null;

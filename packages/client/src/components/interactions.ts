@@ -396,14 +396,20 @@ export function clearSelection(
  * @param state - Interaction state
  */
 export function updateWordDisplay(state: InteractionState): void {
-  if (!state.currentWordText) return;
+  if (!state.currentWordText) {
+    console.warn('[updateWordDisplay] currentWordText is null - word builder not created properly!');
+    return;
+  }
 
   if (state.selectedTiles.length > 0) {
     const word = state.selectedTiles.map(selected => selected.tile.letter).join('');
     const points = state.selectedTiles.reduce((sum, selected) => sum + selected.tile.points, 0);
-    state.currentWordText.setText(`${word} (${points} points)`);
+    const displayText = `${word} (${points} points)`;
+    state.currentWordText.setText(displayText);
+    console.log(`[updateWordDisplay] Set word builder text to: "${displayText}" at position (${state.currentWordText.x}, ${state.currentWordText.y})`);
   } else {
     state.currentWordText.setText('');
+    console.log('[updateWordDisplay] Cleared word builder text');
   }
 }
 

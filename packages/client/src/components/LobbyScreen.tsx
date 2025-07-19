@@ -289,11 +289,27 @@ function SettingsPanel({ settings, onUpdate, onClose }: SettingsPanelProps): JSX
 
   /**
    * Handle settings change
+   * 🎯 SECTION 4.1: Added validation for round duration values with safety fallback
    */
   const handleChange = (key: string, value: number): void => {
+    let validatedValue = value;
+    
+    // 🎯 SECTION 4.1: Validate round duration with safety fallback
+    if (key === 'roundDuration') {
+      const validDurations = [15, 30, 45, 60, 90];
+      if (!validDurations.includes(value)) {
+        console.warn(`[LobbyScreen] Invalid round duration: ${value}s, falling back to 90s`);
+        validatedValue = 90; // Safety fallback
+        // Could add notification here if needed
+        import('../services/notifications.js').then(({ notifications }) => {
+          notifications.warning('Invalid round duration, reset to 90 seconds', 3000);
+        }).catch(() => {}); // Silent fail for notifications
+      }
+    }
+    
     const newSettings = {
       ...localSettings,
-      [key]: value
+      [key]: validatedValue
     };
     setLocalSettings(newSettings);
     onUpdate(newSettings);
@@ -315,7 +331,7 @@ function SettingsPanel({ settings, onUpdate, onClose }: SettingsPanelProps): JSX
       <div className="setting-group">
         <label>Round Duration: {localSettings.roundDuration}s</label>
         <div className="duration-selector">
-          {[15, 30, 60, 90].map(duration => (
+          {[15, 30, 45, 60, 90].map(duration => (
             <button 
               key={duration}
               className={`duration-button ${localSettings.roundDuration === duration ? 'selected' : ''}`}
@@ -325,18 +341,6 @@ function SettingsPanel({ settings, onUpdate, onClose }: SettingsPanelProps): JSX
             </button>
           ))}
         </div>
-      </div>
-
-      <div className="setting-group">
-        <label>Shuffle Cost: {localSettings.shuffleCost} points</label>
-        <input
-          type="range"
-          min="5"
-          max="25"
-          step="5"
-          value={localSettings.shuffleCost}
-          onChange={(e) => handleChange('shuffleCost', parseInt(e.target.value))}
-        />
       </div>
 
       <div className="setting-group">

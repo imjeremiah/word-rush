@@ -104,7 +104,7 @@ app.get('/health', (_, res) => {
 // Initialize board pre-generation cache after dictionary is ready
 // This caches boards upfront to prevent on-demand generation delays
 console.log(`[${new Date().toISOString()}] 🎲 Starting board pre-generation cache...`);
-preGenerateBoards(dictionaryService, 10).catch(error => {
+preGenerateBoards(dictionaryService, 5).catch(error => {
   console.error(`[${new Date().toISOString()}] ❌ Board pre-generation failed:`, error);
 });
 
@@ -118,7 +118,7 @@ setInterval(() => {
   
   // Trigger board pre-generation if cache is running low
   if (cacheStats.cacheSize < 3 && !cacheStats.isPreGenerating && dictionaryService.isReady()) {
-    preGenerateBoards(dictionaryService, 3).catch(console.error);
+    preGenerateBoards(dictionaryService, 5).catch(console.error);
   }
 }, 30 * 60 * 1000); // Every 30 minutes
 
@@ -344,13 +344,31 @@ app.use(
   }
 );
 
-// Start server
+// Start the server
 server.listen(PORT, () => {
-  console.log(
-    `[${new Date().toISOString()}] Word Rush server running on port ${PORT}`
-  );
-  console.log(
-    `[${new Date().toISOString()}] Environment: ${process.env.NODE_ENV || 'development'}`
-  );
+  console.log(`[${new Date().toISOString()}] Word Rush server running on port ${PORT}`);
+  console.log(`[${new Date().toISOString()}] Environment: ${process.env.NODE_ENV || 'development'}`);
+  
+  // 🔧 SECTION 5 FIX: Pre-populate board cache on server startup for zero-delay match starts
+  console.log(`[${new Date().toISOString()}] 🔧 SECTION 5 FIX: Pre-populating board cache for instant match starts...`);
+  import('./services/board.js').then(({ preGenerateBoards }) => {
+    // Wait for dictionary to be ready, then pre-generate boards
+    const startCachePopulation = () => {
+      if (dictionaryService.isReady()) {
+        preGenerateBoards(dictionaryService, 15).then(() => {
+          console.log(`[${new Date().toISOString()}] ✅ SECTION 5 FIX: Board cache pre-populated - ready for zero-delay match starts`);
+        }).catch(error => {
+          console.warn(`[${new Date().toISOString()}] ⚠️ SECTION 5 FIX: Board cache pre-population failed:`, error);
+        });
+      } else {
+        // Dictionary not ready yet, try again in 100ms
+        setTimeout(startCachePopulation, 100);
+      }
+    };
+    
+    startCachePopulation();
+  }).catch(error => {
+    console.warn(`[${new Date().toISOString()}] ⚠️ SECTION 5 FIX: Could not import board service for cache pre-population:`, error);
+  });
 });
 

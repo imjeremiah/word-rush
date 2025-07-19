@@ -3,40 +3,51 @@
  * CSS for the multiplayer lobby system and main menu components
  */
 
-/* Main Menu Styles with Premium Atmosphere */
+/* Main Menu Styles with Oceanic Depth Atmosphere */
 .main-menu {
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  /* Premium deep water gradient atmosphere */
-  background: radial-gradient(ellipse at center, #01616C 0%, #01243F 100%);
+  /* Oceanic depth gradient: #002441 → #013B4F */
+  background: linear-gradient(135deg, #002441 0%, #013B4F 100%);
   padding: 20px;
 }
 
 .menu-container {
-  background: #002643; /* Prussian Blue title background */
+  background: #004F5E; /* Mid Ocean */
   border-radius: 16px;
   padding: 40px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  border: 2px solid #09637B; /* Midnight Green border */
+  border: 2px solid #0B6281; /* Ocean Surface border */
   text-align: center;
   max-width: 500px;
   width: 100%;
 }
 
 .game-title {
-  font-size: 3.5rem;
+  font-family: 'Luckiest Guy', cursive;
+  font-size: clamp(2rem, 8vw, 4rem);
   font-weight: 800; /* Extra bold for premium feel */
   margin-bottom: 10px;
-  /* Premium golden gradient text effect */
-  background: linear-gradient(135deg, #FFE265 0%, #FFB92F 50%, #FF8F1D 100%);
+  letter-spacing: 0.05em;
+  /* Premium golden gradient text effect - EXACT SPECIFICATION */
+  background: linear-gradient(to bottom, #FEDE5F 0%, #FEBA2E 50%, #FE8E1D 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
   /* Add subtle background for the title */
   position: relative;
+}
+
+/* Complementary subtitle styling for in-game headers */
+.match-subtitle {
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  color: #A8C7E8; /* Soft blue from theme */
+  font-size: 0.6em; /* Relative to parent h1 */
+  letter-spacing: 0.02em;
 }
 
 .game-title::before {
@@ -54,7 +65,7 @@
 
 .game-subtitle {
   font-size: 1.2rem;
-  color: #E1F5E4; /* Honeydew for subtitle */
+  color: #0888AD; /* Ocean Foam for subtitle */
   margin-bottom: 40px;
 }
 
@@ -75,42 +86,41 @@
   transition: all 0.3s ease;
   text-decoration: none;
   display: inline-block;
-  color: #D2E9D3; /* Nyanza button text */
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .menu-button.primary {
-  background: #0C5C7E; /* Lapis Lazuli */
-  color: #D2E9D3;
+  background: #0888AD; /* Ocean Foam */
+  color: #002441; /* Deepest Ocean text */
 }
 
 .menu-button.primary:hover {
-  background: #0e6b91;
+  background: #1F7D81; /* Ocean Teal on hover */
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(12, 92, 126, 0.4);
 }
 
 .menu-button.secondary {
-  background: #FAA827; /* Orange Web accent */
-  color: #D2E9D3;
+  background: #F2742B; /* Coral Orange */
+  color: white;
 }
 
 .menu-button.secondary:hover {
-  background: #e8951e;
+  background: #F79A2D; /* Sunset Orange on hover */
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(250, 168, 39, 0.4);
+  box-shadow: 0 8px 25px rgba(242, 116, 43, 0.4);
 }
 
 .game-info {
   text-align: left;
-  background: #002840; /* Leaderboard background */
+  background: #013B4F; /* Deep Ocean */
   padding: 20px;
   border-radius: 8px;
-  border: 1px solid #09637B; /* Midnight Green border */
+  border: 1px solid #0B6281; /* Ocean Surface border */
 }
 
 .game-info h3 {
-  color: #FFE265; /* Golden highlight */
+  color: #0888AD; /* Ocean Foam */
   margin-bottom: 15px;
 }
 
@@ -122,36 +132,36 @@
 
 .game-info li {
   padding: 8px 0;
-  color: #E1F5E4; /* Honeydew text */
+  color: #0888AD; /* Ocean Foam text */
   position: relative;
   padding-left: 20px;
 }
 
 .game-info li::before {
   content: "•";
-  color: #8CE6EC; /* Electric Blue bullets */
+  color: #1F7D81; /* Ocean Teal bullets */
   position: absolute;
   left: 0;
   font-weight: bold;
 }
 
-/* Create/Join Game Screen Styles with Premium Atmosphere */
+/* Create/Join Game Screen Styles with Oceanic Depth Atmosphere */
 .create-game-screen, .join-game-screen {
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  /* Premium deep water gradient atmosphere */
-  background: radial-gradient(ellipse at center, #01616C 0%, #01243F 100%);
+  /* Oceanic depth gradient: #002441 → #013B4F */
+  background: linear-gradient(135deg, #002441 0%, #013B4F 100%);
   padding: 20px;
 }
 
 .screen-container {
-  background: #002643; /* Prussian Blue background */
+  background: #004F5E; /* Mid Ocean */
   border-radius: 16px;
   padding: 40px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  border: 2px solid #09637B; /* Midnight Green border */
+  border: 2px solid #0B6281; /* Ocean Surface border */
   max-width: 600px;
   width: 100%;
 }
@@ -163,23 +173,23 @@
 }
 
 .back-button {
-  background: #003C53; /* Indigo Dye */
-  border: 1px solid #09637B;
+  background: #003C53; /* Ocean Depth */
+  border: 1px solid #0B6281; /* Ocean Surface border */
   padding: 10px 20px;
   border-radius: 6px;
   cursor: pointer;
   margin-right: 20px;
   font-weight: 600;
-  color: #D2E9D3; /* Nyanza text */
+  color: #0888AD; /* Ocean Foam text */
   transition: background 0.2s;
 }
 
 .back-button:hover {
-  background: #0D7085; /* Caribbean Current on hover */
+  background: #01606A; /* Ocean Blue on hover */
 }
 
 .screen-header h2 {
-  color: #E1F5E4; /* Honeydew */
+  color: #0888AD; /* Ocean Foam */
   margin: 0;
   font-size: 2rem;
 }
@@ -198,14 +208,14 @@
 
 .form-group label {
   font-weight: 600;
-  color: #8CE6EC; /* Electric Blue labels */
+  color: #1F7D81; /* Ocean Teal labels */
 }
 
 .form-group input[type="text"] {
   padding: 12px 16px;
-  border: 2px solid #09637B;
-  background: #00435D; /* Empty tile background */
-  color: #E1F5E4; /* Honeydew text */
+  border: 2px solid #0B6281; /* Ocean Surface border */
+  background: #01606A; /* Ocean Blue background */
+  color: #0888AD; /* Ocean Foam text */
   border-radius: 6px;
   font-size: 1rem;
   transition: border-color 0.2s;
@@ -213,27 +223,27 @@
 
 .form-group input[type="text"]:focus {
   outline: none;
-  border-color: #FAA827; /* Orange Web accent */
-  box-shadow: 0 0 8px rgba(250, 168, 39, 0.3);
+  border-color: #F2742B; /* Coral Orange accent */
+  box-shadow: 0 0 8px rgba(242, 116, 43, 0.3);
 }
 
 .form-group input[type="range"] {
   width: 100%;
   height: 6px;
   border-radius: 3px;
-  background: #09637B; /* Midnight Green */
+  background: #0B6281; /* Ocean Surface track */
   outline: none;
 }
 
 .settings-section {
-  background: #002840; /* Leaderboard background */
+  background: #003C53; /* Ocean Depth */
   padding: 20px;
   border-radius: 8px;
-  border: 1px solid #09637B; /* Midnight Green border */
+  border: 1px solid #0B6281; /* Ocean Surface border */
 }
 
 .settings-section h3 {
-  color: #FFE265; /* Golden highlight */
+  color: #1F7D81; /* Ocean Teal */
   margin-bottom: 20px;
 }
 
@@ -244,30 +254,30 @@
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  background: #0C5C7E; /* Lapis Lazuli */
-  color: #D2E9D3; /* Nyanza button text */
+  background: #F2742B; /* Coral Orange */
+  color: white;
   transition: all 0.3s ease;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .create-button:hover, .join-button:hover {
-  background: #0e6b91;
+  background: #F79A2D; /* Sunset Orange */
   transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(14, 107, 145, 0.4);
+  box-shadow: 0 8px 16px rgba(242, 116, 43, 0.4);
 }
 
 .create-button:disabled, .join-button:disabled {
-  background: #003C53; /* Indigo Dye */
+  background: #003C53; /* Ocean Depth */
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
 }
 
-/* Lobby Screen Styles with Premium Atmosphere */
+/* Lobby Screen Styles with Oceanic Depth Atmosphere */
 .lobby-screen {
   min-height: 100vh;
-  /* Premium deep water gradient atmosphere */
-  background: radial-gradient(ellipse at center, #01616C 0%, #01243F 100%);
+  /* Oceanic depth gradient: #002441 → #013B4F */
+  background: linear-gradient(135deg, #002441 0%, #013B4F 100%);
   padding: 20px;
 }
 
@@ -282,19 +292,19 @@
 }
 
 .lobby-header {
-  background: #002840; /* Leaderboard background */
-  color: #E1F5E4; /* Honeydew */
+  background: #004F5E; /* Mid Ocean */
+  color: #0888AD; /* Ocean Foam */
   padding: 20px 30px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 2px solid #09637B;
+  border-bottom: 2px solid #0B6281; /* Ocean Surface border */
 }
 
 .room-info h2 {
   margin: 0 0 10px 0;
   font-size: 1.8rem;
-  color: #FFE265; /* Golden highlight */
+  color: #0888AD; /* Ocean Foam */
 }
 
 .room-code-section {
@@ -305,33 +315,33 @@
 }
 
 .room-code {
-  background: #003C53; /* Indigo Dye */
+  background: #0888AD; /* Ocean Foam background */
   padding: 8px 16px;
   border-radius: 6px;
-  border: 1px solid #09637B;
+  border: 1px solid #1F7D81; /* Ocean Teal border */
   font-family: monospace;
   font-weight: bold;
   cursor: pointer;
   transition: background 0.2s;
-  color: #E1F5E4; /* Honeydew */
+  color: #002441; /* Deepest Ocean text */
 }
 
 .room-code:hover {
-  background: #0D7085; /* Caribbean Current */
+  background: #1F7D81; /* Ocean Teal on hover */
 }
 
 .copy-button {
-  background: #0C5C7E; /* Lapis Lazuli */
+  background: #1F7D81; /* Ocean Teal */
   border: none;
   padding: 8px 12px;
   border-radius: 6px;
   cursor: pointer;
-  color: #D2E9D3; /* Nyanza button text */
+  color: white;
   transition: background 0.2s;
 }
 
 .copy-button:hover {
-  background: #0e6b91;
+  background: #0B6281; /* Ocean Surface on hover */
 }
 
 .leave-button {
@@ -467,38 +477,38 @@
 }
 
 .difficulty.easy {
-  background: rgba(29, 209, 161, 0.3);
-  color: #1DD1A1;
+  background: rgba(11, 98, 129, 0.3); /* Ocean Surface */
+  color: #0B6281;
 }
 
 .difficulty.medium {
-  background: rgba(140, 230, 236, 0.3);
-  color: #8CE6EC;
+  background: rgba(31, 125, 129, 0.3); /* Ocean Teal */
+  color: #1F7D81;
 }
 
 .difficulty.hard {
-  background: rgba(250, 168, 39, 0.3);
-  color: #FAA827;
+  background: rgba(247, 154, 45, 0.3); /* Sunset Orange */
+  color: #F79A2D;
 }
 
 .difficulty.extreme {
-  background: rgba(238, 110, 42, 0.3);
-  color: #EE6E2A;
+  background: rgba(242, 116, 43, 0.3); /* Coral Orange */
+  color: #F2742B;
 }
 
 .difficulty-not-set {
-  color: #8CE6EC; /* Electric Blue */
+  color: #1F7D81; /* Ocean Teal */
   font-style: italic;
 }
 
 .player-status {
   font-size: 0.9rem;
   font-weight: 600;
-  color: #E1F5E4; /* Honeydew */
+  color: #0888AD; /* Ocean Foam */
 }
 
 .difficulty-section h3 {
-  color: #FFE265; /* Golden highlight */
+  color: #0888AD; /* Ocean Foam */
   margin: 0 0 15px 0;
 }
 
@@ -510,8 +520,8 @@
 }
 
 .difficulty-button {
-  background: #00435D; /* Empty tile background */
-  border: 2px solid #09637B;
+  background: #0B6281; /* Ocean Surface background */
+  border: 2px solid #1F7D81; /* Ocean Teal border */
   border-radius: 8px;
   padding: 15px;
   cursor: pointer;
@@ -520,24 +530,25 @@
 }
 
 .difficulty-button:hover {
-  border-color: #FAA827; /* Orange Web accent */
-  background: rgba(250, 168, 39, 0.1);
+  border-color: #F2742B; /* Coral Orange accent */
+  background: rgba(242, 116, 43, 0.1);
 }
 
 .difficulty-button.selected {
-  border-color: #FAA827;
-  background: rgba(250, 168, 39, 0.2);
+  border-color: #F2742B; /* Coral Orange border */
+  background: rgba(242, 116, 43, 0.2);
+  box-shadow: 0 0 12px rgba(242, 116, 43, 0.4); /* Coral Orange glow */
 }
 
 .difficulty-name {
   font-weight: 600;
-  color: #E1F5E4; /* Honeydew */
+  color: #0888AD; /* Ocean Foam */
   margin-bottom: 5px;
 }
 
 .difficulty-details {
   font-size: 0.8rem;
-  color: #8CE6EC; /* Electric Blue */
+  color: #1F7D81; /* Ocean Teal */
 }
 
 .settings-header {
@@ -699,6 +710,7 @@
   }
 
   .game-title {
-    font-size: 2rem;
+    font-size: 3rem; /* Override clamp() for mobile optimization */
+    letter-spacing: 0.03em; /* Slightly tighter on mobile */
   }
 } 

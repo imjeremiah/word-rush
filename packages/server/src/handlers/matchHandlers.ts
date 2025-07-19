@@ -85,10 +85,23 @@ export function handleMatchStartNewMatch(
     return;
   }
 
+  // 🔧 FIX: Auto-ready all players for restart since they were already playing together
+  room.players.forEach(player => {
+    player.isReady = true;
+  });
+
+  console.log(`[${new Date().toISOString()}] Auto-readied ${room.players.length} players for match restart in room ${data.roomCode}`);
+
+  // Notify all players that they've been auto-readied for restart
+  io.to(data.roomCode).emit('room:player-ready', {
+    message: 'All players auto-readied for match restart',
+    allPlayersReady: true
+  });
+
   // Start match using existing room service method with dictionary service
   const updatedRoom = roomService.startMatch(data.roomCode, socket.id, dictionaryService);
   if (!updatedRoom) {
-    socket.emit('server:error', { message: 'Failed to start match', code: 'MATCH_START_FAILED' });
+    socket.emit('server:error', { message: 'Failed to start match after readying players', code: 'MATCH_START_FAILED' });
     return;
   }
 
