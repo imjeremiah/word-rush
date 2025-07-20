@@ -76,6 +76,8 @@ function MainMenu(): JSX.Element {
             <li>Drag over adjacent letters to form words</li>
             <li>Longer words score more points</li>
             <li>Compete in real-time with other players</li>
+            <li>Higher difficulty levels multiply your score but require longer words</li>
+            <li>Submit words quickly for speed bonus multipliers</li>
           </ul>
         </div>
       </div>
