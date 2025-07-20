@@ -26,8 +26,13 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      # CLIENT_URL will be set manually in Render dashboard after deployment
-      # since public URLs can't be auto-referenced in Blueprint spec
+      # This dynamically sets the client's URL for CORS configuration.
+      # It gets the URL from the 'word-rush-client' service defined below.
+      - key: CLIENT_URL
+        fromService:
+          type: web
+          name: word-rush-client
+          property: url
 
   # Service 2: The React Client (Static Site)
   # This serves the compiled React/Vite frontend.
@@ -43,5 +48,10 @@ services:
     staticPublishPath: "./dist"
     # Environment variables required by the client at build time.
     envVars:
-      # VITE_SERVER_URL will be set manually in Render dashboard after deployment
-      # since public URLs can't be auto-referenced in Blueprint spec 
+      # This injects the live server's URL into the client code during the build.
+      # This is how the client knows where to connect.
+      - key: VITE_SERVER_URL
+        fromService:
+          type: web
+          name: word-rush-server
+          property: url 
