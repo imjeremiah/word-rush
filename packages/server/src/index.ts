@@ -60,6 +60,8 @@ const io = new Server<
 });
 
 const PORT = process.env.PORT || 3001;
+// Add HOST configuration for Render deployment
+const HOST = process.env.NODE_ENV === 'production' ? '0.0.0.0' : 'localhost';
 
 // Services are now functional modules - no initialization needed
 
@@ -344,8 +346,8 @@ app.use(
 );
 
 // Start the server
-server.listen(PORT, () => {
-  console.log(`[${new Date().toISOString()}] Word Rush server running on port ${PORT}`);
+server.listen(PORT, HOST, () => {
+  console.log(`[${new Date().toISOString()}] Word Rush server running on ${HOST}:${PORT}`);
   console.log(`[${new Date().toISOString()}] Environment: ${process.env.NODE_ENV || 'development'}`);
   
   // 🎯 Verify updated difficulty multipliers are loaded correctly
