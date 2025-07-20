@@ -238,7 +238,7 @@
   font-size: 1rem;
 }
 
-/* Match Complete Styles */
+/* Match Complete Styles - Enhanced Visual Polish */
 .match-complete-overlay {
   position: fixed;
   top: 0;
@@ -255,7 +255,7 @@
 }
 
 .match-complete-container {
-  background: linear-gradient(135deg, #002441 0%, #01606A 50%, #0888AD 100%); /* Celebratory oceanic gradient */
+  background: linear-gradient(135deg, #002441 0%, #01606A 50%, #0888AD 100%);
   border-radius: 20px;
   padding: 2.5rem;
   max-width: 900px;
@@ -264,6 +264,22 @@
   overflow-y: auto;
   box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
   animation: bounceIn 0.6s ease-out;
+  border: 2px solid rgba(8, 136, 173, 0.3);
+}
+
+/* Centered Match Complete Header - Enhanced */
+.match-complete-header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+.match-complete-title {
+  font-size: 3rem;
+  margin: 0;
+  color: #0888AD;
+  text-shadow: 0 3px 6px rgba(0, 0, 0, 0.5);
+  font-weight: bold;
+  letter-spacing: 1px;
 }
 
 .winner-announcement {
@@ -276,13 +292,6 @@
   font-size: 4rem;
   margin-bottom: 1rem;
   animation: bounce 2s infinite;
-}
-
-.match-complete-title {
-  font-size: 3rem;
-  margin: 0 0 2rem 0;
-  color: #0888AD; /* Ocean Foam */
-  text-shadow: 0 3px 6px rgba(0, 0, 0, 0.5);
 }
 
 .winner-card {
@@ -298,117 +307,154 @@
   box-shadow: 0 10px 30px rgba(255, 215, 0, 0.3);
 }
 
-.winner-trophy {
-  font-size: 4rem;
-  animation: pulse 2s infinite;
-}
-
-.winner-info {
-  text-align: center;
-}
-
-.winner-name {
-  font-size: 2.5rem;
-  font-weight: bold;
-  margin: 0 0 1rem 0;
-}
-
-.winner-details {
-  display: flex;
-  gap: 2rem;
-  justify-content: center;
-  align-items: center;
-}
-
-.winner-difficulty {
-  font-size: 1.2rem;
-  font-weight: bold;
-}
-
-.winner-score {
-  font-size: 1.5rem;
-  font-weight: bold;
-}
-
-.victory-message {
-  background: rgba(255, 215, 0, 0.2);
-  border-radius: 15px;
-  padding: 1.5rem;
-  margin-top: 1rem;
-}
-
-.victory-message h3 {
-  font-size: 1.8rem;
-  margin: 0;
-  animation: pulse 1.5s infinite;
-}
-
+/* Final Rankings Improvements */
 .final-rankings {
   background: rgba(255, 255, 255, 0.1);
   border-radius: 15px;
-  padding: 1.5rem;
+  padding: 2rem;
   margin-bottom: 2rem;
 }
 
-.final-rankings h3 {
+.final-rankings-title {
   color: white;
   text-align: center;
-  margin: 0 0 1rem 0;
+  margin: 0 0 0.5rem 0;
   font-size: 1.8rem;
+  font-weight: bold;
 }
 
-.match-stats {
+.match-info {
   text-align: center;
   color: rgba(255, 255, 255, 0.8);
-  margin-bottom: 1.5rem;
-  font-size: 1.1rem;
+  margin-bottom: 2rem;
+  font-size: 1rem;
+  font-weight: 500;
 }
 
-/* Updated Final Rankings Styling with Clear Winner/Loser Distinction */
+/* Final Ranking Items - Updated Layout for Trophy + Badge */
 .final-ranking-item {
-  display: flex;
+  display: grid;
+  grid-template-columns: 160px 1fr 100px; /* Increased trophy+badge space | Player Info | Score */
   align-items: center;
-  justify-content: space-between;
+  gap: 20px;
+  padding: 20px 24px;
   background: rgba(1, 60, 106, 0.4);
   border: 2px solid #0B6281;
   border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
   transition: all 0.3s ease;
+  min-height: 80px;
 }
 
-.final-ranking-item.current-player {
-  border-color: #FFE265;
-  background: rgba(255, 226, 101, 0.1);
-  box-shadow: 0 0 15px rgba(255, 226, 101, 0.3);
-}
-
-/* Winner Styling - Gold Trophy */
 .final-ranking-item.rank-winner {
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 193, 7, 0.2));
-  border: 2px solid #FFD700;
-  box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
-  animation: winnerGlow 2s ease-in-out infinite alternate;
+  border-color: #FFD700;
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 193, 7, 0.1));
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
 }
 
-/* Runner-up Styling - Silver Medal */
 .final-ranking-item.rank-runner-up {
-  background: linear-gradient(135deg, rgba(192, 192, 192, 0.3), rgba(169, 169, 169, 0.2));
-  border: 2px solid #C0C0C0;
-  box-shadow: 0 0 15px rgba(192, 192, 192, 0.3);
+  border-color: #C0C0C0;
+  background: linear-gradient(135deg, rgba(192, 192, 192, 0.2), rgba(169, 169, 169, 0.1));
+  box-shadow: 0 4px 12px rgba(192, 192, 192, 0.2);
 }
 
-/* Third Place Styling - Bronze Medal */
-.final-ranking-item.rank-third {
-  background: linear-gradient(135deg, rgba(205, 127, 50, 0.3), rgba(184, 115, 51, 0.2));
-  border: 2px solid #CD7F32;
-  box-shadow: 0 0 15px rgba(205, 127, 50, 0.3);
+.trophy-section {
+  display: flex;
+  align-items: center;
+  gap: 24px; /* Increased spacing even more for clearer emoji visibility */
+  background: none !important;
+  border: none !important;
+  outline: none !important;
 }
 
-/* Other Ranks Styling */
-.final-ranking-item.rank-other {
-  background: rgba(1, 60, 106, 0.4);
-  border: 2px solid #0B6281;
+.trophy-section * {
+  background: none !important;
+  border: none !important;
+  outline: none !important;
+}
+
+.rank-icon {
+  font-size: 2.5rem;
+  line-height: 1;
+  background: none !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  filter: none !important;
+  flex-shrink: 0; /* Prevent trophy from shrinking */
+}
+
+.rank-badge {
+  font-size: 0.75rem;
+  font-weight: bold;
+  color: #FFE265;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  white-space: nowrap;
+  line-height: 1.2;
+  flex-shrink: 0;
+  font-family: 'Inter', Arial, sans-serif;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.player-info-centered {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  text-align: center;
+}
+
+.player-name {
+  font-size: 1.15rem;
+  font-weight: bold;
+  color: #FAF0C7;
+  line-height: 1.2;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.player-difficulty {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.9;
+}
+
+.you-indicator {
+  color: #F79A2D;
+  font-weight: normal;
+  font-size: 0.85rem;
+}
+
+.final-score {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.score-value {
+  font-size: 1.6rem;
+  font-weight: bold;
+  color: #FFE265;
+  line-height: 1;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.score-label {
+  font-size: 0.7rem;
+  color: #0888AD;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  margin-top: 2px;
 }
 
 @keyframes winnerGlow {
@@ -452,107 +498,197 @@
   opacity: 0.8;
 }
 
-/* Enhanced Stats Section */
+/* Enhanced Stats Section - Improved Visual Balance */
 .enhanced-stats {
   margin: 20px 0;
-  padding: 20px;
+  padding: 2rem;
   background: rgba(1, 36, 63, 0.6);
-  border-radius: 12px;
+  border-radius: 15px;
   border: 1px solid #0B6281;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
-.enhanced-stats h3 {
+.match-statistics-title {
   color: #FFE265;
-  margin-bottom: 16px;
+  margin-bottom: 1.5rem;
   text-align: center;
-  font-size: 1.2rem;
+  font-size: 1.3rem;
+  font-weight: bold;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+.stats-container {
+  display: flex;
+  flex-direction: column;
   gap: 16px;
 }
 
-.player-stats-card {
+.player-stats-card-stacked {
   background: rgba(1, 60, 106, 0.4);
   border: 2px solid #0B6281;
-  border-radius: 10px;
-  padding: 16px;
+  border-radius: 12px;
+  padding: 20px;
   transition: all 0.3s ease;
 }
 
-.player-stats-card.rank-winner {
+.player-stats-card-stacked.rank-winner {
   border-color: #FFD700;
   background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 193, 7, 0.1));
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.2);
 }
 
-.player-stats-card.rank-runner-up {
+.player-stats-card-stacked.rank-runner-up {
   border-color: #C0C0C0;
   background: linear-gradient(135deg, rgba(192, 192, 192, 0.2), rgba(169, 169, 169, 0.1));
-}
-
-.player-stats-card.rank-third {
-  border-color: #CD7F32;
-  background: linear-gradient(135deg, rgba(205, 127, 50, 0.2), rgba(184, 115, 51, 0.1));
-}
-
-.player-stats-card.current-player {
-  border-color: #FFE265;
-  box-shadow: 0 0 15px rgba(255, 226, 101, 0.3);
+  box-shadow: 0 4px 12px rgba(192, 192, 192, 0.1);
 }
 
 .stats-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid rgba(11, 98, 129, 0.3);
-}
-
-.stats-rank-icon {
-  font-size: 1.2rem;
-}
-
-.stats-player-name {
+  gap: 10px;
+  margin-bottom: 16px;
+  font-size: 1.05rem;
   font-weight: bold;
-  color: #E1F5E4;
-  font-size: 0.9rem;
+  color: #FAF0C7 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
-.stats-grid-content {
+.stats-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  grid-template-columns: 1fr;
+  gap: 12px;
 }
 
 .stat-item {
   display: flex;
+  justify-content: flex-start; /* Changed from space-between to reduce gap */
   align-items: center;
-  gap: 6px;
-  padding: 4px 0;
-}
-
-.stat-icon {
-  font-size: 0.8rem;
-  width: 16px;
-  text-align: center;
+  padding: 12px 16px;
+  background: rgba(11, 98, 129, 0.3);
+  border-radius: 8px;
+  border: 1px solid rgba(11, 98, 129, 0.5);
+  min-height: 50px;
+  gap: 20px; /* Controlled gap between label and value */
 }
 
 .stat-label {
-  font-size: 0.7rem;
-  color: #0888AD;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.95rem;
+  color: #FAF0C7 !important;
   font-weight: 500;
-  min-width: 60px;
+  min-width: 120px; /* Consistent label width for alignment */
+}
+
+.stat-icon {
+  font-size: 1.2rem;
 }
 
 .stat-value {
-  font-size: 0.75rem;
-  color: #FAF0C7;
+  font-size: 1.05rem;
   font-weight: bold;
-  flex: 1;
-  text-align: right;
+  color: #FAF0C7 !important;
+  margin-right: 0; /* Removed margin since we're using gap */
+  flex: 1; /* Take remaining space */
+}
+
+.words-found-value {
+  font-size: 1.05rem;
+  font-weight: bold;
+  color: #FAF0C7 !important;
+  margin-right: 0; /* Removed margin since we're using gap */
+  flex: 1; /* Take remaining space */
+}
+
+/* Game-Like Letter Tiles - Enhanced */
+.word-tiles {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.game-letter-tile {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  font-family: 'Inter', Arial, sans-serif;
+}
+
+.tile-letter {
+  font-size: 1.15rem;
+  font-weight: bold;
+  color: #FAF0C7 !important;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -62%);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.tile-points {
+  font-size: 0.7rem;
+  font-weight: bold;
+  color: #FAF0C7 !important;
+  position: absolute;
+  bottom: 2px;
+  right: 3px;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
+}
+
+.best-word-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.word-score-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.word-score {
+  color: #FAF0C7 !important;
+  font-size: 1rem;
+  margin-left: 6px;
+  font-weight: bold;
+}
+
+.bonus-badges {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.bonus-badge {
+  font-size: 0.65rem;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: 1px solid;
+  white-space: nowrap;
+}
+
+.bonus-badge.difficulty-bonus {
+  background: rgba(255, 165, 0, 0.2);
+  color: #FFA500;
+  border-color: #FFA500;
+}
+
+.bonus-badge.speed-bonus {
+  background: rgba(50, 205, 50, 0.2);
+  color: #32CD32;
+  border-color: #32CD32;
 }
 
 /* Enhanced Personal Summary */
@@ -640,16 +776,17 @@
   font-weight: 500;
 }
 
-/* Action Buttons Enhancement */
+/* Action Buttons Enhancement - Improved */
 .match-complete-actions {
   display: flex;
-  gap: 12px;
+  gap: 16px;
   justify-content: center;
-  margin: 24px 0;
+  margin: 32px 0 16px 0;
 }
 
 .start-new-match-button,
-.return-lobby-button {
+.return-lobby-button,
+.return-main-menu-button {
   padding: 12px 24px;
   border: none;
   border-radius: 8px;
@@ -672,12 +809,14 @@
   box-shadow: 0 4px 8px rgba(76, 175, 80, 0.3);
 }
 
-.return-lobby-button {
+.return-lobby-button,
+.return-main-menu-button {
   background: linear-gradient(135deg, #0B6281, #0888AD);
   color: #FAF0C7;
 }
 
-.return-lobby-button:hover {
+.return-lobby-button:hover,
+.return-main-menu-button:hover {
   background: linear-gradient(135deg, #0888AD, #0B6281);
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(11, 98, 129, 0.3);
@@ -1304,4 +1443,26 @@
     width: 250px;
     height: 250px;
   }
+} 
+
+/* Comprehensive Match Statistics Color Override */
+.enhanced-stats *:not(.game-letter-tile),
+.player-stats-card-stacked *:not(.game-letter-tile),
+.stats-grid *:not(.game-letter-tile),
+.stat-item *:not(.game-letter-tile),
+.word-tiles *:not(.game-letter-tile) {
+  color: #FAF0C7 !important;
+}
+
+/* Game letter tiles keep their background colors but use consistent text */
+.game-letter-tile .tile-letter,
+.game-letter-tile .tile-points {
+  color: #FAF0C7 !important;
+}
+
+/* Preserve match statistics backgrounds */
+.player-stats-card-stacked.rank-winner,
+.player-stats-card-stacked.rank-runner-up,
+.stat-item {
+  background: rgba(11, 98, 129, 0.3) !important;
 } 

@@ -38,7 +38,8 @@ import {
   ClientToServerEvents, 
   InterServerEvents, 
   SocketData,
-  LetterTile
+  LetterTile,
+  DIFFICULTY_CONFIGS
 } from '@word-rush/common';
 
 const app = express();
@@ -121,8 +122,6 @@ setInterval(() => {
     preGenerateBoards(dictionaryService, 5).catch(console.error);
   }
 }, 30 * 60 * 1000); // Every 30 minutes
-
-
 
 /**
  * Wrapper function for socket event handlers to provide error handling, rate limiting, and validation
@@ -348,6 +347,23 @@ app.use(
 server.listen(PORT, () => {
   console.log(`[${new Date().toISOString()}] Word Rush server running on port ${PORT}`);
   console.log(`[${new Date().toISOString()}] Environment: ${process.env.NODE_ENV || 'development'}`);
+  
+  // 🎯 Verify updated difficulty multipliers are loaded correctly
+  console.log(`[${new Date().toISOString()}] 🎯 Difficulty Multipliers Active:`, {
+    easy: DIFFICULTY_CONFIGS.easy.scoreMultiplier + 'x',
+    medium: DIFFICULTY_CONFIGS.medium.scoreMultiplier + 'x',
+    hard: DIFFICULTY_CONFIGS.hard.scoreMultiplier + 'x', 
+    extreme: DIFFICULTY_CONFIGS.extreme.scoreMultiplier + 'x'
+  });
+  console.log(`[${new Date().toISOString()}] 🚀 Speed Bonus Multiplier: 1.5x`);
+  
+  // Example scoring calculation for a 6-point word:
+  console.log(`[${new Date().toISOString()}] 📊 Example: 6-point word scores:`);
+  console.log(`   Easy: 6 × 1.0 = 6 points`);
+  console.log(`   Medium: 6 × 1.5 = 9 points`);
+  console.log(`   Hard: 6 × 2.0 = 12 points`);
+  console.log(`   Extreme: 6 × 3.0 = 18 points`);
+  console.log(`   + Speed Bonus: × 1.5 (e.g., Hard + Speed = 12 × 1.5 = 18 points)`);
   
   // 🔧 SECTION 5 FIX: Pre-populate board cache on server startup for zero-delay match starts
   console.log(`[${new Date().toISOString()}] 🔧 SECTION 5 FIX: Pre-populating board cache for instant match starts...`);

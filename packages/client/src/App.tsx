@@ -42,11 +42,17 @@ const AppContent = React.memo((): JSX.Element => {
     socket, 
     gameState, 
     setGameState,
-    currentRoom, 
+    currentRoom,
+    setCurrentRoom,
     roundSummary, 
-    matchComplete, 
+    matchComplete,
+    setMatchComplete,
+    setRoundSummary,
     roundTimer,
-    playerSession 
+    setRoundTimer,
+    playerSession,
+    setMatchData,
+    setLastWordResult
   } = useGameContext();
 
   // Component key stability - ensure PhaserGame component doesn't remount during transitions
@@ -104,6 +110,43 @@ const AppContent = React.memo((): JSX.Element => {
       socket.emit('match:start-new-match', { roomCode: currentRoom.roomCode });
     }
   }, [socket, currentRoom]);
+
+  const handleReturnToMainMenu = React.useCallback(() => {
+    // Clear all game state and return to main menu with fresh connection
+    console.log('[App] Returning to main menu - resetting connection and state');
+    
+    // Clear all game states
+    setGameState('menu');
+    
+    // Clear room and session data
+    if (socket) {
+      socket.emit('room:leave');
+      socket.disconnect();
+    }
+    
+    // Clear game context state
+    setCurrentRoom(null);
+    setMatchData(null);
+    setRoundSummary(null);
+    setMatchComplete(null);
+    setRoundTimer(null);
+    setLastWordResult(null);
+    
+    // Clear any cached board data
+    (window as any).pendingGameBoard = null;
+    (window as any).currentGameBoard = null;
+    (window as any).pendingBoardChecksum = null;
+    (window as any).currentBoardChecksum = null;
+    
+    // Clear localStorage game state
+    localStorage.removeItem('wordRushGameState');
+    localStorage.removeItem('wordRushRoomCode');
+    
+    // Show notification
+    notifications.info('Returning to main menu...', 2000);
+    
+    // Let GameConnection handle the reconnection automatically
+  }, [socket, setGameState, setCurrentRoom, setMatchData, setRoundSummary, setMatchComplete, setRoundTimer, setLastWordResult]);
 
   const handleReturnToLobby = React.useCallback(() => {
     setGameState('lobby');
@@ -195,8 +238,7 @@ const AppContent = React.memo((): JSX.Element => {
           matchComplete={matchComplete!}
           isHost={isHost}
           currentPlayerId={currentPlayerId}
-          onStartNewMatch={handleStartNewMatch}
-          onReturnToLobby={handleReturnToLobby}
+          onReturnToMainMenu={handleReturnToMainMenu}
         />
       )}
 

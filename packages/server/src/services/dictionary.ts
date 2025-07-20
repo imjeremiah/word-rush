@@ -1,6 +1,6 @@
 /**
  * Dictionary Service for Word Validation
- * Loads the official tournament word list into memory for fast O(1) lookups
+ * Loads the UWU (Ultimate Words Unleashed) word list into memory for fast O(1) lookups
  */
 
 import { readFileSync } from 'fs';
@@ -18,7 +18,7 @@ export interface DictionaryModule {
 }
 
 /**
- * Load the tournament word list into memory
+ * Load the UWU word list into memory
  * @returns Dictionary service module with all functions
  * @throws Error if the dictionary fails to load
  */
@@ -27,14 +27,14 @@ function createDictionaryService(): DictionaryModule {
   let isLoaded = false;
 
   /**
-   * Load the tournament word list into memory
+   * Load the UWU word list into memory
    * @throws Error if the dictionary file cannot be read or parsed
    */
   function loadWordList(): void {
     try {
       const __filename = fileURLToPath(import.meta.url);
       const __dirname = dirname(__filename);
-      const filePath = join(__dirname, '..', 'assets', 'TWL06.txt');
+      const filePath = join(__dirname, '..', 'assets', 'UWU.txt');
       const fileContent = readFileSync(filePath, 'utf-8');
       
       // Split into lines and filter out empty lines
@@ -50,14 +50,14 @@ function createDictionaryService(): DictionaryModule {
       console.log(`[${new Date().toISOString()}] Dictionary loaded: ${words.length} words`);
     } catch (error) {
       console.error(`[${new Date().toISOString()}] Failed to load dictionary:`, error);
-      throw new Error('Failed to load tournament word list');
+      throw new Error('Failed to load UWU word list');
     }
   }
 
   /**
-   * Check if a word is valid according to the tournament word list
+   * Check if a word is valid according to the UWU word list
    * @param word - The word to validate (case insensitive)
-   * @returns True if the word exists in the tournament dictionary
+   * @returns True if the word exists in the UWU dictionary
    * @throws Error if the dictionary is not loaded
    */
   function isValidWord(word: string): boolean {
@@ -73,7 +73,7 @@ function createDictionaryService(): DictionaryModule {
       return false;
     }
     
-    // Check if word exists in the tournament word list
+    // Check if word exists in the UWU word list
     return wordSet.has(normalizedWord);
   }
 

@@ -1075,7 +1075,10 @@ function createRoomService(cleanupIntervalMs: number = 10 * 60 * 1000): RoomModu
         longestWord: (player as any).longestWord || '',
         highestScoringWord: (player as any).highestScoringWord || '',
         highestWordScore: (player as any).highestWordScore || 0,
-        averageWordLength: (player as any).averageWordLength || 0
+        averageWordLength: (player as any).averageWordLength || 0,
+        // Bonus information for best word
+        bestWordHadDifficultyBonus: (player as any).bestWordHadDifficultyBonus || false,
+        bestWordHadSpeedBonus: (player as any).bestWordHadSpeedBonus || false
       })),
       totalRounds: room.gameState.totalRounds
     };
@@ -1169,7 +1172,10 @@ function createRoomService(cleanupIntervalMs: number = 10 * 60 * 1000): RoomModu
       (player as any).longestWord = '';
       (player as any).highestScoringWord = '';
       (player as any).highestWordScore = 0;
+      (player as any).longestWordScore = 0;
       (player as any).averageWordLength = 0;
+      (player as any).bestWordHadDifficultyBonus = false;
+      (player as any).bestWordHadSpeedBonus = false;
     });
 
     // Broadcast return to lobby

@@ -612,6 +612,59 @@ function GameConnection(): null {
       localStorage.removeItem('wordRushSession');
     }));
 
+    newSocket.on('game:leaderboard-update', withServerEventValidation('game:leaderboard-update', (data) => {
+      logSocketEvent('game:leaderboard-update', data);
+      console.log('Leaderboard update:', data.players);
+      
+      // Update leaderboard in current room if applicable
+      contextRef.current.setCurrentRoom(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          players: data.players.map(leaderboardPlayer => {
+            const existingPlayer = prev.players.find(p => p.id === leaderboardPlayer.id);
+            return existingPlayer ? {
+              ...existingPlayer,
+              score: leaderboardPlayer.score
+            } : {
+              id: leaderboardPlayer.id,
+              username: leaderboardPlayer.username,
+              score: leaderboardPlayer.score,
+              difficulty: leaderboardPlayer.difficulty || 'medium' as import('@word-rush/common').DifficultyLevel,
+              isReady: false
+            };
+          })
+        };
+      });
+      
+      // Also update match data leaderboard
+      contextRef.current.setMatchData(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          leaderboard: data.players
+        };
+      });
+    }));
+
+    // Tile changes event handler for cascade animations
+    newSocket.on('game:tile-changes', withServerEventValidation('game:tile-changes', (data) => {
+      logSocketEvent('game:tile-changes', data);
+      console.log(`[${new Date().toISOString()}] 📨 GameConnection received tile changes (seq: ${data.sequenceNumber}):`, {
+        removed: data.removedPositions.length,
+        falling: data.fallingTiles.length,
+        new: data.newTiles.length
+      });
+      
+      // Forward to PhaserGame through global state for proper processing
+      // Note: PhaserGame has its own socket listeners that will handle the actual tile processing
+      (window as any).latestTileChanges = data;
+      
+      // Trigger a custom event that PhaserGame can listen for
+      const tileChangeEvent = new CustomEvent('phaser-tile-changes', { detail: data });
+      window.dispatchEvent(tileChangeEvent);
+    }));
+
     newSocket.on('game:initial-board', withServerEventValidation('game:initial-board', (data) => {
       console.log('Initial board received:', data);
       notifications.info('New game board loaded!', 2000);
@@ -981,42 +1034,6 @@ function GameConnection(): null {
       
       // 🎯 USER REQUEST: Removed auto-return - let players stay on results page to study stats
       // Players can use the "Return to Lobby" or "Start New Match" buttons when ready
-    }));
-
-    newSocket.on('game:leaderboard-update', withServerEventValidation('game:leaderboard-update', (data) => {
-      logSocketEvent('game:leaderboard-update', data);
-      console.log('Leaderboard update:', data.players);
-      
-      // Pre-calculate sorted leaderboard for efficiency
-      const sortedLeaderboard = data.players.sort((a, b) => b.score - a.score);
-      
-      // Use batched state updates to reduce renders by combining both updates
-      // This creates a single render cycle instead of two separate ones
-      const updateFunctions: (() => void)[] = [
-        // Update matchData leaderboard with sorted players
-        () => contextRef.current.setMatchData(prev => prev ? {
-          ...prev,
-          leaderboard: sortedLeaderboard
-        } : null),
-        
-        // Update currentRoom players to keep state in sync
-        () => contextRef.current.setCurrentRoom(prev => {
-          if (!prev) return prev;
-          const updatedPlayers = prev.players.map(roomPlayer => {
-            const leaderboardPlayer = data.players.find(lp => lp.id === roomPlayer.id);
-            return leaderboardPlayer 
-              ? { ...roomPlayer, score: leaderboardPlayer.score, difficulty: leaderboardPlayer.difficulty }
-              : roomPlayer;
-          });
-          return { ...prev, players: updatedPlayers };
-        })
-      ];
-      
-      // Batch both updates to reduce unnecessary re-renders
-      console.log(`[GameConnection] Batching ${updateFunctions.length} leaderboard state updates`);
-      startTransition(() => {
-        updateFunctions.forEach(update => update());
-      });
     }));
 
 
