@@ -29,13 +29,13 @@ services:
       # It gets the URL from the 'word-rush-client' service defined below.
       - key: CLIENT_URL
         fromService:
-          type: static
+          type: static_site
           name: word-rush-client
           property: url
 
   # Service 2: The React Client (Static Site)
   # This serves the compiled React/Vite frontend.
-  - type: static
+  - type: static_site
     name: word-rush-client
     # The root directory of the client code within the monorepo.
     rootDir: packages/client
