@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "module": "CommonJS",
+    "module": "ES2020",
     "moduleResolution": "node",
     "outDir": "dist",
     "rootDir": "src",
@@ -11,6 +11,10 @@
     "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,
     "allowJs": true,
+    "noCheck": false,
+    "suppressOutputPathCheck": true,
+    "allowUnreachableCode": true,
+    "allowUnusedLabels": true,
     "strict": false,
     "noImplicitAny": false,
     "noImplicitReturns": false,
@@ -26,7 +30,8 @@
     "strictFunctionTypes": false,
     "strictNullChecks": false,
     "strictPropertyInitialization": false,
-    "useUnknownInCatchVariables": false
+    "useUnknownInCatchVariables": false,
+    "assumeChangesOnlyAffectDirectDependencies": true
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "src/test/**/*"]
