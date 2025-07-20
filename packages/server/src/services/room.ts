@@ -498,8 +498,6 @@ function createRoomService(cleanupIntervalMs: number = 10 * 60 * 1000): RoomModu
       isConnected: true,
       isReady: false,
       roundScore: 0,
-      // 🎯 Set default difficulty to 'easy' for host (matching join behavior)
-      difficulty: process.env.USE_EASY_DEFAULT !== 'false' ? 'easy' : 'medium',
     };
 
     const room: GameRoom = {
