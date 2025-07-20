@@ -137,37 +137,25 @@ function LobbyScreen(): JSX.Element {
               {currentRoom.players.map((player) => {
                 const isHost = player.id === currentRoom.hostId;
                 const isCurrentPlayer = player.id === playerSession.id;
-                const hasCrowns = (player.crowns || 0) > 0;
-                
-                // Find King of the Hill (most crowns)
-                const kingOfTheHill = currentRoom.players.reduce((prev, current) => 
-                  ((current.crowns || 0) > (prev.crowns || 0)) ? current : prev
-                );
-                const isKingOfTheHill = kingOfTheHill && player.id === kingOfTheHill.id && (kingOfTheHill.crowns || 0) > 0;
                 
                 return (
                   <div 
                     key={player.id} 
-                    className={`player-card ${player.isReady ? 'ready' : 'not-ready'} ${isKingOfTheHill ? 'king-of-the-hill' : ''}`}
+                    className={`player-card ${player.isReady ? 'ready' : 'not-ready'}`}
                   >
                     <div className="player-info">
-                      <span className="player-name">
-                        {player.username}
-                        {isHost && ' 👑'}
-                        {isCurrentPlayer && ' (You)'}
-                        {/* King of the Hill crown indicator */}
-                        {isKingOfTheHill && <span className="king-crown"> 🏆</span>}
-                        {/* Crown count display */}
-                        {hasCrowns && !isKingOfTheHill && (
-                          <span className="crown-count">
-                            👑 {player.crowns}
-                          </span>
-                        )}
-                      </span>
+                      <div className="player-header">
+                        <span className="player-avatar">👤</span>
+                        <span className="player-name">
+                          {player.username}
+                          {isCurrentPlayer && ' (You)'}
+                        </span>
+                        {isHost && <span className="host-badge">HOST</span>}
+                      </div>
                       <span className="player-difficulty">
                         {player.difficulty ? (
                           <span className={`difficulty ${player.difficulty}`}>
-                            {player.difficulty}
+                            {player.difficulty.toUpperCase()}
                           </span>
                         ) : (
                           <span className="difficulty-not-set">No difficulty set</span>
@@ -224,7 +212,6 @@ function LobbyScreen(): JSX.Element {
                 <SettingsPanel 
                   settings={currentRoom.settings}
                   onUpdate={handleUpdateSettings}
-                  onClose={() => setShowSettings(false)}
                 />
               )}
             </div>
@@ -281,10 +268,9 @@ function LobbyScreen(): JSX.Element {
 interface SettingsPanelProps {
   settings: MatchSettings;
   onUpdate: (settings: MatchSettings) => void;
-  onClose: () => void;
 }
 
-function SettingsPanel({ settings, onUpdate, onClose }: SettingsPanelProps): JSX.Element {
+function SettingsPanel({ settings, onUpdate }: SettingsPanelProps): JSX.Element {
   const [localSettings, setLocalSettings] = useState(settings);
 
   /**
@@ -306,6 +292,19 @@ function SettingsPanel({ settings, onUpdate, onClose }: SettingsPanelProps): JSX
         }).catch(() => {}); // Silent fail for notifications
       }
     }
+
+    // Validate rounds with safety fallback
+    if (key === 'totalRounds') {
+      const validRounds = [1, 2, 3, 4, 5];
+      if (!validRounds.includes(value)) {
+        console.warn(`[LobbyScreen] Invalid rounds count: ${value}, falling back to 3`);
+        validatedValue = 3; // Safety fallback
+        // Could add notification here if needed
+        import('../services/notifications.js').then(({ notifications }) => {
+          notifications.warning('Invalid rounds count, reset to 3 rounds', 3000);
+        }).catch(() => {}); // Silent fail for notifications
+      }
+    }
     
     const newSettings = {
       ...localSettings,
@@ -317,15 +316,19 @@ function SettingsPanel({ settings, onUpdate, onClose }: SettingsPanelProps): JSX
 
   return (
     <div className="settings-panel">
-      <div className="setting-group">
+      <div className="setting-group" style={{ marginBottom: '24px' }}>
         <label>Rounds: {localSettings.totalRounds}</label>
-        <input
-          type="range"
-          min="1"
-          max="5"
-          value={localSettings.totalRounds}
-          onChange={(e) => handleChange('totalRounds', parseInt(e.target.value))}
-        />
+        <div className="duration-selector">
+          {[1, 2, 3, 4, 5].map(rounds => (
+            <button 
+              key={rounds}
+              className={`duration-button ${localSettings.totalRounds === rounds ? 'selected' : ''}`}
+              onClick={() => handleChange('totalRounds', rounds)}
+            >
+              {rounds}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="setting-group">
@@ -342,30 +345,6 @@ function SettingsPanel({ settings, onUpdate, onClose }: SettingsPanelProps): JSX
           ))}
         </div>
       </div>
-
-      <div className="setting-group">
-        <label>Speed Bonus: {localSettings.speedBonusMultiplier}x</label>
-        <input
-          type="range"
-          min="1"
-          max="3"
-          step="0.1"
-          value={localSettings.speedBonusMultiplier}
-          onChange={(e) => handleChange('speedBonusMultiplier', parseFloat(e.target.value))}
-        />
-      </div>
-
-      <div className="setting-group">
-        <label>Speed Window: {localSettings.speedBonusWindow}s</label>
-        <input
-          type="range"
-          min="1"
-          max="10"
-          value={localSettings.speedBonusWindow}
-          onChange={(e) => handleChange('speedBonusWindow', parseInt(e.target.value))}
-        />
-      </div>
-      <button onClick={onClose}>Close Settings</button>
     </div>
   );
 }

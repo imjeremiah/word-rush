@@ -177,9 +177,15 @@ const PhaserGame: React.FC<PhaserGameProps> = React.memo(({ socket, gameState })
         console.log(`[${new Date().toISOString()}] 📡 Cleaning up socket listeners - Instance: ${instanceIdRef.current}`);
         socket.off('game:initial-board');
         socket.off('game:board-update');
-        socket.off('game:tile-changes');
+        // Note: game:tile-changes is now handled via custom event, not direct socket
       }
-
+      
+      // Clean up custom event listeners
+      if ((gameRef.current as any)?.scene?.scenes?.[0]?.tileChangesHandler) {
+        window.removeEventListener('phaser-tile-changes', (gameRef.current as any).scene.scenes[0].tileChangesHandler);
+        console.log(`[${new Date().toISOString()}] 📡 Cleaned up custom tile changes event listener`);
+      }
+      
       // Clean up intervals
       if (sceneReadinessCheckInterval) {
         clearInterval(sceneReadinessCheckInterval);
@@ -596,11 +602,13 @@ function preload(this: Phaser.Scene, socket?: Socket<ServerToClientEvents, Clien
     });
 
     // Enhanced tile changes handler with scene readiness queue
-    socket.on('game:tile-changes', (data: TileChanges) => {
+    // Listen for the custom event dispatched by GameConnection.tsx instead of direct socket
+    const handleTileChanges = (event: CustomEvent) => {
+      const data = event.detail as TileChanges;
       const receiveTime = Date.now();
       const networkLatency = receiveTime - data.timestamp;
       
-      console.log(`[${new Date().toISOString()}] 📨 Received tile changes (seq: ${data.sequenceNumber}, latency: ${networkLatency}ms):`, {
+      console.log(`[${new Date().toISOString()}] 📨 PhaserGame received tile changes from GameConnection (seq: ${data.sequenceNumber}, latency: ${networkLatency}ms):`, {
         removed: data.removedPositions.length,
         falling: data.fallingTiles.length,
         new: data.newTiles.length
@@ -627,7 +635,13 @@ function preload(this: Phaser.Scene, socket?: Socket<ServerToClientEvents, Clien
       
       // Process changes in sequence order
       processQueuedTileChanges.call(this);
-    });
+    };
+
+    // Add custom event listener for tile changes
+    window.addEventListener('phaser-tile-changes', handleTileChanges as EventListener);
+    
+    // Store reference for cleanup
+    (this as any).tileChangesHandler = handleTileChanges;
 
     // 🔧 TASK 1: Check for preloaded board from GameConnection
     const checkForPendingBoard = () => {

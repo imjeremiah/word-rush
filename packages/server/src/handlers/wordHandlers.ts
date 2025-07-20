@@ -84,8 +84,7 @@ export function handleWordSubmit(
     roomService?: RoomServiceType;
   }
 ): void {
-  const { word, tiles } = data;
-  const { dictionaryService, sessionService, roomService } = services;
+  const { dictionaryService, roomService } = services;
   
   // Start latency measurement
   const startTime = Date.now();
@@ -189,6 +188,40 @@ function handleMultiplayerWordSubmit(
     player.score = newTotalScore;
     player.roundScore = newRoundScore;
     player.lastWordTimestamp = now;
+
+    // 🎯 ENHANCED STATS: Track detailed player statistics with improved logic
+    if (!(player as any).wordsFound) (player as any).wordsFound = 0;
+    if (!(player as any).totalWordLength) (player as any).totalWordLength = 0;
+    if (!(player as any).longestWord) (player as any).longestWord = '';
+    if (!(player as any).highestScoringWord) (player as any).highestScoringWord = '';
+    if (!(player as any).highestWordScore) (player as any).highestWordScore = 0;
+    if (!(player as any).longestWordScore) (player as any).longestWordScore = 0;
+    if (!(player as any).bestWordHadDifficultyBonus) (player as any).bestWordHadDifficultyBonus = false;
+    if (!(player as any).bestWordHadSpeedBonus) (player as any).bestWordHadSpeedBonus = false;
+
+    // Update enhanced stats
+    (player as any).wordsFound++;
+    (player as any).totalWordLength += word.length;
+    (player as any).averageWordLength = (player as any).totalWordLength / (player as any).wordsFound;
+
+    // Track longest word with improved logic for same-length scenarios
+    const currentLongestLength = (player as any).longestWord.length;
+    const currentLongestScore = (player as any).longestWordScore || 0;
+    
+    if (word.length > currentLongestLength || 
+        (word.length === currentLongestLength && points > currentLongestScore)) {
+      (player as any).longestWord = word;
+      (player as any).longestWordScore = points;
+    }
+
+    // Track highest scoring word with bonus information
+    if (points > (player as any).highestWordScore) {
+      (player as any).highestScoringWord = word;
+      (player as any).highestWordScore = points;
+      // Track if this best word had bonuses applied
+      (player as any).bestWordHadDifficultyBonus = difficultyConfig.scoreMultiplier > 1.0;
+      (player as any).bestWordHadSpeedBonus = speedBonus;
+    }
 
     // Calculate tile changes and update board
     if (room.gameState.board) {

@@ -104,9 +104,9 @@ export interface DifficultyConfig {
 
 export const DIFFICULTY_CONFIGS: Record<DifficultyLevel, DifficultyConfig> = {
   easy: { minWordLength: 2, scoreMultiplier: 1.0 },
-  medium: { minWordLength: 3, scoreMultiplier: 1.2 },
-  hard: { minWordLength: 4, scoreMultiplier: 1.5 },
-  extreme: { minWordLength: 5, scoreMultiplier: 2.0 },
+  medium: { minWordLength: 3, scoreMultiplier: 1.5 },
+  hard: { minWordLength: 4, scoreMultiplier: 2.0 },
+  extreme: { minWordLength: 5, scoreMultiplier: 3.0 },
 };
 
 // Default match settings for lobby creation

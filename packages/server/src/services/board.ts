@@ -212,10 +212,13 @@ function findAllValidWordsOptimized(board: GameBoard, dictionaryService: Diction
   const result = Array.from(foundWords);
   solverMemoCache.set(boardKey, result);
   
-  // Limit cache size to prevent memory issues
-  if (solverMemoCache.size > 100) {
+  // Check if we're hitting the cache size limit
+  if (solverMemoCache.size > 2000) {
+    // Remove oldest entry (first key) to make room
     const firstKey = solverMemoCache.keys().next().value;
-    solverMemoCache.delete(firstKey);
+    if (firstKey) {
+      solverMemoCache.delete(firstKey);
+    }
   }
   
   return result;

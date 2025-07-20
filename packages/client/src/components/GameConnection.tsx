@@ -5,7 +5,7 @@
  */
 
 import { useEffect, useRef, useCallback, startTransition } from 'react';
-import { io } from 'socket.io-client';
+import { io, Socket } from 'socket.io-client';
 import { useGameContext } from '../context/GameContext';
 import { notifications } from '../services/notifications';
 import { withServerEventValidation } from '../validation/schemas';
@@ -17,6 +17,10 @@ if (process.env.NODE_ENV === 'development') {
     // Silently ignore if test utils fail to load
   });
 }
+
+// 🚀 DEPLOYMENT: Use Vite environment variables for the server URL
+// This allows Render to inject the live server URL during the build process.
+const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3001';
 
 // Debug flag to control socket event logging verbosity
 // Set to false in production to reduce console noise
@@ -280,7 +284,7 @@ function GameConnection(): null {
     
     console.log(`[${new Date().toISOString()}] 📱 Using adaptive socket config:`, socketConfig);
     
-    const newSocket = io('http://localhost:3001', socketConfig);
+    const newSocket = io(SERVER_URL, socketConfig);
     socketRef.current = newSocket;
     
     // 🚨 REACT STRICT MODE FIX: Only set socket if not cleaned up
@@ -292,7 +296,7 @@ function GameConnection(): null {
     
     // 🚨 REACT STRICT MODE FIX: Add connection success/failure logging
     newSocket.on('connect', () => {
-      console.log(`[${new Date().toISOString()}] ✅ Socket connected successfully to localhost:3001`);
+      console.log(`[${new Date().toISOString()}] ✅ Socket connected successfully to ${SERVER_URL}`);
       contextRef.current.setConnectionStatus('connected');
     });
     
@@ -610,6 +614,59 @@ function GameConnection(): null {
       
       // Clear stored session since it's invalid
       localStorage.removeItem('wordRushSession');
+    }));
+
+    newSocket.on('game:leaderboard-update', withServerEventValidation('game:leaderboard-update', (data) => {
+      logSocketEvent('game:leaderboard-update', data);
+      console.log('Leaderboard update:', data.players);
+      
+      // Update leaderboard in current room if applicable
+      contextRef.current.setCurrentRoom(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          players: data.players.map(leaderboardPlayer => {
+            const existingPlayer = prev.players.find(p => p.id === leaderboardPlayer.id);
+            return existingPlayer ? {
+              ...existingPlayer,
+              score: leaderboardPlayer.score
+            } : {
+              id: leaderboardPlayer.id,
+              username: leaderboardPlayer.username,
+              score: leaderboardPlayer.score,
+              difficulty: leaderboardPlayer.difficulty || 'medium' as import('@word-rush/common').DifficultyLevel,
+              isReady: false
+            };
+          })
+        };
+      });
+      
+      // Also update match data leaderboard
+      contextRef.current.setMatchData(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          leaderboard: data.players
+        };
+      });
+    }));
+
+    // Tile changes event handler for cascade animations
+    newSocket.on('game:tile-changes', withServerEventValidation('game:tile-changes', (data) => {
+      logSocketEvent('game:tile-changes', data);
+      console.log(`[${new Date().toISOString()}] 📨 GameConnection received tile changes (seq: ${data.sequenceNumber}):`, {
+        removed: data.removedPositions.length,
+        falling: data.fallingTiles.length,
+        new: data.newTiles.length
+      });
+      
+      // Forward to PhaserGame through global state for proper processing
+      // Note: PhaserGame has its own socket listeners that will handle the actual tile processing
+      (window as any).latestTileChanges = data;
+      
+      // Trigger a custom event that PhaserGame can listen for
+      const tileChangeEvent = new CustomEvent('phaser-tile-changes', { detail: data });
+      window.dispatchEvent(tileChangeEvent);
     }));
 
     newSocket.on('game:initial-board', withServerEventValidation('game:initial-board', (data) => {
@@ -979,48 +1036,8 @@ function GameConnection(): null {
       const winnerName = data.winner?.username || 'Unknown';
       notifications.success(`Match over! Winner: ${winnerName}`, 5000);
       
-      // Auto-return to lobby after showing results
-      setTimeout(() => {
-        localStorage.setItem('wordRushGameState', 'lobby');  // Track return to lobby
-        contextRef.current.setGameState('lobby');
-        notifications.info('Returning to lobby...', 2000);
-      }, 10000);  // 10 second delay to show results
-    }));
-
-    newSocket.on('game:leaderboard-update', withServerEventValidation('game:leaderboard-update', (data) => {
-      logSocketEvent('game:leaderboard-update', data);
-      console.log('Leaderboard update:', data.players);
-      
-      // Pre-calculate sorted leaderboard for efficiency
-      const sortedLeaderboard = data.players.sort((a, b) => b.score - a.score);
-      
-      // Use batched state updates to reduce renders by combining both updates
-      // This creates a single render cycle instead of two separate ones
-      const updateFunctions: (() => void)[] = [
-        // Update matchData leaderboard with sorted players
-        () => contextRef.current.setMatchData(prev => prev ? {
-          ...prev,
-          leaderboard: sortedLeaderboard
-        } : null),
-        
-        // Update currentRoom players to keep state in sync
-        () => contextRef.current.setCurrentRoom(prev => {
-          if (!prev) return prev;
-          const updatedPlayers = prev.players.map(roomPlayer => {
-            const leaderboardPlayer = data.players.find(lp => lp.id === roomPlayer.id);
-            return leaderboardPlayer 
-              ? { ...roomPlayer, score: leaderboardPlayer.score, difficulty: leaderboardPlayer.difficulty }
-              : roomPlayer;
-          });
-          return { ...prev, players: updatedPlayers };
-        })
-      ];
-      
-      // Batch both updates to reduce unnecessary re-renders
-      console.log(`[GameConnection] Batching ${updateFunctions.length} leaderboard state updates`);
-      startTransition(() => {
-        updateFunctions.forEach(update => update());
-      });
+      // 🎯 USER REQUEST: Removed auto-return - let players stay on results page to study stats
+      // Players can use the "Return to Lobby" or "Start New Match" buttons when ready
     }));
 
 

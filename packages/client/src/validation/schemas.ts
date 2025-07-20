@@ -206,15 +206,25 @@ export const ServerEventSchemas = {
       id: z.string(),
       username: z.string().optional().default('Unknown'),
       isConnected: z.boolean().optional().default(true),
-      score: z.number().optional().default(0)
+      score: z.number().optional().default(0),
+      difficulty: z.string().optional().default('medium')
     }).nullable(),
     finalScores: z.array(z.object({
       rank: z.number(),
       playerId: z.string(),
-      playerName: z.string().optional().default('Unknown'),  // Fix: Handle missing/undefined
+      playerName: z.string().optional().default('Unknown'),
       roundScore: z.number().optional().default(0),
-      totalScore: z.number().optional().default(0),
-      difficulty: z.string().optional().default('medium')
+      score: z.number().optional().default(0), // Server sends 'score', not 'totalScore'
+      difficulty: z.string().optional().default('medium'),
+      // Enhanced stats fields that server is sending
+      wordsFound: z.number().optional().default(0),
+      longestWord: z.string().optional().default(''),
+      highestScoringWord: z.string().optional().default(''),
+      highestWordScore: z.number().optional().default(0),
+      averageWordLength: z.number().optional().default(0),
+      // Bonus information for best word
+      bestWordHadDifficultyBonus: z.boolean().optional().default(false),
+      bestWordHadSpeedBonus: z.boolean().optional().default(false)
     })),
     totalRounds: z.number(),
   }),

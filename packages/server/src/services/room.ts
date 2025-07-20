@@ -491,6 +491,10 @@ function createRoomService(cleanupIntervalMs: number = 10 * 60 * 1000): RoomModu
     const roomCode = generateRoomCode();
     const now = Date.now();
 
+    // Get crown count from session service (same as regular players)
+    const session = sessionService.getPlayerSession(hostId);
+    const crownCount = session?.crowns || 0;
+
     const hostPlayer: Player = {
       id: hostId,
       username: hostUsername,
@@ -498,6 +502,9 @@ function createRoomService(cleanupIntervalMs: number = 10 * 60 * 1000): RoomModu
       isConnected: true,
       isReady: false,
       roundScore: 0,
+      crowns: crownCount,
+      // 🎯 SECTION 3.1: Set default difficulty to 'easy' for host (same as regular players)
+      difficulty: process.env.USE_EASY_DEFAULT !== 'false' ? 'easy' : 'medium', // Feature flag with 'easy' as new default
     };
 
     const room: GameRoom = {
@@ -845,17 +852,18 @@ function createRoomService(cleanupIntervalMs: number = 10 * 60 * 1000): RoomModu
     let boardGenerationTime = 0;
     
     if (room.gameState.currentRound === 1 && room.gameState.board) {
-      // First round: Use the preloaded board from startMatch()
+      // First round: Use the preloaded board from startMatch() if available
       boardChecksum = generateBoardChecksum(room.gameState.board);
       console.log(`[${new Date().toISOString()}] 🎲 Using preloaded board for round 1 in room ${roomCode}: checksum=${boardChecksum}, tiles_count=${room.gameState.board.width * room.gameState.board.height}`);
     } else {
-      // Subsequent rounds: Generate new board
+      // Subsequent rounds OR no preloaded board (e.g., after restart): Generate new board
       const boardGenerationStart = Date.now();
       room.gameState.board = generateBoard(dictionaryService);
       boardGenerationTime = Date.now() - boardGenerationStart;
       
       boardChecksum = generateBoardChecksum(room.gameState.board);
-      console.log(`[${new Date().toISOString()}] Board generated for round ${room.gameState.currentRound} in room ${roomCode}: checksum=${boardChecksum}, generation_time=${boardGenerationTime}ms, tiles_count=${room.gameState.board.width * room.gameState.board.height}`);
+      const reason = room.gameState.currentRound === 1 ? 'no preloaded board (fresh start)' : `round ${room.gameState.currentRound}`;
+      console.log(`[${new Date().toISOString()}] 🎲 Generated fresh board for ${reason} in room ${roomCode}: checksum=${boardChecksum}, generation_time=${boardGenerationTime}ms, tiles_count=${room.gameState.board.width * room.gameState.board.height}`);
     }
 
     // Validate board integrity before sending to players
@@ -1009,15 +1017,18 @@ function createRoomService(cleanupIntervalMs: number = 10 * 60 * 1000): RoomModu
         // 🔧 SAFETY CHECK: Verify room still exists and is in correct state for next round
         const currentRoom = rooms.get(roomCode.toUpperCase());
         if (!currentRoom || !currentRoom.gameState || 
-            currentRoom.gameState.matchStatus !== 'round-end' || 
-            !currentRoom.isGameActive) {
+            currentRoom.gameState.matchStatus !== 'round-end') {
           console.warn(`[${new Date().toISOString()}] ⚠️ Skipping next round start - room state changed: ${roomCode}`);
           transitionTimeouts.delete(roomCode);
           return;
         }
         
         transitionTimeouts.delete(roomCode);
-        room.gameState!.currentRound++;
+        // Set room back to active state for the next round
+        currentRoom.isGameActive = true;
+        currentRoom.gameState.isGameActive = true;
+        currentRoom.gameState.matchStatus = 'starting';
+        currentRoom.gameState.currentRound++;
         startRound(roomCode, io, dictionaryService);
       }, 5000); // Show round summary for 5 seconds
       
@@ -1047,7 +1058,7 @@ function createRoomService(cleanupIntervalMs: number = 10 * 60 * 1000): RoomModu
 
     room.gameState.winner = winner;
 
-    // Calculate final match summary with proper winner selection
+    // Calculate final match summary with proper winner selection and enhanced stats
     const sortedPlayers = room.players
       .sort((a, b) => (b.score || 0) - (a.score || 0));
     
@@ -1056,17 +1067,25 @@ function createRoomService(cleanupIntervalMs: number = 10 * 60 * 1000): RoomModu
     const matchSummary = {
       winner: matchWinner ? {
         id: matchWinner.id,
-        username: matchWinner.username || 'Unknown',  // Fix: Use username with fallback
-        isConnected: matchWinner.isConnected || true,  // Fix: Add required fields
-        score: matchWinner.score || 0  // Fix: Provide fallback for score
+        username: matchWinner.username || 'Unknown',
+        score: matchWinner.score || 0,
+        difficulty: matchWinner.difficulty || 'medium'
       } : null,
       finalScores: sortedPlayers.map((player, index) => ({
         rank: index + 1,
         playerId: player.id,
-        playerName: player.username || 'Unknown',  // Fix: Use username with fallback
-        roundScore: player.roundScore || 0,  // Fix: Add roundScore field
-        totalScore: player.score || 0,  // Fix: Use totalScore and provide fallback
-        difficulty: player.difficulty || 'medium'  // Fix: Provide fallback for difficulty
+        playerName: player.username || 'Unknown',
+        score: player.score || 0,
+        difficulty: player.difficulty || 'medium',
+        // Enhanced stats
+        wordsFound: (player as any).wordsFound || 0,
+        longestWord: (player as any).longestWord || '',
+        highestScoringWord: (player as any).highestScoringWord || '',
+        highestWordScore: (player as any).highestWordScore || 0,
+        averageWordLength: (player as any).averageWordLength || 0,
+        // Bonus information for best word
+        bestWordHadDifficultyBonus: (player as any).bestWordHadDifficultyBonus || false,
+        bestWordHadSpeedBonus: (player as any).bestWordHadSpeedBonus || false
       })),
       totalRounds: room.gameState.totalRounds
     };
@@ -1133,11 +1152,16 @@ function createRoomService(cleanupIntervalMs: number = 10 * 60 * 1000): RoomModu
       isGameActive: false,
       matchStatus: 'lobby',
       settings: room.gameState?.settings || {
+        totalRounds: 3,
+        roundDuration: 90,
         shuffleCost: 5,
         speedBonusMultiplier: 1.5,
         speedBonusWindow: 3,
-        deadBoardThreshold: 5
-      }
+        deadBoardThreshold: 5,
+        gameMode: 'standard' as const
+      },
+      // 🔧 BOARD SYNC FIX: Clear board to prevent stale board reuse on restart
+      board: undefined
     };
 
     // Reset all player states
@@ -1149,6 +1173,16 @@ function createRoomService(cleanupIntervalMs: number = 10 * 60 * 1000): RoomModu
       if ('lastWordTimestamp' in player) {
         player.lastWordTimestamp = undefined;
       }
+      // 🎯 ENHANCED STATS: Reset detailed statistics for new match
+      (player as any).wordsFound = 0;
+      (player as any).totalWordLength = 0;
+      (player as any).longestWord = '';
+      (player as any).highestScoringWord = '';
+      (player as any).highestWordScore = 0;
+      (player as any).longestWordScore = 0;
+      (player as any).averageWordLength = 0;
+      (player as any).bestWordHadDifficultyBonus = false;
+      (player as any).bestWordHadSpeedBonus = false;
     });
 
     // Broadcast return to lobby

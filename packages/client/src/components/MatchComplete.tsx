@@ -4,15 +4,13 @@
  * Shows final scores, winner, and options to play again or return to lobby
  */
 
-import { MatchComplete as MatchCompleteType } from '@word-rush/common';
-
 /**
- * Match completion data structure with optional properties to prevent crashes
+ * Match completion data structure with enhanced stats
  */
 interface MatchCompleteData {
   winner: {
-    playerId: string;
-    playerName: string;
+    id: string;
+    username: string;
     score: number;
     difficulty?: string;
   } | null;
@@ -22,6 +20,15 @@ interface MatchCompleteData {
     playerName: string;
     score: number;
     difficulty?: string;
+    // Enhanced stats
+    wordsFound?: number;
+    longestWord?: string;
+    highestScoringWord?: string;
+    highestWordScore?: number;
+    averageWordLength?: number;
+    // Bonus information for best word
+    bestWordHadDifficultyBonus?: boolean;
+    bestWordHadSpeedBonus?: boolean;
   }>;
   totalRounds: number;
 }
@@ -36,10 +43,8 @@ interface MatchCompleteProps {
   isHost: boolean;
   /** Current player ID for highlighting */
   currentPlayerId: string;
-  /** Callback when returning to lobby */
-  onReturnToLobby?: () => void;
-  /** Callback when starting a new match */
-  onStartNewMatch?: () => void;
+  /** Callback when returning to main menu */
+  onReturnToMainMenu?: () => void;
 }
 
 /**
@@ -52,20 +57,19 @@ export function MatchComplete({
   matchComplete,
   isHost,
   currentPlayerId,
-  onReturnToLobby,
-  onStartNewMatch
+  onReturnToMainMenu
 }: MatchCompleteProps): JSX.Element {
   
   // Add null checks for winner
   const winner = matchComplete.winner || { 
-    playerId: '', 
-    playerName: 'Unknown', 
+    id: '', 
+    username: 'Unknown', 
     score: 0, 
     difficulty: 'medium' 
   };
   
   // Check if current player is the winner
-  const isWinner = winner.playerId === currentPlayerId;
+  const isWinner = winner.id === currentPlayerId;
   
   // Find current player's final rank with fallback
   const currentPlayerResult = matchComplete.finalScores.find(p => p.playerId === currentPlayerId);
@@ -104,93 +108,116 @@ export function MatchComplete({
   }
 
   /**
-   * Get trophy icon based on rank
+   * Get the point value for a letter (Scrabble scoring)
    */
-  function getTrophyIcon(rank: number): string {
-    if (rank === 1) return '🏆';
-    if (rank === 2) return '🥈';
-    if (rank === 3) return '🥉';
-    return '🏅';
+  function getLetterPoints(letter: string): number {
+    const LETTER_POINTS: { [key: string]: number } = {
+      A: 1, B: 3, C: 3, D: 2, E: 1, F: 4, G: 2, H: 4, I: 1, J: 8,
+      K: 5, L: 1, M: 3, N: 1, O: 1, P: 3, Q: 10, R: 1, S: 1, T: 1,
+      U: 1, V: 4, W: 4, X: 8, Y: 4, Z: 10
+    };
+    return LETTER_POINTS[letter.toUpperCase()] || 1;
   }
 
   /**
-   * Get rank class for styling
+   * Get tile color by point value (matching game tiles)
    */
-  function getRankClass(rank: number): string {
-    if (rank === 1) return 'rank-gold';
-    if (rank === 2) return 'rank-silver';
-    if (rank === 3) return 'rank-bronze';
-    return 'rank-other';
+  function getTileColorByPoints(points: number): string {
+    switch(points) {
+      case 1: return '#045476';    // Dark Blue 
+      case 2: return '#0A7497';    // Blue 
+      case 3: return '#149ABC';    // Light Blue 
+      case 4: return '#0F9995';    // Teal 
+      case 5: return '#FBA731';    // Orange 
+      case 8: return '#F88C2B';    // Dark Orange 
+      case 10: return '#F1742A';   // Red Orange 
+      default: return '#045476';
+    }
+  }
+
+  /**
+   * Render a word as game-like letter tiles with point values
+   */
+  function renderWordAsTiles(word: string) {
+    if (!word || word === 'None') return <span className="stat-value enhanced-stat">None</span>;
+    
+    return (
+      <div className="word-tiles">
+        {word.split('').map((letter, index) => {
+          const points = getLetterPoints(letter);
+          const tileColor = getTileColorByPoints(points);
+          return (
+            <div 
+              key={index} 
+              className="game-letter-tile"
+              style={{ backgroundColor: tileColor }}
+            >
+              <span className="tile-letter">{letter.toUpperCase()}</span>
+              <span className="tile-points">{points}</span>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  /**
+   * Get trophy/medal icon and styling based on rank
+   */
+  function getRankInfo(rank: number) {
+    if (rank === 1) return { icon: '🏆', class: 'rank-winner', badge: 'WINNER!' };
+    if (rank === 2) return { icon: '🥈', class: 'rank-runner-up', badge: 'RUNNER-UP' };
+    if (rank === 3) return { icon: '🥉', class: 'rank-third', badge: '3RD PLACE' };
+    return { icon: '🏅', class: 'rank-other', badge: `${rank}${getRankSuffix(rank)} PLACE` };
   }
 
   return (
     <div className="match-complete-overlay">
       <div className="match-complete-container">
         
-        {/* Winner Announcement */}
-        <div className="winner-announcement">
-          <div className="winner-crown">👑</div>
+        {/* Centered Match Complete Title */}
+        <div className="match-complete-header">
           <h1 className="match-complete-title">Match Complete!</h1>
-          
-          <div className="winner-card">
-            <div className="winner-trophy">🏆</div>
-            <div className="winner-info">
-              <h2 className="winner-name">{winner.playerName}</h2>
-              <div className="winner-details">
-                <span 
-                  className="winner-difficulty"
-                  style={{ color: getDifficultyColor(winner.difficulty) }}
-                >
-                  {getDifficultyDisplay(winner.difficulty)}
-                </span>
-                <span className="winner-score">{winner.score} points</span>
-              </div>
-            </div>
-          </div>
-          
-          {isWinner && (
-            <div className="victory-message">
-              <h3>🎉 Congratulations! You won! 🎉</h3>
-            </div>
-          )}
         </div>
 
-        {/* Final Rankings */}
+        {/* Final Rankings with Centered Round Info */}
         <div className="final-rankings">
-          <h3>Final Rankings</h3>
-          <div className="match-stats">
+          <h3 className="final-rankings-title">Final Rankings</h3>
+          <div className="match-info">
             {matchComplete.totalRounds} Round{matchComplete.totalRounds !== 1 ? 's' : ''} Played
           </div>
           
-          <div className="rankings-list">
+          <div className="ranking-list">
             {matchComplete.finalScores.map((player) => {
               const isCurrentPlayer = player.playerId === currentPlayerId;
+              const rankInfo = getRankInfo(player.rank);
               
               return (
                 <div 
                   key={player.playerId}
-                  className={`final-ranking-item ${getRankClass(player.rank)} ${isCurrentPlayer ? 'current-player' : ''}`}
+                  className={`final-ranking-item ${rankInfo.class} ${isCurrentPlayer ? 'current-player' : ''}`}
                 >
-                  
-                  {/* Rank with Trophy */}
-                  <div className="rank-display">
-                    <div className="trophy-icon">{getTrophyIcon(player.rank)}</div>
-                    <div className="rank-text">
-                      {player.rank}{getRankSuffix(player.rank)}
+                  {/* Trophy Icon with Badge */}
+                  <div className="trophy-section">
+                    <div className="rank-icon">
+                      {rankInfo.icon}
+                    </div>
+                    <div className="rank-badge">
+                      {rankInfo.badge}
                     </div>
                   </div>
                   
-                  {/* Player Info */}
-                  <div className="player-info">
+                  {/* Player Info - Centered */}
+                  <div className="player-info-centered">
                     <div className="player-name">
                       {player.playerName || 'Unknown Player'}
-                      {isCurrentPlayer && <span className="you-indicator">(You)</span>}
+                      {isCurrentPlayer && <span className="you-indicator"> (You)</span>}
                     </div>
                     <div 
                       className="player-difficulty"
                       style={{ color: getDifficultyColor(player.difficulty) }}
                     >
-                      {getDifficultyDisplay(player.difficulty)} Difficulty
+                      {getDifficultyDisplay(player.difficulty)}
                     </div>
                   </div>
                   
@@ -206,72 +233,83 @@ export function MatchComplete({
           </div>
         </div>
 
-        {/* Personal Performance Summary */}
-        {currentPlayerResult && (
-          <div className="personal-summary">
-            <div className="summary-card">
-              <h4>Your Match Performance</h4>
-              <div className="summary-stats">
-                <div className="summary-stat">
-                  <span className="stat-icon">{getTrophyIcon(currentPlayerRank)}</span>
-                  <span className="stat-label">Final Rank:</span>
-                  <span className="stat-value">
-                    {currentPlayerRank}{getRankSuffix(currentPlayerRank)} Place
-                  </span>
-                </div>
-                <div className="summary-stat">
-                  <span className="stat-icon">🎯</span>
-                  <span className="stat-label">Total Score:</span>
-                  <span className="stat-value">{currentPlayerResult.score || 0} points</span>
-                </div>
-                <div className="summary-stat">
-                  <span className="stat-icon">⚡</span>
-                  <span className="stat-label">Difficulty:</span>
-                  <span 
-                    className="stat-value"
-                    style={{ color: getDifficultyColor(currentPlayerResult.difficulty) }}
-                  >
-                    {getDifficultyDisplay(currentPlayerResult.difficulty)}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Stacked Match Statistics */}
+        <div className="enhanced-stats">
+          <h3 className="match-statistics-title">Match Statistics</h3>
+          <div className="stats-container">
+            {matchComplete.finalScores.map((player) => {
+              const isCurrentPlayer = player.playerId === currentPlayerId;
+              const rankInfo = getRankInfo(player.rank);
+              
+              return (
+                <div 
+                  key={player.playerId}
+                  className={`player-stats-card-stacked ${rankInfo.class} ${isCurrentPlayer ? 'current-player' : ''}`}
+                >
+                  <div className="stats-header">
+                    <span className="stats-rank-icon">{rankInfo.icon}</span>
+                    <span className="stats-player-name">
+                      {player.playerName}
+                      {isCurrentPlayer && ' (You)'}
+                    </span>
+                  </div>
+                  
 
-        {/* Action Buttons */}
-        <div className="match-complete-actions">
-          {isHost && (
-            <>
-              {onStartNewMatch && (
-                <button 
-                  className="start-new-match-button"
-                  onClick={onStartNewMatch}
-                >
-                  🔄 Start New Match
-                </button>
-              )}
-              {onReturnToLobby && (
-                <button 
-                  className="return-lobby-button"
-                  onClick={onReturnToLobby}
-                >
-                  🏠 Return to Lobby
-                </button>
-              )}
-            </>
-          )}
-          
-          {!isHost && (
-            <div className="non-host-message">
-              <p>Waiting for host to start a new match or return to lobby...</p>
-            </div>
-          )}
+                  <div className="stats-grid">
+                    <div className="stat-item">
+                      <span className="stat-label">Words Found:</span>
+                      <span className="stat-value words-found-value">{player.wordsFound || 0}</span>
+                    </div>
+                    
+                    <div className="stat-item">
+                      <span className="stat-label">Longest Word:</span>
+                      <div className="stat-value">
+                        {renderWordAsTiles(player.longestWord || '')}
+                      </div>
+                    </div>
+                    
+                    <div className="stat-item">
+                      <span className="stat-label">Best Word:</span>
+                      <div className="stat-value">
+                        {player.highestScoringWord && player.highestScoringWord !== 'None' ? (
+                          <div className="best-word-container">
+                            {renderWordAsTiles(player.highestScoringWord)}
+                            {player.highestWordScore && (
+                              <div className="word-score-section">
+                                <span className="word-score"><strong>({player.highestWordScore}pts)</strong></span>
+                                <div className="bonus-badges">
+                                  {player.bestWordHadDifficultyBonus && (
+                                    <span className="bonus-badge difficulty-bonus">DIFF</span>
+                                  )}
+                                  {player.bestWordHadSpeedBonus && (
+                                    <span className="bonus-badge speed-bonus">SPEED</span>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="stat-value">None</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
-        {/* Auto Return Notice */}
-        <div className="auto-return-notice">
-          <p>Returning to lobby automatically in a few seconds...</p>
+        {/* Single Return to Main Menu Button */}
+        <div className="match-complete-actions">
+          {onReturnToMainMenu && (
+            <button 
+              className="return-main-menu-button"
+              onClick={onReturnToMainMenu}
+            >
+              🏠 Return to Main Menu
+            </button>
+          )}
         </div>
 
       </div>
