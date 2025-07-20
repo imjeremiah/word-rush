@@ -11,7 +11,8 @@ services:
     # The root directory of the server code within the monorepo.
     rootDir: packages/server
     # Commands to build the server from TypeScript to JavaScript.
-    buildCommand: "npm install && npm run build"
+    # Install from root and build common package first, then server
+    buildCommand: "cd ../.. && npm install && cd packages/common && npm run build && cd ../server && npm run build"
     # Command to start the server after a successful build.
     startCommand: "node dist/index.js"
     # Render's health check will ping this endpoint to ensure the server is live.
@@ -36,7 +37,8 @@ services:
     # The root directory of the client code within the monorepo.
     rootDir: packages/client
     # Commands to build the static site.
-    buildCommand: "npm install && npm run build"
+    # Install from root and build common package first, then client
+    buildCommand: "cd ../.. && npm install && cd packages/common && npm run build && cd ../client && npm run build"
     # The directory where the built static files (HTML, JS, CSS) are located.
     staticPublishPath: "./dist"
     # Environment variables required by the client at build time.
