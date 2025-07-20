@@ -28,9 +28,7 @@
     "strictFunctionTypes": false,
     "strictNullChecks": false,
     "strictPropertyInitialization": false,
-    "useUnknownInCatchVariables": false,
-    "suppressImplicitAnyIndexErrors": true,
-    "noStrictGenericChecks": true
+    "useUnknownInCatchVariables": false
   },
   "include": ["src/**/*", "vite-env.d.ts"],
   "exclude": ["node_modules", "dist"]
