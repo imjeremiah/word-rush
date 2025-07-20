@@ -186,6 +186,12 @@ const PhaserGame: React.FC<PhaserGameProps> = React.memo(({ socket, gameState })
         console.log(`[${new Date().toISOString()}] 📡 Cleaned up custom tile changes event listener`);
       }
       
+      // Clean up board update listener
+      if ((gameRef.current as any)?.scene?.scenes?.[0]?.boardUpdateHandler) {
+        window.removeEventListener('phaser-board-update', (gameRef.current as any).scene.scenes[0].boardUpdateHandler);
+        console.log(`[${new Date().toISOString()}] 📡 Cleaned up board update event listener`);
+      }
+      
       // Clean up intervals
       if (sceneReadinessCheckInterval) {
         clearInterval(sceneReadinessCheckInterval);
@@ -642,6 +648,31 @@ function preload(this: Phaser.Scene, socket?: Socket<ServerToClientEvents, Clien
     
     // Store reference for cleanup
     (this as any).tileChangesHandler = handleTileChanges;
+
+    // 🔧 CRITICAL FIX: Add listener for board updates between rounds
+    const handleBoardUpdate = (event: CustomEvent) => {
+      const { board, boardChecksum, round } = event.detail;
+      console.log(`[${new Date().toISOString()}] 🔄 Received board update for round ${round} (checksum: ${boardChecksum})`);
+      
+      // Update the board state
+      boardState.currentBoard = board;
+      
+      // Check if scene is ready
+      if (this.sys && this.sys.isActive()) {
+        console.log(`[${new Date().toISOString()}] 🎮 Updating board display for round ${round}`);
+        updateBoardDisplayWrapper.call(this);
+        
+        // Ensure word builder text is positioned correctly
+        repositionWordBuilderText(this, interactionState, boardState);
+      } else {
+        console.warn(`[${new Date().toISOString()}] ⚠️ Scene not ready for board update - will retry`);
+        // Store for later when scene is ready
+        (window as any).pendingRoundBoard = board;
+      }
+    };
+    
+    window.addEventListener('phaser-board-update', handleBoardUpdate as EventListener);
+    (this as any).boardUpdateHandler = handleBoardUpdate;
 
     // 🔧 TASK 1: Check for preloaded board from GameConnection
     const checkForPendingBoard = () => {
@@ -1248,8 +1279,16 @@ function create(this: Phaser.Scene, socket?: Socket<ServerToClientEvents, Client
     // 🔧 Check for any available board data in global state
     const pendingBoard = (window as any).pendingGameBoard;
     const currentBoard = (window as any).currentGameBoard;
+    const pendingRoundBoard = (window as any).pendingRoundBoard;
     
-    if (pendingBoard) {
+    if (pendingRoundBoard) {
+      console.log(`[${new Date().toISOString()}] 🔄 Found pending round board - rendering immediately`);
+      boardState.currentBoard = pendingRoundBoard;
+      updateBoardDisplayWrapper.call(this);
+      
+      // Clear the pending board
+      (window as any).pendingRoundBoard = null;
+    } else if (pendingBoard) {
       console.log(`[${new Date().toISOString()}] 🎲 Found pending board in global state - storing for match:go`);
       boardState.pendingBoard = pendingBoard;
     } else if (currentBoard && (gameState === 'match')) {

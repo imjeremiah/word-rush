@@ -155,8 +155,10 @@ const AppContent = React.memo((): JSX.Element => {
 
   // 🟡 PHASE 3A: Render bailout conditions for unchanged states
   const shouldRenderPhaser = React.useMemo(() => {
-    return gameState === 'match' && roundTimer && currentRoom;
-  }, [gameState, roundTimer, currentRoom]);
+    // Keep PhaserGame mounted during round transitions to prevent state loss
+    // Only hide it when we're truly in menu, lobby, or countdown states
+    return (gameState === 'match' || gameState === 'round-end') && currentRoom;
+  }, [gameState, currentRoom]);
 
   const shouldRenderRoundEnd = React.useMemo(() => {
     return gameState === 'round-end' && roundSummary && currentRoom;
@@ -199,13 +201,13 @@ const AppContent = React.memo((): JSX.Element => {
             </div>
           </header>
 
-          <main className="app-main">
+          <main className="app-main" style={{ display: gameState === 'round-end' ? 'none' : 'block' }}>
             <div className="game-container">
               <div className="ui-section">
                 {/* 🎯 PHASE C.3.3: Removed shuffle props: canShuffle, shuffleCost, onShuffle */}
                 {/* 🎯 PHASE D.2.3: Removed playerPoints prop - no longer needed after stats section removal */}
                 <GameHUD 
-                  timer={roundTimer!}
+                  timer={roundTimer || { timeRemaining: 0, currentRound: 1, totalRounds: currentRoom!.gameState?.totalRounds || 3 }}
                   players={currentRoom!.players}
                   currentPlayerId={currentPlayerId}
                   isGameActive={isGameActive}

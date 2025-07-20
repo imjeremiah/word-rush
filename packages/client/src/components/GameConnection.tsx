@@ -814,6 +814,14 @@ function GameConnection(): null {
           return;
         }
         
+        // Log matchData for debugging
+        console.log(`[${new Date().toISOString()}] MATCH EVENT: match:started`, {
+          round: data.currentRound,
+          totalRounds: data.totalRounds,
+          boardChecksum: data.boardChecksum,
+          playerCount: data.playerCount
+        });
+        
         // Track game state change for component stability
         localStorage.setItem('wordRushGameState', 'match');
         localStorage.setItem('wordRushRoundData', JSON.stringify({
@@ -822,30 +830,42 @@ function GameConnection(): null {
           startTime: Date.now()
         }));
         
-        // 🔧 TASK 2: Enhanced board checksum validation with resync capability
-        
-        // Function to continue match processing
-        const processMatchStart = () => {
-          // Note: Game state already set to 'match' in match:starting handler
-          contextRef.current.setRoundTimer({
-            timeRemaining: data.timeRemaining || 90000,
-            currentRound: data.currentRound,
-            totalRounds: data.totalRounds
-          });
-          contextRef.current.setMatchData({
-            currentRound: data.currentRound,
-            totalRounds: data.totalRounds,
-            timeRemaining: data.timeRemaining || 90000,
-            leaderboard: [] // Will be updated separately
-          });
-          notifications.success('Match started! Good luck!', 3000);
-        };
-        
         try {
           // 🔧 CRITICAL FIX: Forward board data to PhaserGame first
           console.log(`[${new Date().toISOString()}] 🎮 Forwarding match:started board to PhaserGame (checksum: ${data.boardChecksum})`);
           (window as any).currentGameBoard = data.board;
           (window as any).currentBoardChecksum = data.boardChecksum;
+          
+          // 🔧 CRITICAL FIX: For round 2+, also trigger a board update event
+          // This ensures PhaserGame updates its board even if it wasn't recreated
+          if (data.currentRound > 1) {
+            console.log(`[${new Date().toISOString()}] 🔄 Round ${data.currentRound} - triggering board update for existing PhaserGame`);
+            const boardUpdateEvent = new CustomEvent('phaser-board-update', { 
+              detail: { 
+                board: data.board, 
+                boardChecksum: data.boardChecksum,
+                round: data.currentRound 
+              } 
+            });
+            window.dispatchEvent(boardUpdateEvent);
+          }
+          
+          // Function to continue match processing
+          const processMatchStart = () => {
+            // Note: Game state already set to 'match' in match:starting handler
+            contextRef.current.setRoundTimer({
+              timeRemaining: data.timeRemaining || 90000,
+              currentRound: data.currentRound,
+              totalRounds: data.totalRounds
+            });
+            contextRef.current.setMatchData({
+              currentRound: data.currentRound,
+              totalRounds: data.totalRounds,
+              timeRemaining: data.timeRemaining || 90000,
+              leaderboard: [] // Will be updated separately
+            });
+            notifications.success('Match started! Good luck!', 3000);
+          };
           
           // Import validation service dynamically (using .then() instead of await)
           import('../services/checksumValidation.js').then(({ validateAndResyncBoard }) => {
@@ -1006,6 +1026,10 @@ function GameConnection(): null {
       
       // Track state transition for component stability
       localStorage.setItem('wordRushGameState', 'round-end');
+      
+      // 🔧 CRITICAL FIX: Don't clear board data during round transitions
+      // This preserves the PhaserGame state between rounds
+      console.log(`[${new Date().toISOString()}] 🎮 Preserving board state during round transition`);
       
       contextRef.current.setGameState('round-end');
       contextRef.current.setRoundSummary(data);
