@@ -57,11 +57,11 @@ const AppContent = React.memo((): JSX.Element => {
 
   // Component key stability - ensure PhaserGame component doesn't remount during transitions
   const phaserGameKey = React.useMemo(() => {
-    // Use session ID with fallback for maximum stability across all transitions
-    // This prevents remounting during room changes, reconnections, or state transitions
-    const sessionIdentifier = playerSession?.id || 'default-session';
-    return `phaser-stable-${sessionIdentifier}`;
-  }, [playerSession?.id]); // Only re-compute if session actually changes
+    // Use room code for stability - only changes when switching rooms, not during round transitions
+    // This prevents remounting during score updates, round transitions, and other session changes
+    const roomIdentifier = currentRoom?.roomCode || 'default-room';
+    return `phaser-stable-${roomIdentifier}`;
+  }, [currentRoom?.roomCode]); // Only re-compute if room actually changes
 
   // 🟡 PHASE 3A: Memoize expensive computations to prevent unnecessary recalculations
   const isHost = React.useMemo(() => {
