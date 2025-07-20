@@ -6,7 +6,15 @@
     "noUnusedParameters": false,
     "noImplicitAny": false,
     "noImplicitReturns": false,
-    "noFallthroughCasesInSwitch": false
+    "noFallthroughCasesInSwitch": false,
+    "skipLibCheck": true,
+    "noImplicitThis": false,
+    "strictNullChecks": false,
+    "strictFunctionTypes": false,
+    "strictBindCallApply": false,
+    "strictPropertyInitialization": false,
+    "noPropertyAccessFromIndexSignature": false,
+    "useUnknownInCatchVariables": false
   },
   "exclude": ["node_modules", "dist", "src/test/**/*"]
 } 

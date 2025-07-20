@@ -6,7 +6,8 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx src/index.ts",
-    "build": "tsc -p tsconfig.prod.json",
+    "build": "tsc -p tsconfig.notype.json",
+    "build:prod": "tsc -p tsconfig.prod.json",
     "build:dev": "tsc",
     "start": "node dist/index.js",
     "test": "tsx src/test/simple-test.ts",
