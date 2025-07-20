@@ -146,7 +146,7 @@ function withErrorHandling<T extends keyof typeof ClientEventSchemas>(
       const validation = validateSocketEvent(eventName, data);
       if (!validation.success) {
         socket.emit('server:error', {
-          message: `Invalid event data: ${validation.error}`,
+          message: `Invalid event data: ${(validation as { success: false; error: string }).error}`,
           code: 'VALIDATION_ERROR'
         });
         return;

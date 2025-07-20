@@ -127,7 +127,7 @@ export function handleRoomJoin(
     
     if (!joinResult.success) {
       socket.emit('room:not-found', {
-        message: joinResult.error
+        message: (joinResult as { success: false; error: string }).error
       });
       return;
     }

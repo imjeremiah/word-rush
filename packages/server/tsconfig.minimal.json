@@ -14,7 +14,6 @@
     "allowSyntheticDefaultImports": true,
     "moduleResolution": "node",
     "noEmitOnError": false,
-    "suppressOutputPathCheck": true,
     "allowUnreachableCode": true,
     "allowUnusedLabels": true,
     "noImplicitAny": false,
