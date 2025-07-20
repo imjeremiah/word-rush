@@ -346,7 +346,7 @@ app.use(
 );
 
 // Start the server
-server.listen(PORT, HOST, () => {
+server.listen(Number(PORT), HOST, () => {
   console.log(`[${new Date().toISOString()}] Word Rush server running on ${HOST}:${PORT}`);
   console.log(`[${new Date().toISOString()}] Environment: ${process.env.NODE_ENV || 'development'}`);
   
