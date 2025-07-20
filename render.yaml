@@ -26,13 +26,10 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      # This dynamically sets the client's URL for CORS configuration.
-      # It gets the URL from the 'word-rush-client' service defined below.
+      # This sets the client's URL for CORS configuration.
+      # Based on the predictable Render URL pattern for our static site service.
       - key: CLIENT_URL
-        fromService:
-          type: web
-          name: word-rush-client
-          property: url
+        value: https://word-rush-client.onrender.com
 
   # Service 2: The React Client (Static Site)
   # This serves the compiled React/Vite frontend.
@@ -51,7 +48,4 @@ services:
       # This injects the live server's URL into the client code during the build.
       # This is how the client knows where to connect.
       - key: VITE_SERVER_URL
-        fromService:
-          type: web
-          name: word-rush-server
-          property: url 
+        value: https://word-rush-server.onrender.com 
