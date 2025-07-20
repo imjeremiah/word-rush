@@ -18,6 +18,10 @@ if (process.env.NODE_ENV === 'development') {
   });
 }
 
+// 🚀 DEPLOYMENT: Use Vite environment variables for the server URL
+// This allows Render to inject the live server URL during the build process.
+const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3001';
+
 // Debug flag to control socket event logging verbosity
 // Set to false in production to reduce console noise
 const DEBUG_SOCKET_EVENTS = true; // Toggle for production deployment
@@ -280,7 +284,7 @@ function GameConnection(): null {
     
     console.log(`[${new Date().toISOString()}] 📱 Using adaptive socket config:`, socketConfig);
     
-    const newSocket = io('http://localhost:3001', socketConfig);
+    const newSocket = io(SERVER_URL, socketConfig);
     socketRef.current = newSocket;
     
     // 🚨 REACT STRICT MODE FIX: Only set socket if not cleaned up
@@ -292,7 +296,7 @@ function GameConnection(): null {
     
     // 🚨 REACT STRICT MODE FIX: Add connection success/failure logging
     newSocket.on('connect', () => {
-      console.log(`[${new Date().toISOString()}] ✅ Socket connected successfully to localhost:3001`);
+      console.log(`[${new Date().toISOString()}] ✅ Socket connected successfully to ${SERVER_URL}`);
       contextRef.current.setConnectionStatus('connected');
     });
     

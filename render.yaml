@@ -1,0 +1,54 @@
+# render.yaml
+# This file configures the deployment of the Word Rush application on Render.
+# It defines two services: the backend server and the frontend client.
+
+services:
+  # Service 1: The Node.js Server (Web Service)
+  # This runs the Express and Socket.io backend.
+  - type: web
+    name: word-rush-server
+    runtime: node
+    # The root directory of the server code within the monorepo.
+    rootDir: packages/server
+    # Commands to build the server from TypeScript to JavaScript.
+    buildCommand: "npm install && npm run build"
+    # Command to start the server after a successful build.
+    startCommand: "node dist/index.js"
+    # Render's health check will ping this endpoint to ensure the server is live.
+    healthCheckPath: /health
+    # Plan: Choose "Free" or "Starter" in the Render dashboard.
+    # The Free plan may have limitations (e.g., spinning down after inactivity)
+    # that can affect real-time connections. The "Starter" plan is recommended
+    # for a stable, always-on WebSocket server.
+    plan: free
+    # Environment variables required by the server.
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # This dynamically sets the client's URL for CORS configuration.
+      # It gets the URL from the 'word-rush-client' service defined below.
+      - key: CLIENT_URL
+        fromService:
+          type: static
+          name: word-rush-client
+          property: url
+
+  # Service 2: The React Client (Static Site)
+  # This serves the compiled React/Vite frontend.
+  - type: static
+    name: word-rush-client
+    # The root directory of the client code within the monorepo.
+    rootDir: packages/client
+    # Commands to build the static site.
+    buildCommand: "npm install && npm run build"
+    # The directory where the built static files (HTML, JS, CSS) are located.
+    publishDir: "dist"
+    # Environment variables required by the client at build time.
+    envVars:
+      # This injects the live server's URL into the client code during the build.
+      # This is how the client knows where to connect.
+      - key: VITE_SERVER_URL
+        fromService:
+          type: web
+          name: word-rush-server
+          property: url 

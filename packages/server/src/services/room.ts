@@ -491,6 +491,10 @@ function createRoomService(cleanupIntervalMs: number = 10 * 60 * 1000): RoomModu
     const roomCode = generateRoomCode();
     const now = Date.now();
 
+    // Get crown count from session service (same as regular players)
+    const session = sessionService.getPlayerSession(hostId);
+    const crownCount = session?.crowns || 0;
+
     const hostPlayer: Player = {
       id: hostId,
       username: hostUsername,
@@ -498,6 +502,9 @@ function createRoomService(cleanupIntervalMs: number = 10 * 60 * 1000): RoomModu
       isConnected: true,
       isReady: false,
       roundScore: 0,
+      crowns: crownCount,
+      // 🎯 SECTION 3.1: Set default difficulty to 'easy' for host (same as regular players)
+      difficulty: process.env.USE_EASY_DEFAULT !== 'false' ? 'easy' : 'medium', // Feature flag with 'easy' as new default
     };
 
     const room: GameRoom = {
