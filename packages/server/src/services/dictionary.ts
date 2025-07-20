@@ -34,8 +34,35 @@ function createDictionaryService(): DictionaryModule {
     try {
       const __filename = fileURLToPath(import.meta.url);
       const __dirname = dirname(__filename);
-      const filePath = join(__dirname, '..', 'assets', 'UWU.txt');
-      const fileContent = readFileSync(filePath, 'utf-8');
+      
+      // Try multiple path strategies for different deployment environments
+      const possiblePaths = [
+        join(__dirname, '..', 'assets', 'UWU.txt'),           // Normal build: dist/assets/
+        join(__dirname, 'assets', 'UWU.txt'),                // Same directory as this file
+        join(process.cwd(), 'dist', 'assets', 'UWU.txt'),    // From process working directory
+        join(process.cwd(), 'assets', 'UWU.txt'),            // From process working directory
+        join(process.cwd(), 'packages', 'server', 'dist', 'assets', 'UWU.txt') // Monorepo structure
+      ];
+      
+      let fileContent: string;
+      let successfulPath: string = '';
+      
+      for (const filePath of possiblePaths) {
+        try {
+          fileContent = readFileSync(filePath, 'utf-8');
+          successfulPath = filePath;
+          break;
+        } catch (error) {
+          // Try next path
+          continue;
+        }
+      }
+      
+      if (!successfulPath) {
+        throw new Error(`UWU.txt not found in any of the expected locations: ${possiblePaths.join(', ')}`);
+      }
+      
+      console.log(`[${new Date().toISOString()}] Dictionary loaded from: ${successfulPath}`);
       
       // Split into lines and filter out empty lines
       const words = fileContent
