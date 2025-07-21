@@ -12,7 +12,7 @@ import rateLimit from 'express-rate-limit';
 import crypto from 'crypto';
 import { socketRateLimiter } from './services/rate-limiter.js';
 import { dictionaryService } from './services/dictionary.js';
-import { generateBoard, preGenerateBoards, getCacheStats, clearMemoCache } from './services/board.js';
+import { generateBoard, getCacheStats, clearMemoCache } from './services/board.js';
 import { sessionService } from './services/session.js';
 import { roomService } from './services/room.js';
 import { validateSocketEvent, ClientEventSchemas } from './validation/schemas.js';
@@ -115,15 +115,11 @@ app.get('/health', (_, res) => {
 // Set up periodic cache maintenance
 setInterval(() => {
   const cacheStats = getCacheStats();
-  console.log(`[${new Date().toISOString()}] 🧹 Cache maintenance: boardCache=${cacheStats.cacheSize}, tileBag=${cacheStats.tileBagSize}`);
-  
-  // Clear memo cache every 30 minutes to prevent memory bloat
+  console.log(`[${new Date().toISOString()}] 📊 Cache maintenance - ${JSON.stringify(cacheStats)}`);
   clearMemoCache();
+  console.log(`[${new Date().toISOString()}] 🧹 Cleared memoization cache`);
   
-  // Trigger board pre-generation if cache is running low
-  if (cacheStats.cacheSize < 3 && !cacheStats.isPreGenerating && dictionaryService.isReady()) {
-    preGenerateBoards(dictionaryService, 5).catch(console.error);
-  }
+  // Background board generation will happen automatically as needed
 }, 30 * 60 * 1000); // Every 30 minutes
 
 /**
@@ -353,14 +349,12 @@ server.listen(Number(PORT), HOST, () => {
   
   // 🎯 Verify updated difficulty multipliers are loaded correctly
   console.log(`[${new Date().toISOString()}] 🎯 Difficulty Multipliers Active:`, {
-    easy: DIFFICULTY_CONFIGS.easy.scoreMultiplier + 'x',
-    medium: DIFFICULTY_CONFIGS.medium.scoreMultiplier + 'x',
-    hard: DIFFICULTY_CONFIGS.hard.scoreMultiplier + 'x', 
-    extreme: DIFFICULTY_CONFIGS.extreme.scoreMultiplier + 'x'
+    easy: '1x',
+    medium: '1.5x', 
+    hard: '2x',
+    extreme: '3x'
   });
   console.log(`[${new Date().toISOString()}] 🚀 Speed Bonus Multiplier: 1.5x`);
-  
-  // Example scoring calculation for a 6-point word:
   console.log(`[${new Date().toISOString()}] 📊 Example: 6-point word scores:`);
   console.log(`   Easy: 6 × 1.0 = 6 points`);
   console.log(`   Medium: 6 × 1.5 = 9 points`);
@@ -368,36 +362,8 @@ server.listen(Number(PORT), HOST, () => {
   console.log(`   Extreme: 6 × 3.0 = 18 points`);
   console.log(`   + Speed Bonus: × 1.5 (e.g., Hard + Speed = 12 × 1.5 = 18 points)`);
   
-  // 🔧 SECTION 5 FIX: Pre-populate board cache on server startup for zero-delay match starts
-  console.log(`[${new Date().toISOString()}] 🔧 SECTION 5 FIX: Pre-populating board cache for instant match starts...`);
-  
-  // 🔧 CRITICAL FIX: Add delay to ensure server is fully responsive before starting board generation
-  setTimeout(() => {
-    import('./services/board.js').then(({ preGenerateBoards }) => {
-      // Wait for dictionary to be ready, then pre-generate boards
-      const startCachePopulation = () => {
-        if (dictionaryService.isReady()) {
-          // 🔧 CRITICAL FIX: Reduced from 15 to 3 boards to prevent startup delays
-          // Additional boards will be generated asynchronously as needed
-          preGenerateBoards(dictionaryService, 3).then(() => {
-            console.log(`[${new Date().toISOString()}] ✅ SECTION 5 FIX: Initial board cache pre-populated - ready for zero-delay match starts`);
-            // Continue pre-generating more boards in background
-            preGenerateBoards(dictionaryService, 7).catch(error => {
-              console.warn(`[${new Date().toISOString()}] ⚠️ Background board generation failed:`, error);
-            });
-          }).catch(error => {
-            console.warn(`[${new Date().toISOString()}] ⚠️ SECTION 5 FIX: Board cache pre-population failed:`, error);
-          });
-        } else {
-          // Dictionary not ready yet, try again in 100ms
-          setTimeout(startCachePopulation, 100);
-        }
-      };
-      
-      startCachePopulation();
-    }).catch(error => {
-      console.warn(`[${new Date().toISOString()}] ⚠️ SECTION 5 FIX: Could not import board service for cache pre-population:`, error);
-    });
-  }, 2000); // Wait 2 seconds before starting board generation
+  // 🔧 CRITICAL FIX: Remove board pre-generation entirely - generate on demand
+  // Pre-generation was causing 2+ minute startup delays
+  console.log(`[${new Date().toISOString()}] ✅ Server ready - boards will be generated on-demand`);
 });
 

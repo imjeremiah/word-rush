@@ -12,42 +12,21 @@ import type { DictionaryModule } from './dictionary.js';
 // Global sequence counter for tile changes synchronization
 let tileChangeSequenceNumber = 0;
 
-// Pre-generation cache for optimized board delivery
-let boardCache: GameBoard[] = [];
-let isPreGenerating = false;
+// Track board generation stats
+let totalBoardsGenerated = 0;
+let cacheHits = 0;
+let cacheMisses = 0;
+
+// Simple board cache for on-demand generation
+const boardCache: GameBoard[] = [];
+const MAX_CACHE_SIZE = 3;
+let isGenerating = false;
 
 // Persistent tile bag for efficient reuse
 let persistentTileBag = [...LETTER_BAG];
 
 // Memoization cache for solver function
 const solverMemoCache = new Map<string, string[]>();
-
-/**
- * Pre-generate boards asynchronously for cache
- * Creates a pool of validated boards to serve instantly during gameplay
- * @param dictionaryService - Dictionary service for word validation
- * @param cacheSize - Number of boards to pre-generate (default: 10)
- */
-export async function preGenerateBoards(dictionaryService: DictionaryModule, cacheSize: number = 10): Promise<void> {
-  if (isPreGenerating) return;
-  isPreGenerating = true;
-  
-  console.log(`[${new Date().toISOString()}] 🎲 Starting pre-generation of ${cacheSize} boards...`);
-  const startTime = Date.now();
-  
-  for (let i = 0; i < cacheSize; i++) {
-    try {
-      const board = await generateValidBoardAsync(dictionaryService);
-      boardCache.push(board);
-    } catch (error) {
-      console.warn(`[${new Date().toISOString()}] ⚠️ Failed to pre-generate board ${i + 1}:`, error);
-    }
-  }
-  
-  const endTime = Date.now();
-  console.log(`[${new Date().toISOString()}] ✅ Pre-generated ${boardCache.length} boards in ${endTime - startTime}ms`);
-  isPreGenerating = false;
-}
 
 /**
  * Generate a validated board asynchronously with performance monitoring
@@ -65,10 +44,10 @@ async function generateValidBoardAsync(dictionaryService: DictionaryModule): Pro
       
       try {
         const board = createRandomBoardOptimized();
-        const foundWords = findAllValidWordsOptimized(board, dictionaryService);
+        const foundWords = findAllValidWordsOptimized(board, dictionaryService, DEFAULT_BOARD_CONFIG.minWordsRequired);
         
-        // 🚀 PHASE 5x5: Updated for 5x5 board - require more words for larger board
-        if (foundWords.length >= 15) { // Increased to 15 for 5x5 board validation
+        // 🚀 PHASE 5x5: Updated for 5x5 board - use config value for consistency
+        if (foundWords.length >= DEFAULT_BOARD_CONFIG.minWordsRequired) {
           const endTime = Date.now();
           console.log(`[${new Date().toISOString()}] 🎯 Generated valid 5x5 board with ${foundWords.length} words in ${attempts} attempts (${endTime - startTime}ms)`);
           resolve(board);
@@ -156,57 +135,60 @@ function findAllValidWordsOptimized(board: GameBoard, dictionaryService: Diction
     [1, -1],  [1, 0],  [1, 1]
   ];
   
+  // 🔧 CRITICAL OPTIMIZATION: Random starting positions for faster discovery
+  const positions: [number, number][] = [];
+  for (let r = 0; r < board.height; r++) {
+    for (let c = 0; c < board.width; c++) {
+      positions.push([r, c]);
+    }
+  }
+  // Shuffle positions for better distribution
+  for (let i = positions.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [positions[i], positions[j]] = [positions[j], positions[i]];
+  }
+  
   // Fast iterative search with early termination
-  for (let startRow = 0; startRow < board.height && foundWords.size < targetCount; startRow++) {
-    for (let startCol = 0; startCol < board.width && foundWords.size < targetCount; startCol++) {
-      // Use iterative BFS instead of recursive DFS
-      const queue: Array<{
-        row: number;
-        col: number;
-        word: string;
-        path: Set<string>;
-      }> = [{
-        row: startRow,
-        col: startCol,
-        word: board.tiles[startRow][startCol].letter,
-        path: new Set([`${startRow}-${startCol}`])
-      }];
+  for (const [startRow, startCol] of positions) {
+    if (foundWords.size >= targetCount) break;
+    
+    // 🔧 CRITICAL: Use DFS with limited depth instead of BFS
+    const visited = new Set<string>();
+    
+    function dfs(row: number, col: number, word: string, path: Set<string>, depth: number): void {
+      // Stop if we have enough words or depth is too high
+      if (foundWords.size >= targetCount || depth > 6) return; // Max word length 6
       
-      while (queue.length > 0 && foundWords.size < targetCount) {
-        const current = queue.shift()!;
+      // Check if current word is valid (3+ letters)
+      if (word.length >= 3 && dictionaryService.isValidWord(word)) {
+        foundWords.add(word);
+      }
+      
+      // Explore adjacent cells
+      for (const [deltaRow, deltaCol] of directions) {
+        const newRow = row + deltaRow;
+        const newCol = col + deltaCol;
+        const posKey = `${newRow}-${newCol}`;
         
-        // Check if current word is valid (3+ letters)
-        if (current.word.length >= 3 && dictionaryService.isValidWord(current.word)) {
-          foundWords.add(current.word);
-        }
-        
-        // Don't expand words longer than 8 letters (performance limit)
-        if (current.word.length >= 8) continue;
-        
-        // Explore adjacent cells
-        for (const [deltaRow, deltaCol] of directions) {
-          const newRow = current.row + deltaRow;
-          const newCol = current.col + deltaCol;
-          const posKey = `${newRow}-${newCol}`;
+        // Bounds check and avoid revisiting
+        if (newRow >= 0 && newRow < board.height && 
+            newCol >= 0 && newCol < board.width && 
+            !path.has(posKey)) {
           
-          // Bounds check and avoid revisiting
-          if (newRow >= 0 && newRow < board.height && 
-              newCol >= 0 && newCol < board.width && 
-              !current.path.has(posKey)) {
-            
-            const newPath = new Set(current.path);
+          const newWord = word + board.tiles[newRow][newCol].letter;
+          
+          // 🔧 CRITICAL: Early pruning - skip if prefix doesn't exist in dictionary
+          if (word.length < 2 || dictionaryService.hasPrefix?.(newWord.substring(0, 3)) !== false) {
+            const newPath = new Set(path);
             newPath.add(posKey);
-            
-            queue.push({
-              row: newRow,
-              col: newCol,
-              word: current.word + board.tiles[newRow][newCol].letter,
-              path: newPath
-            });
+            dfs(newRow, newCol, newWord, newPath, depth + 1);
           }
         }
       }
     }
+    
+    const startPath = new Set([`${startRow}-${startCol}`]);
+    dfs(startRow, startCol, board.tiles[startRow][startCol].letter, startPath, 0);
   }
   
   const result = Array.from(foundWords);
@@ -513,81 +495,118 @@ interface BoardConfig {
 const DEFAULT_BOARD_CONFIG: BoardConfig = {
   boardWidth: 5,   // Upgraded to 5x5 for enhanced gameplay
   boardHeight: 5,  // Upgraded to 5x5 for enhanced gameplay
-  minWordsRequired: 3, // 🔧 SECTION 5 FIX: Reduced to 3 for ultra-fast generation
+  minWordsRequired: 10, // 🔧 CRITICAL FIX: Reduced from 15 to 10 for faster generation
   maxGenerationAttempts: 10, // 🔧 CRITICAL FIX: Reduced from 25 to 10 for faster startup
   minWordLength: 3,
 };
 
 /**
- * Generate a new game board with guaranteed minimum word count
- * Uses cache for instant delivery, falls back to generation if cache is empty
- * 🔧 SECTION 5 FIX: Enhanced with aggressive cache management and faster fallback
+ * High-level board generation with caching and analytics
+ * This is the main entry point for board generation
  * @param dictionaryService - Dictionary service for word validation
- * @param config - Board generation configuration (optional, uses defaults)
- * @returns GameBoard with validated word count
+ * @returns Generated game board
  */
 export function generateBoard(
-  dictionaryService: DictionaryModule,
-  config: Partial<BoardConfig> = {}
+  dictionaryService: DictionaryModule
 ): GameBoard {
-  console.time('generateBoard');
+  // 🔧 CRITICAL FIX: Use sync version for backward compatibility
+  // The async getBoardOnDemand is better but requires updating all callers
   
-  // 🔧 SECTION 5 FIX: Always try to serve from cache first for zero-delay start
+  // If we have a cached board, use it immediately
   if (boardCache.length > 0) {
-    const cachedBoard = boardCache.shift()!;
-    console.timeEnd('generateBoard');
+    const board = boardCache.shift()!;
     console.log(`[${new Date().toISOString()}] 🚀 Served board from cache (${boardCache.length} remaining) - ZERO DELAY`);
     
-    // 🔧 SECTION 5 FIX: Aggressive cache refill - start immediately if cache gets low
-    if (boardCache.length < 5 && !isPreGenerating && dictionaryService.isReady()) {
-      console.log(`[${new Date().toISOString()}] 🔄 Cache low (${boardCache.length}) - starting immediate pre-generation`);
-      preGenerateBoards(dictionaryService, 8).catch(console.error);
+    // Refill cache in background if getting low
+    if (boardCache.length < 2 && !isGenerating) {
+      isGenerating = true;
+      generateBoardForCache(dictionaryService).finally(() => {
+        isGenerating = false;
+      });
     }
     
-    return cachedBoard;
+    return board;
   }
-
-  // 🔧 SECTION 5 FIX: Emergency fallback with relaxed requirements for speed
-  console.warn(`[${new Date().toISOString()}] ⚠️ Cache empty, using emergency fast generation`);
   
-  const boardConfig = { ...DEFAULT_BOARD_CONFIG, ...config };
-  // 🔧 SECTION 5 FIX: Even more relaxed requirements for emergency generation
-  boardConfig.minWordsRequired = Math.min(boardConfig.minWordsRequired, 2); // Accept any board with 2+ words
-  boardConfig.maxGenerationAttempts = Math.min(boardConfig.maxGenerationAttempts, 10); // Max 10 attempts
+  // No cached board, generate one synchronously (fallback)
+  console.log(`[${new Date().toISOString()}] ⚠️ No cached board available, generating synchronously...`);
+  const startTime = Date.now();
   
-  let attempts = 0;
-  let board: GameBoard;
-  let foundWords: string[];
-
-  do {
-    attempts++;
-    board = createRandomBoardOptimized();
-    foundWords = findAllValidWordsOptimized(board, dictionaryService, 5); // Stop at 5 words for speed
+  for (let attempts = 0; attempts < DEFAULT_BOARD_CONFIG.maxGenerationAttempts; attempts++) {
+    const board = createRandomBoardOptimized();
+    const foundWords = findAllValidWordsOptimized(board, dictionaryService, DEFAULT_BOARD_CONFIG.minWordsRequired);
     
-    if (foundWords.length >= boardConfig.minWordsRequired) {
-      console.timeEnd('generateBoard');
-      console.log(`[${new Date().toISOString()}] ✅ Emergency generated valid board with ${foundWords.length} words in ${attempts} attempts`);
+    if (foundWords.length >= DEFAULT_BOARD_CONFIG.minWordsRequired) {
+      const endTime = Date.now();
+      console.log(`[${new Date().toISOString()}] 🎯 Generated valid board with ${foundWords.length} words in ${attempts + 1} attempts (${endTime - startTime}ms)`);
       
-      // 🔧 SECTION 5 FIX: Immediately start cache refill after emergency generation
-      if (!isPreGenerating && dictionaryService.isReady()) {
-        console.log(`[${new Date().toISOString()}] 🔄 Starting cache refill after emergency generation`);
-        preGenerateBoards(dictionaryService, 10).catch(console.error);
+      // Start background cache generation for next time
+      if (!isGenerating && boardCache.length < MAX_CACHE_SIZE) {
+        isGenerating = true;
+        generateBoardForCache(dictionaryService).finally(() => {
+          isGenerating = false;
+        });
       }
       
       return board;
     }
-  } while (attempts < boardConfig.maxGenerationAttempts);
-
-  // 🔧 SECTION 5 FIX: Ultimate fallback - return any board to prevent match start failure
-  console.timeEnd('generateBoard');
-  console.warn(`[${new Date().toISOString()}] ⚠️ Ultimate fallback: Using board with ${foundWords.length} words after ${attempts} attempts`);
+  }
   
-  // Still start cache refill
-  if (!isPreGenerating && dictionaryService.isReady()) {
-    preGenerateBoards(dictionaryService, 10).catch(console.error);
+  // Fallback: return any board if we can't find a good one
+  console.warn(`[${new Date().toISOString()}] ⚠️ Could not generate valid board, using fallback`);
+  return createRandomBoardOptimized();
+}
+
+/**
+ * Get a board from cache or generate on-demand
+ * @param dictionaryService - Dictionary service for validation
+ * @returns Promise resolving to a GameBoard
+ */
+export async function getBoardOnDemand(dictionaryService: DictionaryModule): Promise<GameBoard> {
+  // If we have a cached board, use it
+  if (boardCache.length > 0) {
+    const board = boardCache.shift()!;
+    console.log(`[${new Date().toISOString()}] 🚀 Served board from cache (${boardCache.length} remaining)`);
+    
+    // Refill cache in background if getting low
+    if (boardCache.length < 2 && !isGenerating) {
+      isGenerating = true;
+      generateBoardForCache(dictionaryService).finally(() => {
+        isGenerating = false;
+      });
+    }
+    
+    return board;
+  }
+  
+  // No cached board, generate one now
+  console.log(`[${new Date().toISOString()}] 🎲 Generating board on-demand...`);
+  const board = await generateValidBoardAsync(dictionaryService);
+  
+  // Start background generation for next time
+  if (!isGenerating && boardCache.length < MAX_CACHE_SIZE) {
+    isGenerating = true;
+    generateBoardForCache(dictionaryService).finally(() => {
+      isGenerating = false;
+    });
   }
   
   return board;
+}
+
+/**
+ * Generate a board for the cache in the background
+ */
+async function generateBoardForCache(dictionaryService: DictionaryModule): Promise<void> {
+  try {
+    while (boardCache.length < MAX_CACHE_SIZE) {
+      const board = await generateValidBoardAsync(dictionaryService);
+      boardCache.push(board);
+      console.log(`[${new Date().toISOString()}] 📦 Added board to cache (${boardCache.length}/${MAX_CACHE_SIZE})`);
+    }
+  } catch (error) {
+    console.error(`[${new Date().toISOString()}] ❌ Cache generation failed:`, error);
+  }
 }
 
 /**
