@@ -177,8 +177,8 @@ function findAllValidWordsOptimized(board: GameBoard, dictionaryService: Diction
           
           const newWord = word + board.tiles[newRow][newCol].letter;
           
-          // 🔧 CRITICAL: Early pruning - skip if prefix doesn't exist in dictionary
-          if (word.length < 2 || dictionaryService.hasPrefix?.(newWord.substring(0, 3)) !== false) {
+          // 🔧 CRITICAL: Early pruning - skip very long words
+          if (newWord.length <= 6) {
             const newPath = new Set(path);
             newPath.add(posKey);
             dfs(newRow, newCol, newWord, newPath, depth + 1);
@@ -644,11 +644,21 @@ export function isBoardDead(board: GameBoard, dictionaryService: DictionaryModul
  * Get cache statistics for monitoring
  * @returns Object with cache size and generation status
  */
-export function getCacheStats(): { cacheSize: number; isPreGenerating: boolean; tileBagSize: number } {
+export function getCacheStats(): { 
+  cacheSize: number; 
+  tileBagSize: number; 
+  totalGenerated: number;
+  cacheHits: number;
+  cacheMisses: number;
+  isGenerating: boolean;
+} {
   return {
     cacheSize: boardCache.length,
-    isPreGenerating,
-    tileBagSize: persistentTileBag.length
+    tileBagSize: persistentTileBag.length,
+    totalGenerated: totalBoardsGenerated,
+    cacheHits,
+    cacheMisses,
+    isGenerating,
   };
 }
 

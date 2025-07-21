@@ -98,8 +98,11 @@ app.get('/health', (_, res) => {
     activePlayers: sessionService.getActivePlayerCount(),
     boardCache: {
       size: cacheStats.cacheSize,
-      isPreGenerating: cacheStats.isPreGenerating,
-      tileBagSize: cacheStats.tileBagSize
+      isGenerating: cacheStats.isGenerating,
+      tileBagSize: cacheStats.tileBagSize,
+      totalGenerated: cacheStats.totalGenerated,
+      cacheHits: cacheStats.cacheHits,
+      cacheMisses: cacheStats.cacheMisses
     }
   });
 });
