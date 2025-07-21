@@ -580,4 +580,5 @@ export function getCacheStats(): { cacheSize: number; isPreGenerating: boolean; 
  */
 export function clearMemoCache(): void {
   solverMemoCache.clear();
-  console.log(`
+  console.log(`[${new Date().toISOString()}] 🧹 Cleared memoization cache`);
+}
