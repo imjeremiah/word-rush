@@ -354,6 +354,34 @@ export function calculateTileChanges(
 }
 
 /**
+ * Generate a random tile for a given position
+ * @param x - X coordinate
+ * @param y - Y coordinate
+ * @returns A new letter tile
+ */
+function generateRandomTile(x: number, y: number): LetterTile {
+  // Refill persistent bag if needed
+  if (persistentTileBag.length === 0) {
+    persistentTileBag.push(...LETTER_BAG);
+  }
+  
+  // Efficient random selection
+  const randomIndex = Math.floor(Math.random() * persistentTileBag.length);
+  const letter = persistentTileBag[randomIndex];
+  
+  // Remove selected letter
+  persistentTileBag.splice(randomIndex, 1);
+  
+  return {
+    letter,
+    points: LETTER_DISTRIBUTION[letter as keyof typeof LETTER_DISTRIBUTION]?.points || 1,
+    x,
+    y,
+    id: `tile-${y}-${x}-${Date.now()}`,
+  };
+}
+
+/**
  * Calculate cascade changes for a single column
  * Determines which tiles fall and where new tiles appear
  * @param board - The game board
@@ -560,6 +588,37 @@ export function generateBoard(
   }
   
   return board;
+}
+
+/**
+ * Calculate the score for a word based on its length and complexity
+ * @param word - The word to score
+ * @returns The total score for the word
+ */
+export function calculateWordScore(word: string): number {
+  // Base score is the length of the word
+  let score = word.length;
+  
+  // Apply length bonuses
+  if (word.length >= 6) {
+    score += 10; // Bonus for 6+ letter words
+  } else if (word.length >= 5) {
+    score += 5; // Bonus for 5 letter words
+  }
+  
+  return score;
+}
+
+/**
+ * Check if a board has no valid words left (is "dead")
+ * @param board - The game board to check
+ * @param dictionaryService - Dictionary service for word validation
+ * @param threshold - Minimum number of words required (default 1)
+ * @returns True if the board has fewer valid words than the threshold
+ */
+export function isBoardDead(board: GameBoard, dictionaryService: DictionaryModule, threshold: number = 1): boolean {
+  const words = findAllValidWordsOptimized(board, dictionaryService, threshold);
+  return words.length < threshold;
 }
 
 /**
