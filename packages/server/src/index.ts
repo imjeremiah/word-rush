@@ -105,11 +105,12 @@ app.get('/health', (_, res) => {
 });
 
 // Initialize board pre-generation cache after dictionary is ready
-// This caches boards upfront to prevent on-demand generation delays
-console.log(`[${new Date().toISOString()}] 🎲 Starting board pre-generation cache...`);
-preGenerateBoards(dictionaryService, 5).catch(error => {
-  console.error(`[${new Date().toISOString()}] ❌ Board pre-generation failed:`, error);
-});
+// 🔧 CRITICAL FIX: Moved to AFTER server starts listening to prevent blocking
+// This was causing 6+ minute delays before the server could accept connections
+// console.log(`[${new Date().toISOString()}] 🎲 Starting board pre-generation cache...`);
+// preGenerateBoards(dictionaryService, 5).catch(error => {
+//   console.error(`[${new Date().toISOString()}] ❌ Board pre-generation failed:`, error);
+// });
 
 // Set up periodic cache maintenance
 setInterval(() => {
@@ -369,24 +370,34 @@ server.listen(Number(PORT), HOST, () => {
   
   // 🔧 SECTION 5 FIX: Pre-populate board cache on server startup for zero-delay match starts
   console.log(`[${new Date().toISOString()}] 🔧 SECTION 5 FIX: Pre-populating board cache for instant match starts...`);
-  import('./services/board.js').then(({ preGenerateBoards }) => {
-    // Wait for dictionary to be ready, then pre-generate boards
-    const startCachePopulation = () => {
-      if (dictionaryService.isReady()) {
-        preGenerateBoards(dictionaryService, 15).then(() => {
-          console.log(`[${new Date().toISOString()}] ✅ SECTION 5 FIX: Board cache pre-populated - ready for zero-delay match starts`);
-        }).catch(error => {
-          console.warn(`[${new Date().toISOString()}] ⚠️ SECTION 5 FIX: Board cache pre-population failed:`, error);
-        });
-      } else {
-        // Dictionary not ready yet, try again in 100ms
-        setTimeout(startCachePopulation, 100);
-      }
-    };
-    
-    startCachePopulation();
-  }).catch(error => {
-    console.warn(`[${new Date().toISOString()}] ⚠️ SECTION 5 FIX: Could not import board service for cache pre-population:`, error);
-  });
+  
+  // 🔧 CRITICAL FIX: Add delay to ensure server is fully responsive before starting board generation
+  setTimeout(() => {
+    import('./services/board.js').then(({ preGenerateBoards }) => {
+      // Wait for dictionary to be ready, then pre-generate boards
+      const startCachePopulation = () => {
+        if (dictionaryService.isReady()) {
+          // 🔧 CRITICAL FIX: Reduced from 15 to 3 boards to prevent startup delays
+          // Additional boards will be generated asynchronously as needed
+          preGenerateBoards(dictionaryService, 3).then(() => {
+            console.log(`[${new Date().toISOString()}] ✅ SECTION 5 FIX: Initial board cache pre-populated - ready for zero-delay match starts`);
+            // Continue pre-generating more boards in background
+            preGenerateBoards(dictionaryService, 7).catch(error => {
+              console.warn(`[${new Date().toISOString()}] ⚠️ Background board generation failed:`, error);
+            });
+          }).catch(error => {
+            console.warn(`[${new Date().toISOString()}] ⚠️ SECTION 5 FIX: Board cache pre-population failed:`, error);
+          });
+        } else {
+          // Dictionary not ready yet, try again in 100ms
+          setTimeout(startCachePopulation, 100);
+        }
+      };
+      
+      startCachePopulation();
+    }).catch(error => {
+      console.warn(`[${new Date().toISOString()}] ⚠️ SECTION 5 FIX: Could not import board service for cache pre-population:`, error);
+    });
+  }, 2000); // Wait 2 seconds before starting board generation
 });
 
