@@ -41,7 +41,7 @@ import { notifications } from '../services/notifications.js';
 
 interface PhaserGameProps {
   socket?: Socket<ServerToClientEvents, ClientToServerEvents>;
-  gameState?: 'menu' | 'lobby' | 'countdown' | 'match' | 'round-end' | 'match-end';
+  gameState?: 'menu' | 'lobby' | 'countdown' | 'match' | 'round-end' | 'match-end' | 'single-player-setup' | 'single-player' | 'single-player-end';
 }
 
 // Memoized component to prevent unnecessary re-renders

@@ -28,12 +28,15 @@ interface RoundTimer {
 
 // Valid game state transitions - expanded to allow more flexible flow including same-state transitions
 const VALID_STATE_TRANSITIONS: Record<string, string[]> = {
-  'menu': ['menu', 'lobby', 'countdown', 'match', 'round-end', 'match-end'], // Add self-transition for state updates
+  'menu': ['menu', 'lobby', 'countdown', 'match', 'round-end', 'match-end', 'single-player-setup'], // Add single-player-setup transition
   'lobby': ['lobby', 'menu', 'countdown', 'match', 'round-end', 'match-end'], // Add countdown transition from lobby
   'countdown': ['countdown', 'match', 'lobby', 'menu'], // New countdown state transitions
   'match': ['match', 'round-end', 'match-end', 'lobby', 'menu'], // Add self-transition for match data updates
   'round-end': ['round-end', 'match', 'match-end', 'lobby', 'menu'], // Add self-transition for summary updates
-  'match-end': ['match-end', 'lobby', 'menu', 'match'] // Add self-transition for final data updates
+  'match-end': ['match-end', 'lobby', 'menu', 'match'], // Add self-transition for final data updates
+  'single-player-setup': ['single-player-setup', 'single-player', 'menu'], // Single-player setup transitions
+  'single-player': ['single-player', 'single-player-end', 'menu'], // Single-player game transitions
+  'single-player-end': ['single-player-end', 'menu', 'single-player-setup'] // Single-player end transitions
 };
 
 // Debouncing configuration
@@ -60,7 +63,7 @@ interface GameContextType {
   connectionStatus: 'connecting' | 'connected' | 'disconnected';
   playerSession: PlayerSession | null;
   currentRoom: GameRoom | null;
-  gameState: 'menu' | 'lobby' | 'countdown' | 'match' | 'round-end' | 'match-end';
+  gameState: 'menu' | 'lobby' | 'countdown' | 'match' | 'round-end' | 'match-end' | 'single-player-setup' | 'single-player' | 'single-player-end';
   matchData: {
     currentRound: number;
     totalRounds: number;
@@ -76,11 +79,14 @@ interface GameContextType {
   roundSummary: any;
   matchComplete: any;
   roundTimer: RoundTimer | null;
+  singlePlayerDifficulty: DifficultyLevel | null;
+  singlePlayerDuration: number | null; // in seconds
+  singlePlayerScore: number; // Track running score
   setSocket: (socket: Socket<ServerToClientEvents, ClientToServerEvents> | null) => void;
   setConnectionStatus: (status: 'connecting' | 'connected' | 'disconnected') => void;
   setPlayerSession: (session: PlayerSession | null) => void;
   setCurrentRoom: (room: GameRoom | null) => void;
-  setGameState: (state: 'menu' | 'lobby' | 'countdown' | 'match' | 'round-end' | 'match-end') => void;
+  setGameState: (state: 'menu' | 'lobby' | 'countdown' | 'match' | 'round-end' | 'match-end' | 'single-player-setup' | 'single-player' | 'single-player-end') => void;
   setMatchData: (data: {
     currentRound: number;
     totalRounds: number;
@@ -93,9 +99,13 @@ interface GameContextType {
   setRoundTimer: (timer: RoundTimer | null) => void;
   setRoundTimerOptimized: (timeRemaining: number) => void; // New optimized setter
   safeSetRoundTimer: (timer: RoundTimer | null) => void; // Safe wrapper to prevent crashes
+  setSinglePlayerDifficulty: (diff: DifficultyLevel | null) => void;
+  setSinglePlayerDuration: (dur: number | null) => void;
+  setSinglePlayerScore: (score: number) => void;
+  resetSinglePlayer: () => void; // For cleanup
   // 🟡 PHASE 3B: Batch update function for complex state operations
   batchUpdateGameState: (updates: {
-    gameState?: 'menu' | 'lobby' | 'countdown' | 'match' | 'round-end' | 'match-end';
+    gameState?: 'menu' | 'lobby' | 'countdown' | 'match' | 'round-end' | 'match-end' | 'single-player-setup' | 'single-player' | 'single-player-end';
     currentRoom?: GameRoom | null;
     matchData?: {
       currentRound: number;
@@ -223,7 +233,7 @@ export function GameProvider({ children }: GameProviderProps): JSX.Element {
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
   const [playerSession, setPlayerSessionInternal] = useState<PlayerSession | null>(null);
   const [currentRoom, setCurrentRoomInternal] = useState<GameRoom | null>(null);
-  const [gameState, setGameStateInternal] = useState<'menu' | 'lobby' | 'countdown' | 'match' | 'round-end' | 'match-end'>('menu');
+  const [gameState, setGameStateInternal] = useState<'menu' | 'lobby' | 'countdown' | 'match' | 'round-end' | 'match-end' | 'single-player-setup' | 'single-player' | 'single-player-end'>('menu');
   const [matchData, setMatchDataInternal] = useState<{
     currentRound: number;
     totalRounds: number;
@@ -239,9 +249,12 @@ export function GameProvider({ children }: GameProviderProps): JSX.Element {
   const [roundSummary, setRoundSummary] = useState<any>(null);
   const [matchComplete, setMatchComplete] = useState<any>(null);
   const [roundTimer, setRoundTimerInternal] = useState<RoundTimer | null>(null);
+  const [singlePlayerDifficulty, setSinglePlayerDifficulty] = useState<DifficultyLevel | null>(null);
+  const [singlePlayerDuration, setSinglePlayerDuration] = useState<number | null>(null);
+  const [singlePlayerScore, setSinglePlayerScore] = useState<number>(0);
 
   // 🟡 PHASE 3B: Enhanced setters with validation and debouncing
-  const setGameState = useCallback((newState: 'menu' | 'lobby' | 'countdown' | 'match' | 'round-end' | 'match-end') => {
+  const setGameState = useCallback((newState: 'menu' | 'lobby' | 'countdown' | 'match' | 'round-end' | 'match-end' | 'single-player-setup' | 'single-player' | 'single-player-end') => {
     const currentState = gameState;
     
     // Validate state transition
@@ -282,6 +295,12 @@ export function GameProvider({ children }: GameProviderProps): JSX.Element {
     });
   }, [gameState]);
 
+  const resetSinglePlayer = useCallback(() => {
+    setSinglePlayerDifficulty(null);
+    setSinglePlayerDuration(null);
+    setSinglePlayerScore(0);
+  }, []);
+
   const setPlayerSession = useCallback(createDebouncedSetter(
     (session: PlayerSession | null) => {
       logStateChange('playerSession', playerSession, session, 'setPlayerSession');
@@ -314,7 +333,7 @@ export function GameProvider({ children }: GameProviderProps): JSX.Element {
   const currentTimerRef = useRef<RoundTimer | null>(null);
   
   // State persistence refs to prevent resets during re-renders
-  const gameStateRef = useRef<'menu' | 'lobby' | 'countdown' | 'match' | 'round-end' | 'match-end'>(gameState);
+  const gameStateRef = useRef<'menu' | 'lobby' | 'countdown' | 'match' | 'round-end' | 'match-end' | 'single-player-setup' | 'single-player' | 'single-player-end'>(gameState);
   const currentRoomRef = useRef<GameRoom | null>(currentRoom);
   const matchDataRef = useRef<typeof matchData>(matchData);
   
@@ -423,7 +442,7 @@ export function GameProvider({ children }: GameProviderProps): JSX.Element {
 
   // 🟡 PHASE 3B: Batch state update helper for complex operations
   const batchUpdateGameState = useCallback((updates: {
-    gameState?: 'menu' | 'lobby' | 'countdown' | 'match' | 'round-end' | 'match-end';
+    gameState?: 'menu' | 'lobby' | 'countdown' | 'match' | 'round-end' | 'match-end' | 'single-player-setup' | 'single-player' | 'single-player-end';
     currentRoom?: GameRoom | null;
     matchData?: typeof matchData;
     roundTimer?: RoundTimer | null;
@@ -432,6 +451,11 @@ export function GameProvider({ children }: GameProviderProps): JSX.Element {
     
     if (updates.gameState !== undefined) {
       updateFunctions.push(() => setGameState(updates.gameState!));
+      
+      // Reset single-player data when transitioning to menu
+      if (updates.gameState === 'menu') {
+        updateFunctions.push(() => resetSinglePlayer());
+      }
     }
     if (updates.currentRoom !== undefined) {
       updateFunctions.push(() => setCurrentRoom(updates.currentRoom!));
@@ -445,7 +469,7 @@ export function GameProvider({ children }: GameProviderProps): JSX.Element {
     
     console.log(`[GameContext] Batching ${updateFunctions.length} state updates`);
     batchStateUpdates(updateFunctions);
-  }, [setGameState, setCurrentRoom, setMatchData, setRoundTimerEnhanced]);
+  }, [setGameState, setCurrentRoom, setMatchData, setRoundTimerEnhanced, resetSinglePlayer]);
 
   const contextValue: GameContextType = {
     socket,
@@ -458,6 +482,9 @@ export function GameProvider({ children }: GameProviderProps): JSX.Element {
     roundSummary,
     matchComplete,
     roundTimer,
+    singlePlayerDifficulty,
+    singlePlayerDuration,
+    singlePlayerScore,
     setSocket,
     setConnectionStatus,
     setPlayerSession,
@@ -470,6 +497,10 @@ export function GameProvider({ children }: GameProviderProps): JSX.Element {
     setRoundTimer: setRoundTimerEnhanced,
     setRoundTimerOptimized,
     safeSetRoundTimer,
+    setSinglePlayerDifficulty,
+    setSinglePlayerDuration,
+    setSinglePlayerScore,
+    resetSinglePlayer,
     batchUpdateGameState, // 🟡 PHASE 3B: Enhanced batch update function
   };
 

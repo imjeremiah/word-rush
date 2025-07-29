@@ -66,3 +66,16 @@
   2.  Send the chosen difficulty to the server when joining a lobby.
   3.  On the server, enforce the minimum word length rule for each player based on their chosen difficulty.
   4.  On the server, apply the appropriate score multiplier when a valid word is submitted.
+
+#### 4. Single Player Mode (Extension)
+
+- **Description**: Implement a standalone single-player mode for practice and demonstration purposes.
+- **Added**: This feature extends the multiplayer foundation to provide a solo gaming experience.
+- **Steps**:
+  1.  Add single-player state management to `GameContext` with difficulty and duration settings.
+  2.  Create `SinglePlayerSetup` component for configuring difficulty level and round duration.
+  3.  Implement client-side timer management for single-player rounds.
+  4.  Reuse existing word submission and board cascade functionality in single-player context.
+  5.  Apply difficulty-based score multipliers client-side for immediate feedback.
+  6.  Create `SinglePlayerEndScreen` component showing final score and restart options.
+  7.  Integrate single-player flow into main application routing and menu system.
