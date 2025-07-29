@@ -2,6 +2,7 @@
  * Main Menu Component
  * Entry point for the game with options to create or join multiplayer lobbies
  * Provides the primary navigation for multiplayer game flow
+ * Updated: 2025-07-29 - Single Player Mode Added
  */
 
 import { useState, useEffect } from 'react';
