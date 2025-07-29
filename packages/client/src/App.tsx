@@ -11,6 +11,8 @@ import PhaserGame from './components/PhaserGame';
 import MainMenu from './components/MainMenu';
 import LobbyScreen from './components/LobbyScreen';
 import CountdownScreen from './components/CountdownScreen';
+import SinglePlayerSetup from './components/SinglePlayerSetup';
+import SinglePlayerEndScreen from './components/SinglePlayerEndScreen';
 import { RoundSummary } from './components/RoundSummary';
 import { MatchComplete } from './components/MatchComplete';
 import MonitoringDashboard from './components/MonitoringDashboard';
@@ -52,7 +54,8 @@ const AppContent = React.memo((): JSX.Element => {
     setRoundTimer,
     playerSession,
     setMatchData,
-    setLastWordResult
+    setLastWordResult,
+    singlePlayerScore
   } = useGameContext();
 
   // Component key stability - ensure PhaserGame component doesn't remount during transitions
@@ -188,6 +191,45 @@ const AppContent = React.memo((): JSX.Element => {
       {gameState === 'lobby' && <LobbyScreen />}
       
       {gameState === 'countdown' && <CountdownScreen />}
+      
+      {gameState === 'single-player-setup' && <SinglePlayerSetup />}
+      
+      {gameState === 'single-player' && (
+        <>
+          <header className="app-header">
+            <h1>
+              <span className="game-title">Word Rush</span>
+              <span className="match-subtitle"> - Single Player</span>
+            </h1>
+            <div className="score-indicator">
+              Score: {singlePlayerScore}
+            </div>
+          </header>
+
+          <main className="app-main">
+            <div className="game-container">
+              <div className="ui-section">
+                <GameHUD 
+                  timer={{ timeRemaining: roundTimer?.timeRemaining || 0, currentRound: 1, totalRounds: 1 }} 
+                  players={[{ id: currentPlayerId, username: 'You', score: singlePlayerScore, isConnected: true }]} 
+                  currentPlayerId={currentPlayerId}
+                  isGameActive={true}
+                />
+              </div>
+
+              <div className="game-section">
+                <PhaserGame 
+                  key={`single-player-${Date.now()}`}
+                  socket={socket || undefined}
+                  gameState={gameState}
+                />
+              </div>
+            </div>
+          </main>
+        </>
+      )}
+      
+      {gameState === 'single-player-end' && <SinglePlayerEndScreen />}
       
       {shouldRenderPhaser && (
         <>

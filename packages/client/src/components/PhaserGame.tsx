@@ -1231,7 +1231,7 @@ function getRecoveryMetrics(): {
  * @param socket - Optional Socket.io connection for server communication and board requests
  * @returns void - Establishes complete interactive game scene ready for player input
  */
-function create(this: Phaser.Scene, socket?: Socket<ServerToClientEvents, ClientToServerEvents>, gameState?: 'menu' | 'lobby' | 'countdown' | 'match' | 'round-end' | 'match-end', getCurrentDifficulty?: () => DifficultyLevel) {
+function create(this: Phaser.Scene, socket?: Socket<ServerToClientEvents, ClientToServerEvents>, gameState?: 'menu' | 'lobby' | 'countdown' | 'match' | 'round-end' | 'match-end' | 'single-player-setup' | 'single-player' | 'single-player-end', getCurrentDifficulty?: () => DifficultyLevel) {
   console.log(`[${new Date().toISOString()}] 🎬 Scene CREATE started - optimized initialization...`);
   
   // Force scene readiness for faster startup

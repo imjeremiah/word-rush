@@ -1248,6 +1248,80 @@ function GameConnection(): null {
     };
   }, []); // Empty dependency array to prevent socket recreation
 
+  // 🎯 SINGLE PLAYER: Client-side timer and scoring management
+  useEffect(() => {
+    const context = contextRef.current;
+    if (!context) return;
+
+    if (context.gameState !== 'single-player' || !context.singlePlayerDuration) return;
+    
+    let timeLeft = context.singlePlayerDuration;
+    console.log(`[GameConnection] Starting single player timer: ${timeLeft}s`);
+    
+    // Set initial timer
+    context.setRoundTimer({ 
+      timeRemaining: timeLeft * 1000, 
+      currentRound: 1, 
+      totalRounds: 1 
+    });
+    
+    const interval = setInterval(() => {
+      timeLeft--;
+      context.setRoundTimer({ 
+        timeRemaining: timeLeft * 1000, 
+        currentRound: 1, 
+        totalRounds: 1 
+      });
+      
+      if (timeLeft <= 0) {
+        console.log(`[GameConnection] Single player round complete`);
+        clearInterval(interval);
+        context.setGameState('single-player-end');
+      }
+    }, 1000);
+
+    return () => {
+      console.log(`[GameConnection] Cleaning up single player timer`);
+      clearInterval(interval);
+    };
+  }, [contextRef.current?.gameState, contextRef.current?.singlePlayerDuration]);
+
+  // 🎯 SINGLE PLAYER: Enhanced word validation with difficulty multipliers
+  useEffect(() => {
+    const context = contextRef.current;
+    if (!context?.socket) return;
+
+    const handleWordValid = (data: any) => {
+      const currentContext = contextRef.current;
+      if (!currentContext) return;
+      
+      if (currentContext.gameState === 'single-player' && currentContext.singlePlayerDifficulty) {
+        // Import difficulty configs
+        import('@word-rush/common').then(({ DIFFICULTY_CONFIGS }) => {
+          const multiplier = DIFFICULTY_CONFIGS[currentContext.singlePlayerDifficulty!].scoreMultiplier;
+          const adjustedPoints = Math.round(data.points * multiplier);
+          
+          console.log(`[GameConnection] Single player word scored: "${data.word}" = ${data.points} × ${multiplier} = ${adjustedPoints} points`);
+          
+          currentContext.setSinglePlayerScore((prev: number) => prev + adjustedPoints);
+          
+          // Show notification with multiplier info
+          import('../services/notifications.js').then(({ notifications }) => {
+            const bonusText = multiplier > 1 ? ` (${multiplier}x bonus!)` : '';
+            notifications.success(`"${data.word}" = ${adjustedPoints} points${bonusText}`, 2000);
+          });
+        });
+      }
+    };
+
+    // Add listener 
+    context.socket.on('word:valid', handleWordValid);
+
+    return () => {
+      context.socket?.off('word:valid', handleWordValid);
+    };
+  }, [contextRef.current?.socket, contextRef.current?.gameState]);
+
   return null; // This component only manages logic, no UI
 }
 

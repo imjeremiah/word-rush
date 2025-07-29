@@ -9,10 +9,11 @@ import { useGameContext } from '../context/GameContext';
 
 /**
  * Main Menu component with create/join game options
- * Displays the primary game entry point with multiplayer lobby options
+ * Displays the primary game entry point with multiplayer lobby options and single player mode
  * @returns JSX element containing the main menu interface
  */
 function MainMenu(): JSX.Element {
+  const { setGameState } = useGameContext();
   const [showCreateGame, setShowCreateGame] = useState(false);
   const [showJoinGame, setShowJoinGame] = useState(false);
 
@@ -28,6 +29,13 @@ function MainMenu(): JSX.Element {
    */
   const handleJoinGame = (): void => {
     setShowJoinGame(true);
+  };
+
+  /**
+   * Navigate to single player setup
+   */
+  const handleSinglePlayer = (): void => {
+    setGameState('single-player-setup');
   };
 
   /**
@@ -68,6 +76,13 @@ function MainMenu(): JSX.Element {
           >
             🚪 Join Game
           </button>
+
+          <button 
+            className="menu-button"
+            onClick={handleSinglePlayer}
+          >
+            🏆 Single Player
+          </button>
         </div>
 
         <div className="game-info">
@@ -75,7 +90,7 @@ function MainMenu(): JSX.Element {
           <ul>
             <li>Drag over adjacent letters to form words</li>
             <li>Longer words score more points</li>
-            <li>Compete in real-time with other players</li>
+            <li>Play solo or compete in real-time with others</li>
           </ul>
         </div>
       </div>
