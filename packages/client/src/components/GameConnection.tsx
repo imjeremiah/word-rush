@@ -1295,22 +1295,28 @@ function GameConnection(): null {
       const currentContext = contextRef.current;
       if (!currentContext) return;
       
-      if (currentContext.gameState === 'single-player' && currentContext.singlePlayerDifficulty) {
-        // Import difficulty configs
-        import('@word-rush/common').then(({ DIFFICULTY_CONFIGS }) => {
-          const multiplier = DIFFICULTY_CONFIGS[currentContext.singlePlayerDifficulty!].scoreMultiplier;
-          const adjustedPoints = Math.round(data.points * multiplier);
-          
-          console.log(`[GameConnection] Single player word scored: "${data.word}" = ${data.points} × ${multiplier} = ${adjustedPoints} points`);
-          
-          currentContext.setSinglePlayerScore((prev: number) => prev + adjustedPoints);
-          
-          // Show notification with multiplier info
-          import('../services/notifications.js').then(({ notifications }) => {
-            const bonusText = multiplier > 1 ? ` (${multiplier}x bonus!)` : '';
-            notifications.success(`"${data.word}" = ${adjustedPoints} points${bonusText}`, 2000);
+      if (currentContext.gameState === 'single-player') {
+        // Server already applies multipliers, so use points directly
+        const points = data.points;
+        
+        console.log(`[GameConnection] Single player word scored: "${data.word}" = ${points} points (server already applied multiplier)`);
+        
+        currentContext.setSinglePlayerScore((prev: number) => prev + points);
+        
+        // Show notification - get difficulty for display only
+        if (currentContext.singlePlayerDifficulty) {
+          import('@word-rush/common').then(({ DIFFICULTY_CONFIGS }) => {
+            const multiplier = DIFFICULTY_CONFIGS[currentContext.singlePlayerDifficulty!].scoreMultiplier;
+            const bonusText = multiplier > 1 ? ` (${multiplier}x difficulty bonus!)` : '';
+            import('../services/notifications.js').then(({ notifications }) => {
+              notifications.success(`"${data.word}" = ${points} points${bonusText}`, 2000);
+            });
           });
-        });
+        } else {
+          import('../services/notifications.js').then(({ notifications }) => {
+            notifications.success(`"${data.word}" = ${points} points`, 2000);
+          });
+        }
       }
     };
 
