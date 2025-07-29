@@ -288,7 +288,7 @@ export function onTilePointerOver(
 export function onPointerUp(
   boardState: BoardRenderingState,
   interactionState: InteractionState,
-  gameState?: 'menu' | 'lobby' | 'countdown' | 'match' | 'round-end' | 'match-end',
+  gameState?: 'menu' | 'lobby' | 'countdown' | 'match' | 'round-end' | 'match-end' | 'single-player-setup' | 'single-player' | 'single-player-end',
   getCurrentDifficulty?: () => DifficultyLevel
 ): void {
   if (!interactionState.isSelecting || interactionState.selectedTiles.length === 0) return;
@@ -328,8 +328,8 @@ export function onPointerUp(
      function submitWordToServer() {
     // Submit word to server (already validated by validateWordSubmission above)
     if (interactionState.gameSocket) {
-      // Check if game state allows submissions (only during 'match')
-      if (gameState !== 'match') {
+      // Check if game state allows submissions (during 'match' or 'single-player')
+      if (gameState !== 'match' && gameState !== 'single-player') {
         console.warn(`[Interactions] Word submission blocked - game not active (state: ${gameState})`);
         // Still clear selection to provide user feedback
         clearSelection(boardState, interactionState);
@@ -350,10 +350,18 @@ export function onPointerUp(
       // Record submission timestamp for latency measurement
       wordSubmissionTimestamps.set(word, Date.now());
       
-      interactionState.gameSocket.emit('word:submit', {
+      // Prepare word submission data
+      const submissionData: any = {
         word,
         tiles: interactionState.selectedTiles.map(selected => selected.tile),
-      });
+      };
+      
+      // Add difficulty for single player mode
+      if (gameState === 'single-player' && getCurrentDifficulty) {
+        submissionData.difficulty = getCurrentDifficulty();
+      }
+      
+      interactionState.gameSocket.emit('word:submit', submissionData);
     }
 
     // Reset selection

@@ -33,6 +33,7 @@ export const ClientEventSchemas = {
   'word:submit': z.object({
     word: z.string().min(2).max(20).regex(/^[A-Za-z]+$/, 'Word must contain only letters'),
     tiles: z.array(LetterTileSchema).min(2).max(20),
+    difficulty: DifficultyLevelSchema.optional(), // Optional difficulty for single player mode
   }),
 
   // Room management

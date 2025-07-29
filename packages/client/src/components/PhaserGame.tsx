@@ -53,13 +53,20 @@ const PhaserGame: React.FC<PhaserGameProps> = React.memo(({ socket, gameState })
   const timeoutsRef = useRef<NodeJS.Timeout[]>([]); // Track particle effect timeouts for cleanup
 
   // 🕰️ PHASE 28: Access game context for difficulty-based validation
-  const { currentRoom, playerSession } = useGameContext();
+  const { currentRoom, playerSession, singlePlayerDifficulty } = useGameContext();
 
   /**
    * Get current player's difficulty setting for word validation
+   * Supports both multiplayer and single player modes
    * @returns Current player's difficulty level or 'medium' as default
    */
   const getCurrentDifficulty = (): DifficultyLevel => {
+    // Single player mode - use context difficulty
+    if (gameState === 'single-player' && singlePlayerDifficulty) {
+      return singlePlayerDifficulty;
+    }
+    
+    // Multiplayer mode - find player in room
     if (!currentRoom || !playerSession) {
       return 'medium'; // Default fallback
     }

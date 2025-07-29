@@ -76,7 +76,7 @@ function validateTilePath(tiles: LetterTile[]): { isValid: boolean; reason?: str
  */
 export function handleWordSubmit(
   socket: Socket<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>,
-  data: { word: string; tiles: LetterTile[] },
+  data: { word: string; tiles: LetterTile[]; difficulty?: import('@word-rush/common').DifficultyLevel },
   services: {
     dictionaryService: DictionaryModule;
     generateBoard: typeof generateBoard;
@@ -106,7 +106,7 @@ export function handleWordSubmit(
  */
 function handleMultiplayerWordSubmit(
   socket: Socket<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>,
-  data: { word: string; tiles: LetterTile[] },
+  data: { word: string; tiles: LetterTile[]; difficulty?: import('@word-rush/common').DifficultyLevel },
   services: { dictionaryService: DictionaryModule; roomService: RoomServiceType },
   room: import('@word-rush/common').GameRoom,
   startTime: number
@@ -292,7 +292,7 @@ function handleMultiplayerWordSubmit(
  */
 function handleSinglePlayerWordSubmit(
   socket: Socket<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>,
-  data: { word: string; tiles: LetterTile[] },
+  data: { word: string; tiles: LetterTile[]; difficulty?: import('@word-rush/common').DifficultyLevel },
   services: { dictionaryService: DictionaryModule; sessionService: SessionServiceType },
   startTime: number
 ): void {
@@ -327,12 +327,27 @@ function handleSinglePlayerWordSubmit(
     return;
   }
 
+  // Apply difficulty-based minimum word length validation
+  const difficulty = data.difficulty || 'medium';
+  const difficultyConfig = DIFFICULTY_CONFIGS[difficulty];
+  
+  if (word.length < difficultyConfig.minWordLength) {
+    socket.emit('word:invalid', {
+      word,
+      reason: `Word must be at least ${difficultyConfig.minWordLength} letters for ${difficulty} difficulty`
+    });
+    return;
+  }
+
   // Validate word using dictionary service
   const isDictionaryValid = dictionaryService.isValidWord(word);
   
   if (isDictionaryValid) {
-    // Calculate points using board functions
-    const points = calculateWordScore(word);
+    // Calculate base points using board functions
+    let points = calculateWordScore(word);
+    
+    // Apply difficulty multiplier
+    points = Math.floor(points * difficultyConfig.scoreMultiplier);
     
     // Update player session score
     sessionService.updatePlayerSession(socket.id, {
