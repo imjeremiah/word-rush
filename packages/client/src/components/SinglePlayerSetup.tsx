@@ -14,7 +14,7 @@ import { DifficultyLevel } from '@word-rush/common';
  * @returns JSX element containing the setup interface
  */
 function SinglePlayerSetup(): JSX.Element {
-  const { setSinglePlayerDifficulty, setSinglePlayerDuration, setGameState, socket } = useGameContext();
+  const { setSinglePlayerDifficulty, setSinglePlayerDuration, setGameState, socket, resetSinglePlayer } = useGameContext();
   
   // Local states for selections
   const [difficulty, setDifficulty] = useState<DifficultyLevel>('medium');
@@ -39,6 +39,7 @@ function SinglePlayerSetup(): JSX.Element {
    * Handle returning to main menu
    */
   const handleBack = (): void => {
+    resetSinglePlayer(); // Clear any partial single player state
     setGameState('menu');
   };
 

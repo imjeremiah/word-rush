@@ -55,7 +55,8 @@ const AppContent = React.memo((): JSX.Element => {
     playerSession,
     setMatchData,
     setLastWordResult,
-    singlePlayerScore
+    singlePlayerScore,
+    resetSinglePlayer
   } = useGameContext();
 
   // Component key stability - ensure PhaserGame component doesn't remount during transitions
@@ -134,6 +135,7 @@ const AppContent = React.memo((): JSX.Element => {
     setMatchComplete(null);
     setRoundTimer(null);
     setLastWordResult(null);
+    resetSinglePlayer(); // Clear single player state
     
     // Clear any cached board data
     (window as any).pendingGameBoard = null;
@@ -149,7 +151,7 @@ const AppContent = React.memo((): JSX.Element => {
     notifications.info('Returning to main menu...', 2000);
     
     // Let GameConnection handle the reconnection automatically
-  }, [socket, setGameState, setCurrentRoom, setMatchData, setRoundSummary, setMatchComplete, setRoundTimer, setLastWordResult]);
+  }, [socket, setGameState, setCurrentRoom, setMatchData, setRoundSummary, setMatchComplete, setRoundTimer, setLastWordResult, resetSinglePlayer]);
 
   const handleReturnToLobby = React.useCallback(() => {
     setGameState('lobby');
