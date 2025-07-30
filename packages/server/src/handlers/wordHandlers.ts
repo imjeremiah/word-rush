@@ -355,6 +355,23 @@ function handleSinglePlayerWordSubmit(
       wordsSubmitted: session.wordsSubmitted + 1
     });
 
+    // 🔧 NEW: Calculate tile changes and generate new tiles for single-player mode
+    // Get current board from session (we'll need to store board state in session)
+    const playerBoard = sessionService.getPlayerBoard(socket.id);
+    if (playerBoard) {
+      const tilesToRemove = tiles.map(tile => ({ x: tile.x, y: tile.y }));
+      const tileChanges = calculateTileChanges(playerBoard, tilesToRemove);
+      
+      // Apply changes to update board state
+      const updatedBoard = applyTileChanges(playerBoard, tileChanges);
+      
+      // Store updated board back to session
+      sessionService.setPlayerBoard(socket.id, updatedBoard);
+      
+      // Send tile changes to client for cascade animation
+      socket.emit('game:tile-changes', tileChanges);
+    }
+
     // Get updated session
     const updatedSession = sessionService.getPlayerSession(socket.id);
     if (updatedSession) {

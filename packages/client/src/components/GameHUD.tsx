@@ -250,12 +250,12 @@ export const GameHUD = React.memo<GameHUDProps>(({
         
         {/* Status Messages - Removed "Round Paused" as auto-unpause is now implemented */}
 
-        {/* Low Time Warning */}
-        {timer.timeRemaining <= 10000 && isGameActive && (
+        {/* Low Time Warning - REMOVED: Causing layout issues */}
+        {/* {timer.timeRemaining <= 10000 && isGameActive && (
           <div className="low-time-warning">
             <div className="warning-text">⚠️ 10 Seconds Remaining! ⚠️</div>
           </div>
-        )}
+        )} */}
 
         {/* Speed Bonus Indicator */}
         <div className="speed-bonus-indicator">

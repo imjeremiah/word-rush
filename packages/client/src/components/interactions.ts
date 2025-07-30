@@ -39,6 +39,17 @@ export const wordSubmissionTimestamps = new Map<string, number>();
 let lastSubmissionTime = 0;
 const WORD_SUBMISSION_DEBOUNCE_MS = 200;
 
+// Store last submitted tiles for cascade animation after validation
+let lastSubmittedTiles: Array<{ row: number; col: number; tile: any }> = [];
+
+export function getLastSubmittedTiles(): Array<{ row: number; col: number; tile: any }> {
+  return lastSubmittedTiles;
+}
+
+export function clearLastSubmittedTiles(): void {
+  lastSubmittedTiles = [];
+}
+
 /**
  * Check if two tiles are adjacent (including diagonally)
  * Validates tile adjacency for word path formation using 8-directional connectivity:
@@ -349,6 +360,9 @@ export function onPointerUp(
       
       // Record submission timestamp for latency measurement
       wordSubmissionTimestamps.set(word, Date.now());
+      
+      // Store selected tiles for potential tile removal after validation
+      lastSubmittedTiles = [...interactionState.selectedTiles];
       
       // Prepare word submission data
       const submissionData: any = {

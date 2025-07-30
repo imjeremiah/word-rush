@@ -221,7 +221,7 @@ const AppContent = React.memo((): JSX.Element => {
 
               <div className="game-section">
                 <PhaserGame 
-                  key={`single-player-${Date.now()}`}
+                  key="single-player-stable"
                   socket={socket || undefined}
                   gameState={gameState}
                 />

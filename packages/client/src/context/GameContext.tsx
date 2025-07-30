@@ -82,6 +82,13 @@ interface GameContextType {
   singlePlayerDifficulty: DifficultyLevel | null;
   singlePlayerDuration: number | null; // in seconds
   singlePlayerScore: number; // Track running score
+  singlePlayerStats: {
+    wordsFound: number;
+    longestWord: string;
+    highestScoringWord: string;
+    highestWordScore: number;
+    bestWordHadSpeedBonus: boolean;
+  }; // Track detailed stats for end screen
   setSocket: (socket: Socket<ServerToClientEvents, ClientToServerEvents> | null) => void;
   setConnectionStatus: (status: 'connecting' | 'connected' | 'disconnected') => void;
   setPlayerSession: (session: PlayerSession | null) => void;
@@ -99,9 +106,28 @@ interface GameContextType {
   setRoundTimer: (timer: RoundTimer | null) => void;
   setRoundTimerOptimized: (timeRemaining: number) => void; // New optimized setter
   safeSetRoundTimer: (timer: RoundTimer | null) => void; // Safe wrapper to prevent crashes
-  setSinglePlayerDifficulty: (diff: DifficultyLevel | null) => void;
-  setSinglePlayerDuration: (dur: number | null) => void;
-  setSinglePlayerScore: (score: number) => void;
+  setSinglePlayerDifficulty: (difficulty: DifficultyLevel | null) => void;
+  setSinglePlayerDuration: (duration: number | null) => void;
+  setSinglePlayerScore: (score: number | ((prev: number) => number)) => void;
+  setSinglePlayerStats: (stats: {
+    wordsFound: number;
+    longestWord: string;
+    highestScoringWord: string;
+    highestWordScore: number;
+    bestWordHadSpeedBonus: boolean;
+  } | ((prev: {
+    wordsFound: number;
+    longestWord: string;
+    highestScoringWord: string;
+    highestWordScore: number;
+    bestWordHadSpeedBonus: boolean;
+  }) => {
+    wordsFound: number;
+    longestWord: string;
+    highestScoringWord: string;
+    highestWordScore: number;
+    bestWordHadSpeedBonus: boolean;
+  })) => void;
   resetSinglePlayer: () => void; // For cleanup
   // 🟡 PHASE 3B: Batch update function for complex state operations
   batchUpdateGameState: (updates: {
@@ -252,6 +278,19 @@ export function GameProvider({ children }: GameProviderProps): JSX.Element {
   const [singlePlayerDifficulty, setSinglePlayerDifficulty] = useState<DifficultyLevel | null>(null);
   const [singlePlayerDuration, setSinglePlayerDuration] = useState<number | null>(null);
   const [singlePlayerScore, setSinglePlayerScore] = useState<number>(0);
+  const [singlePlayerStats, setSinglePlayerStats] = useState<{
+    wordsFound: number;
+    longestWord: string;
+    highestScoringWord: string;
+    highestWordScore: number;
+    bestWordHadSpeedBonus: boolean;
+  }>({
+    wordsFound: 0,
+    longestWord: '',
+    highestScoringWord: '',
+    highestWordScore: 0,
+    bestWordHadSpeedBonus: false,
+  });
 
   // 🟡 PHASE 3B: Enhanced setters with validation and debouncing
   const setGameState = useCallback((newState: 'menu' | 'lobby' | 'countdown' | 'match' | 'round-end' | 'match-end' | 'single-player-setup' | 'single-player' | 'single-player-end') => {
@@ -299,6 +338,13 @@ export function GameProvider({ children }: GameProviderProps): JSX.Element {
     setSinglePlayerDifficulty(null);
     setSinglePlayerDuration(null);
     setSinglePlayerScore(0);
+    setSinglePlayerStats({
+      wordsFound: 0,
+      longestWord: '',
+      highestScoringWord: '',
+      highestWordScore: 0,
+      bestWordHadSpeedBonus: false,
+    });
   }, []);
 
   const setPlayerSession = useCallback(createDebouncedSetter(
@@ -383,7 +429,7 @@ export function GameProvider({ children }: GameProviderProps): JSX.Element {
         timeRemaining
       };
     }
-  }, [formatTime]);
+  }, [formatTime]); // Simplified dependencies to prevent circular issues
 
   /**
    * Enhanced setRoundTimer that tracks the timer reference with Phase 3B optimizations
@@ -391,7 +437,7 @@ export function GameProvider({ children }: GameProviderProps): JSX.Element {
   const setRoundTimerEnhanced = useCallback((timer: RoundTimer | null) => {
     try {
       // 🟡 PHASE 3B: Add logging and validation
-      logStateChange('roundTimer', roundTimer, timer, 'setRoundTimerEnhanced');
+      // logStateChange('roundTimer', roundTimer, timer, 'setRoundTimerEnhanced'); // Temporarily disabled to reduce log spam
       
       currentTimerRef.current = timer;
       if (timer) {
@@ -419,7 +465,7 @@ export function GameProvider({ children }: GameProviderProps): JSX.Element {
         setRoundTimerInternal(fallbackTimer);
       });
     }
-  }, [formatTime, roundTimer]);
+  }, [formatTime]); // Removed roundTimer from dependency array to break circular dependency
 
   /**
    * Safe wrapper for setRoundTimer to prevent crashes from undefined errors
@@ -485,6 +531,7 @@ export function GameProvider({ children }: GameProviderProps): JSX.Element {
     singlePlayerDifficulty,
     singlePlayerDuration,
     singlePlayerScore,
+    singlePlayerStats,
     setSocket,
     setConnectionStatus,
     setPlayerSession,
@@ -500,6 +547,7 @@ export function GameProvider({ children }: GameProviderProps): JSX.Element {
     setSinglePlayerDifficulty,
     setSinglePlayerDuration,
     setSinglePlayerScore,
+    setSinglePlayerStats,
     resetSinglePlayer,
     batchUpdateGameState, // 🟡 PHASE 3B: Enhanced batch update function
   };

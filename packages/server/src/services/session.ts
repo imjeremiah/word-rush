@@ -4,7 +4,7 @@
  * Provides centralized session management for the game server
  */
 
-import { PlayerSession } from '@word-rush/common';
+import { PlayerSession, GameBoard } from '@word-rush/common';
 
 /**
  * Session service module interface
@@ -19,6 +19,9 @@ interface SessionModule {
   awardCrown: (socketId: string) => PlayerSession | undefined;
   getActivePlayerCount: () => number;
   cleanup: () => void;
+  // Board management for single-player mode
+  getPlayerBoard: (socketId: string) => GameBoard | undefined;
+  setPlayerBoard: (socketId: string, board: GameBoard) => void;
 }
 
 /**
@@ -28,6 +31,7 @@ interface SessionModule {
  */
 function createSessionService(cleanupIntervalMs: number = 5 * 60 * 1000): SessionModule {
   const playerSessions = new Map<string, PlayerSession>();
+  const playerBoards = new Map<string, GameBoard>();
   
   /**
    * Clean up inactive sessions that haven't been active for 5+ minutes
@@ -40,6 +44,7 @@ function createSessionService(cleanupIntervalMs: number = 5 * 60 * 1000): Sessio
     for (const [socketId, session] of playerSessions.entries()) {
       if (!session.isConnected && (now - session.lastActivity) > fiveMinutes) {
         playerSessions.delete(socketId);
+        playerBoards.delete(socketId); // Also clean up player board
         console.log(`[${new Date().toISOString()}] Cleaned up inactive session: ${socketId}`);
       }
     }
@@ -202,6 +207,24 @@ function createSessionService(cleanupIntervalMs: number = 5 * 60 * 1000): Sessio
     cleanupInactiveSessions();
   }
 
+  /**
+   * Get player board for single-player mode
+   * @param socketId - Socket identifier
+   * @returns Player's board or undefined if not found
+   */
+  function getPlayerBoard(socketId: string): GameBoard | undefined {
+    return playerBoards.get(socketId);
+  }
+
+  /**
+   * Set player board for single-player mode  
+   * @param socketId - Socket identifier
+   * @param board - Game board to store
+   */
+  function setPlayerBoard(socketId: string, board: GameBoard): void {
+    playerBoards.set(socketId, board);
+  }
+
   // Return the public API
   return {
     createOrUpdatePlayerSession,
@@ -213,6 +236,8 @@ function createSessionService(cleanupIntervalMs: number = 5 * 60 * 1000): Sessio
     awardCrown,
     getActivePlayerCount,
     cleanup,
+    getPlayerBoard,
+    setPlayerBoard,
   };
 }
 

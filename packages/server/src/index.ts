@@ -293,7 +293,7 @@ io.on('connection', (socket) => {
 
   // Handle board requests
   socket.on('game:request-board', withErrorHandlingNoData(socket, () => {
-    handleBoardRequest(socket, dictionaryService, generateBoard);
+    handleBoardRequest(socket, dictionaryService, generateBoard, sessionService);
   }));
 
   // Handle shuffle requests

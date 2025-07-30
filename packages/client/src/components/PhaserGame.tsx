@@ -199,6 +199,8 @@ const PhaserGame: React.FC<PhaserGameProps> = React.memo(({ socket, gameState })
         console.log(`[${new Date().toISOString()}] 📡 Cleaned up board update event listener`);
       }
       
+      // Note: Single-player cascade cleanup no longer needed
+      
       // Clean up intervals
       if (sceneReadinessCheckInterval) {
         clearInterval(sceneReadinessCheckInterval);
@@ -770,6 +772,12 @@ function preload(this: Phaser.Scene, socket?: Socket<ServerToClientEvents, Clien
         }
       }
     });
+
+    // Store reference for cleanup
+    (this as any).tileChangesHandler = handleTileChanges;
+
+    // Note: Single-player cascade is now handled by standard game:tile-changes events
+    // No need for separate single-player cascade handling
   }
 }
 

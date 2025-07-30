@@ -26,9 +26,15 @@ import type { roomService } from '../services/room.js';
 export function handleBoardRequest(
   socket: Socket<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>,
   dictionaryService: DictionaryModule,
-  generateBoardFn: typeof generateBoard
+  generateBoardFn: typeof generateBoard,
+  sessionService?: any
 ): void {
   const newBoard = generateBoardFn(dictionaryService);
+  
+  // 🔧 Store board in session for single-player mode
+  if (sessionService) {
+    sessionService.setPlayerBoard(socket.id, newBoard);
+  }
   
   // 🔧 TASK 4: Add checksum for validation
   const boardString = JSON.stringify({

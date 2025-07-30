@@ -153,7 +153,12 @@ function GameConnection(): null {
     setRoundTimer,
     setRoundTimerOptimized,
     batchUpdateGameState,
-    roundTimer, // 🔴 PHASE 2A: Fix roundTimer reference error
+    gameState, // Add missing state for timer dependencies
+    singlePlayerDuration, // Add missing state for timer dependencies
+    setSinglePlayerScore, // Add missing setter for single player scoring
+    setSinglePlayerStats, // Add missing setter for single player stats
+    singlePlayerDifficulty, // Add missing state for difficulty
+    socket, // Add actual socket for event listeners
   } = useGameContext();
 
   // Use refs to prevent stale closures and constant reconnections
@@ -169,7 +174,12 @@ function GameConnection(): null {
     setMatchComplete,
     setRoundTimer,
     setRoundTimerOptimized,
-    batchUpdateGameState
+    batchUpdateGameState,
+    gameState,
+    singlePlayerDuration,
+    setSinglePlayerScore,
+    singlePlayerDifficulty,
+    socket,
   });
 
   // Update refs when context values change
@@ -185,7 +195,12 @@ function GameConnection(): null {
     setMatchComplete,
     setRoundTimer,
     setRoundTimerOptimized,
-    batchUpdateGameState
+    batchUpdateGameState,
+    gameState,
+    singlePlayerDuration,
+    setSinglePlayerScore,
+    singlePlayerDifficulty,
+    socket,
   };
 
   // 🕰️ PHASE 27: Client-side timer interpolation for smooth 1-second countdown
@@ -578,7 +593,7 @@ function GameConnection(): null {
         return { ...prev, players: updatedPlayers };
       });
       
-      notifications.info(`+${data.score} points! Total: ${data.totalScore}`, 2000);
+      // Badge removed: keeping only validation confirmation badge
     }));
 
     newSocket.on('player:session-update', withServerEventValidation('player:session-update', (data) => {
@@ -993,7 +1008,7 @@ function GameConnection(): null {
           }
           
           // Update round timer if available
-          if (data.timeRemaining && roundTimer) {
+          if (data.timeRemaining && contextRef.current.roundTimer) {
             contextRef.current.setRoundTimerOptimized(data.timeRemaining);
           }
         }
@@ -1250,16 +1265,17 @@ function GameConnection(): null {
 
   // 🎯 SINGLE PLAYER: Client-side timer and scoring management
   useEffect(() => {
-    const context = contextRef.current;
-    if (!context) return;
-
-    if (context.gameState !== 'single-player' || !context.singlePlayerDuration) return;
+    // More robust validation - ensure we have valid duration before starting timer
+    if (gameState !== 'single-player' || !singlePlayerDuration || singlePlayerDuration <= 0) {
+      console.log(`[GameConnection] Timer prerequisites not met: gameState=${gameState}, duration=${singlePlayerDuration}`);
+      return;
+    }
     
-    let timeLeft = context.singlePlayerDuration;
+    let timeLeft = singlePlayerDuration;
     console.log(`[GameConnection] Starting single player timer: ${timeLeft}s`);
     
     // Set initial timer
-    context.setRoundTimer({ 
+    setRoundTimer({ 
       timeRemaining: timeLeft * 1000, 
       currentRound: 1, 
       totalRounds: 1 
@@ -1267,7 +1283,7 @@ function GameConnection(): null {
     
     const interval = setInterval(() => {
       timeLeft--;
-      context.setRoundTimer({ 
+      setRoundTimer({ 
         timeRemaining: timeLeft * 1000, 
         currentRound: 1, 
         totalRounds: 1 
@@ -1276,7 +1292,7 @@ function GameConnection(): null {
       if (timeLeft <= 0) {
         console.log(`[GameConnection] Single player round complete`);
         clearInterval(interval);
-        context.setGameState('single-player-end');
+        setGameState('single-player-end');
       }
     }, 1000);
 
@@ -1284,49 +1300,56 @@ function GameConnection(): null {
       console.log(`[GameConnection] Cleaning up single player timer`);
       clearInterval(interval);
     };
-  }, [contextRef.current?.gameState, contextRef.current?.singlePlayerDuration]);
+  }, [gameState, singlePlayerDuration, setRoundTimer, setGameState]);
 
   // 🎯 SINGLE PLAYER: Enhanced word validation with difficulty multipliers
   useEffect(() => {
-    const context = contextRef.current;
-    if (!context?.socket) return;
+    if (!socket) return;
+
+    let lastWordTime = Date.now(); // Track timing for speed bonuses
 
     const handleWordValid = (data: any) => {
-      const currentContext = contextRef.current;
-      if (!currentContext) return;
-      
-      if (currentContext.gameState === 'single-player') {
+      if (gameState === 'single-player') {
         // Server already applies multipliers, so use points directly
         const points = data.points;
+        const word = data.word;
+        const currentTime = Date.now();
+        const timeSinceLastWord = currentTime - lastWordTime;
+        const hasSpeedBonus = timeSinceLastWord <= 4000; // Speed bonus if submitted within 4 seconds
         
-        console.log(`[GameConnection] Single player word scored: "${data.word}" = ${points} points (server already applied multiplier)`);
+        console.log(`[GameConnection] Single player word scored: "${word}" = ${points} points (server already applied multiplier)`);
         
-        currentContext.setSinglePlayerScore((prev: number) => prev + points);
+        setSinglePlayerScore((prev: number) => prev + points);
         
-        // Show notification - get difficulty for display only
-        if (currentContext.singlePlayerDifficulty) {
-          import('@word-rush/common').then(({ DIFFICULTY_CONFIGS }) => {
-            const multiplier = DIFFICULTY_CONFIGS[currentContext.singlePlayerDifficulty!].scoreMultiplier;
-            const bonusText = multiplier > 1 ? ` (${multiplier}x difficulty bonus!)` : '';
-            import('../services/notifications.js').then(({ notifications }) => {
-              notifications.success(`"${data.word}" = ${points} points${bonusText}`, 2000);
-            });
-          });
-        } else {
-          import('../services/notifications.js').then(({ notifications }) => {
-            notifications.success(`"${data.word}" = ${points} points`, 2000);
-          });
-        }
+        // Update detailed stats for end screen
+        setSinglePlayerStats((prev) => ({
+          wordsFound: prev.wordsFound + 1,
+          longestWord: word.length > prev.longestWord.length ? word : prev.longestWord,
+          highestScoringWord: points > prev.highestWordScore ? word : prev.highestScoringWord,
+          highestWordScore: points > prev.highestWordScore ? points : prev.highestWordScore,
+          bestWordHadSpeedBonus: points > prev.highestWordScore ? hasSpeedBonus : prev.bestWordHadSpeedBonus,
+        }));
+        
+        lastWordTime = currentTime;
+        
+        // Note: Tile cascading for single-player mode is now handled by server
+        // The server calculates tile changes and sends game:tile-changes events
+        // which are processed the same way as multiplayer mode
+        
+        // Badge removed: keeping only validation confirmation badge from 'word:valid' event
       }
     };
 
-    // Add listener 
-    context.socket.on('word:valid', handleWordValid);
-
-    return () => {
-      context.socket?.off('word:valid', handleWordValid);
-    };
-  }, [contextRef.current?.socket, contextRef.current?.gameState]);
+    // Add listener to the current socket from context
+    const currentSocket = socket;
+    if (currentSocket) {
+      currentSocket.on('word:valid', handleWordValid);
+      
+      return () => {
+        currentSocket.off('word:valid', handleWordValid);
+      };
+    }
+  }, [gameState, singlePlayerDifficulty, setSinglePlayerScore, setSinglePlayerStats, socket]);
 
   return null; // This component only manages logic, no UI
 }

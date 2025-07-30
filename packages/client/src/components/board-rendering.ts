@@ -1284,7 +1284,7 @@ function createNewBoardWithAnimation(
  * @param removedTiles - Array of tile positions that were removed from the board
  * @returns void - Updates board visuals with smooth cascading animations
  */
-function animateTileRemovalAndCascade(
+export function animateTileRemovalAndCascade(
   scene: Phaser.Scene,
   state: BoardRenderingState,
   setupTileInteraction: (tile: Phaser.GameObjects.Rectangle, row: number, col: number, tileData: LetterTile) => void,
@@ -1321,8 +1321,12 @@ function animateTileRemovalAndCascade(
       removedPositions.add(`${x}-${y}`);
       
       const removalPromise = new Promise<void>((resolve) => {
+        // Get tile data from board state
+        const tileData = state.currentBoard?.tiles[y * state.currentBoard.width + x];
+        const points = tileData?.points || 1;
+        
         // Create particle effect for tile removal
-        const particles = createTileRemovalEffect(scene, tileSprite.x, tileSprite.y, selected.tile.points);
+        const particles = createTileRemovalEffect(scene, tileSprite.x, tileSprite.y, points);
 
         // Animate tile disappearing
         scene.tweens.add({
@@ -2412,7 +2416,7 @@ export function createTileRemovalEffect(
     
     // Auto-destroy after emission
     setTimeout(() => {
-      if (particles && !particles.scene.game.destroyed) {
+      if (particles && particles.scene && particles.scene.game && !particles.scene.game.destroyed) {
         particles.destroy();
       }
     }, 500);
