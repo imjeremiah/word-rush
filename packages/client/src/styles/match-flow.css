@@ -500,17 +500,18 @@
 
 /* Enhanced Stats Section - Improved Visual Balance */
 .enhanced-stats {
-  margin: 20px 0;
-  padding: 2rem;
+  margin: 10px 0;
+  padding: 1.5rem;
   background: rgba(1, 36, 63, 0.6);
   border-radius: 15px;
   border: 1px solid #0B6281;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  flex: 1;
 }
 
 .match-statistics-title {
   color: #FFE265;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   text-align: center;
   font-size: 1.3rem;
   font-weight: bold;
@@ -595,7 +596,7 @@
 }
 
 .words-found-value {
-  font-size: 1.05rem;
+  font-size: 1.4rem;
   font-weight: bold;
   color: #FAF0C7 !important;
   margin-right: 0; /* Removed margin since we're using gap */
@@ -657,7 +658,7 @@
 
 .word-score {
   color: #FAF0C7 !important;
-  font-size: 1rem;
+  font-size: 1.4rem;
   margin-left: 6px;
   font-weight: bold;
 }
@@ -1499,11 +1500,10 @@
 .setup-screen .screen-container {
   background: rgba(255, 255, 255, 0.1);
   border-radius: 20px;
-  padding: 2.5rem;
-  max-width: 600px;
+  padding: 2rem;
+  max-width: 700px;
   width: 90vw;
-  max-height: 90vh;
-  overflow-y: auto;
+  max-height: 85vh;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
   animation: slideUp 0.4s ease-out;
   border: 2px solid rgba(8, 136, 173, 0.3);
@@ -1512,7 +1512,7 @@
 .setup-screen .screen-header {
   display: flex;
   align-items: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
   gap: 1rem;
 }
 
@@ -1544,7 +1544,7 @@
 .setup-form {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1.5rem;
 }
 
 .setup-form .form-group {
@@ -1560,7 +1560,12 @@
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
-.difficulty-selector,
+.difficulty-selector {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
 .duration-selector {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -1596,59 +1601,62 @@
   transform: scale(1.02);
 }
 
-.difficulty-info {
-  background: rgba(1, 59, 79, 0.6);
-  border-radius: 12px;
-  padding: 1.5rem;
-  border: 1px solid #0888AD;
-}
-
-.difficulty-info h3 {
-  color: #FFE265;
-  margin: 0 0 1rem 0;
+/* Difficulty button content styling */
+.difficulty-button .difficulty-name {
   font-size: 1.1rem;
-  text-align: center;
-}
-
-.difficulty-info ul {
-  margin: 0;
-  padding-left: 1.2rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
   color: white;
 }
 
-.difficulty-info li {
-  margin-bottom: 0.5rem;
-  font-size: 0.95rem;
+.difficulty-button .difficulty-details {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 0.2rem;
 }
+
+.difficulty-button.selected .difficulty-name {
+  color: #FFE265;
+}
+
+.difficulty-button.selected .difficulty-details {
+  color: rgba(255, 226, 101, 0.9);
+}
+
+
 
 .setup-actions {
   text-align: center;
-  margin-top: 1rem;
+  margin-top: 2rem;
 }
 
-.start-button {
-  background: linear-gradient(135deg, #56ab2f, #a8e6cf);
-  color: white;
+.start-game-button {
+  padding: 16px 32px;
+  font-size: 1.2rem;
+  font-weight: 600;
   border: none;
-  padding: 1.2rem 2.5rem;
-  border-radius: 25px;
-  font-size: 1.1rem;
-  font-weight: bold;
+  border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(86, 171, 47, 0.3);
+  text-decoration: none;
+  display: inline-block;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  background: #0888AD; /* Ocean Foam */
+  color: #002441; /* Deepest Ocean text */
 }
 
-.start-button:hover:not(:disabled) {
+.start-game-button:hover:not(:disabled) {
+  background: #1F7D81; /* Ocean Teal on hover */
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(86, 171, 47, 0.4);
+  box-shadow: 0 8px 25px rgba(12, 92, 126, 0.4);
 }
 
-.start-button:disabled {
+.start-game-button:disabled {
   background: rgba(255, 255, 255, 0.2);
   color: rgba(255, 255, 255, 0.6);
   cursor: not-allowed;
   box-shadow: none;
+  transform: none;
 }
 
 /* Single Player End Screen */
@@ -1669,23 +1677,27 @@
 .end-screen .screen-container {
   background: rgba(255, 255, 255, 0.1);
   border-radius: 20px;
-  padding: 2.5rem;
+  padding: 1.5rem;
   max-width: 700px;
   width: 90vw;
   max-height: 90vh;
-  overflow-y: auto;
   box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
   animation: bounceIn 0.6s ease-out;
   border: 2px solid rgba(8, 136, 173, 0.3);
+  display: flex;
+  flex-direction: column;
 }
 
 .end-screen-content {
   text-align: center;
   color: white;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .completion-header {
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
 .completion-title {
@@ -1702,12 +1714,13 @@
   animation: bounce 2s infinite;
 }
 
-.score-section {
+.score-rating {
   background: rgba(1, 59, 79, 0.6);
   border-radius: 15px;
-  padding: 2rem;
-  margin-bottom: 2rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
   border: 1px solid #0888AD;
+  text-align: center;
 }
 
 .final-score {
@@ -1724,7 +1737,7 @@
 
 .score-value {
   display: block;
-  font-size: 3rem;
+  font-size: 4rem;
   font-weight: bold;
   color: #FFE265;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
@@ -1760,18 +1773,20 @@
 .stat-label {
   color: white;
   font-weight: 500;
+  font-size: 1.2rem;
 }
 
 .stat-value {
   font-weight: bold;
-  font-size: 1.1rem;
+  font-size: 1.4rem;
 }
 
 .end-screen-actions {
   display: flex;
   gap: 1rem;
   justify-content: center;
-  margin-bottom: 1.5rem;
+  margin-top: auto;
+  padding-top: 1rem;
 }
 
 .action-button {
@@ -1809,18 +1824,40 @@
   box-shadow: 0 6px 20px rgba(11, 98, 129, 0.3);
 }
 
-.encouragement {
-  background: rgba(255, 255, 255, 0.1);
+/* Back to Menu button styling - matches menu card buttons */
+.back-to-menu-button {
+  padding: 16px 32px;
+  font-size: 1.2rem;
+  font-weight: 600;
+  border: none;
   border-radius: 8px;
-  padding: 1rem;
-  margin-top: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-block;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  background: #0888AD; /* Ocean Foam */
+  color: #002441; /* Deepest Ocean text */
 }
 
-.encouragement p {
-  margin: 0;
-  color: rgba(255, 255, 255, 0.9);
-  font-style: italic;
-  font-size: 0.95rem;
+.back-to-menu-button:hover {
+  background: #1F7D81; /* Ocean Teal on hover */
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(12, 92, 126, 0.4);
+}
+
+/* Final score styling within stats - match other stat items */
+.final-score-item {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 0.8rem;
+  margin-bottom: 0.8rem;
+}
+
+.final-score-value {
+  font-size: 1.4rem;
+  font-weight: bold;
+  color: #FFE265;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 /* Responsive Design for Single Player */

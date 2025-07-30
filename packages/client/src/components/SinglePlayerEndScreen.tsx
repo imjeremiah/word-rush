@@ -16,19 +16,12 @@ function SinglePlayerEndScreen(): JSX.Element {
   const { singlePlayerScore, singlePlayerDifficulty, singlePlayerStats, resetSinglePlayer, setGameState } = useGameContext();
 
   /**
-   * Handle returning to main menu
+   * Handle returning to main menu with browser refresh
    */
   const handleBackToMenu = (): void => {
     resetSinglePlayer();
-    setGameState('menu');
-  };
-
-  /**
-   * Handle playing again
-   */
-  const handlePlayAgain = (): void => {
-    resetSinglePlayer();
-    setGameState('single-player-setup');
+    // Full browser refresh to return to start
+    window.location.href = window.location.origin;
   };
 
   /**
@@ -122,38 +115,15 @@ function SinglePlayerEndScreen(): JSX.Element {
     <div className="end-screen">
       <div className="screen-container">
         <div className="end-screen-content">
-          <div className="completion-header">
-            <h1 className="completion-title">Round Complete!</h1>
+          <div className="score-rating">
             <div className="completion-emoji">{scoreRating.emoji}</div>
-          </div>
-
-          <div className="score-section">
-            <div className="final-score">
-              <span className="score-label">Final Score</span>
-              <span className="score-value">{singlePlayerScore}</span>
-            </div>
-            
-            <div className="score-rating">
-              <h2>{scoreRating.rating}</h2>
-              <p>{scoreRating.message}</p>
-            </div>
-          </div>
-
-          <div className="game-stats">
-            <div className="stat-item">
-              <span className="stat-label">Difficulty:</span>
-              <span 
-                className="stat-value" 
-                style={{ color: difficultyInfo.color }}
-              >
-                {difficultyInfo.name} ({difficultyInfo.multiplier})
-              </span>
-            </div>
+            <h2>{scoreRating.rating}</h2>
+            <p>{scoreRating.message}</p>
           </div>
 
           {/* Enhanced Statistics - Words Found, Longest Word, Best Word */}
           <div className="enhanced-stats">
-            <h3 className="match-statistics-title">Match Statistics</h3>
+            <h3 className="match-statistics-title">Game Stats</h3>
             <div className="stats-container">
               <div className="player-stats-card-stacked current-player">
                 <div className="stats-header">
@@ -162,6 +132,11 @@ function SinglePlayerEndScreen(): JSX.Element {
                 </div>
                 
                 <div className="stats-grid">
+                  <div className="stat-item final-score-item">
+                    <span className="stat-label">Final Score:</span>
+                    <span className="stat-value final-score-value">{singlePlayerScore}</span>
+                  </div>
+                  
                   <div className="stat-item">
                     <span className="stat-label">Words Found:</span>
                     <span className="stat-value words-found-value">{singlePlayerStats.wordsFound}</span>
@@ -182,7 +157,17 @@ function SinglePlayerEndScreen(): JSX.Element {
                           {renderWordAsTiles(singlePlayerStats.highestScoringWord)}
                           {singlePlayerStats.highestWordScore > 0 && (
                             <div className="word-score-section">
-                              <span className="word-score"><strong>({singlePlayerStats.highestWordScore}pts)</strong></span>
+                              <span className="word-score"><strong>({(() => {
+                                // Calculate the actual letter values for display
+                                const word = singlePlayerStats.highestScoringWord;
+                                if (!word) return singlePlayerStats.highestWordScore;
+                                
+                                const totalLetterPoints = word.split('').reduce((sum, letter) => {
+                                  return sum + getLetterPoints(letter);
+                                }, 0);
+                                
+                                return totalLetterPoints;
+                              })()}pts)</strong></span>
                               <div className="bonus-badges">
                                 {singlePlayerDifficulty && singlePlayerDifficulty !== 'easy' && (
                                   <span className="bonus-badge difficulty-bonus">DIFF</span>
@@ -206,26 +191,11 @@ function SinglePlayerEndScreen(): JSX.Element {
 
           <div className="end-screen-actions">
             <button 
-              className="action-button primary"
-              onClick={handlePlayAgain}
-            >
-              🔄 Play Again
-            </button>
-            
-            <button 
-              className="action-button secondary"
+              className="menu-button primary back-to-menu-button"
               onClick={handleBackToMenu}
             >
               🏠 Back to Menu
             </button>
-          </div>
-
-          <div className="encouragement">
-            <p>
-              {singlePlayerScore > 0 
-                ? "Great job finding words! Try a higher difficulty for more points." 
-                : "Don't give up! Every expert was once a beginner."}
-            </p>
           </div>
         </div>
       </div>

@@ -33,9 +33,9 @@ function MainMenu(): JSX.Element {
   };
 
   /**
-   * Navigate to single player setup
+   * Navigate to quick game setup
    */
-  const handleSinglePlayer = (): void => {
+  const handleQuickGame = (): void => {
     setGameState('single-player-setup');
   };
 
@@ -61,28 +61,28 @@ function MainMenu(): JSX.Element {
     <div className="main-menu">
       <div className="menu-container">
         <h1 className="game-title">Word Rush</h1>
-        <p className="game-subtitle">Competitive Multiplayer Word Game</p>
+        <p className="game-subtitle">Competitive Word Search Game</p>
         
         <div className="menu-options">
+          <button 
+            className="menu-button white"
+            onClick={handleQuickGame}
+          >
+            ⚡ Quick Game
+          </button>
+          
           <button 
             className="menu-button primary"
             onClick={handleCreateGame}
           >
             🎮 Create Game
           </button>
-          
+
           <button 
             className="menu-button secondary"
             onClick={handleJoinGame}
           >
             🚪 Join Game
-          </button>
-
-          <button 
-            className="menu-button"
-            onClick={handleSinglePlayer}
-          >
-            🏆 Single Player
           </button>
         </div>
 

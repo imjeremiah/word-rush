@@ -1567,11 +1567,25 @@ function processQueuedTileChanges(this: Phaser.Scene) {
   }
 
   isProcessingTileChanges = true;
-  const currentSequence = lastProcessedSequence + 1;
-  const pending = pendingTileChanges.get(currentSequence);
+  
+  // Find the next sequential pending change
+  let currentSequence = lastProcessedSequence + 1;
+  let pending = pendingTileChanges.get(currentSequence);
+
+  // If we don't have the exact next sequence, process the next available one
+  if (!pending && pendingTileChanges.size > 0) {
+    const availableSequences = Array.from(pendingTileChanges.keys()).sort((a, b) => a - b);
+    const nextSequence = availableSequences.find(seq => seq > lastProcessedSequence);
+    
+    if (nextSequence) {
+      currentSequence = nextSequence;
+      pending = pendingTileChanges.get(currentSequence);
+      console.log(`[${new Date().toISOString()}] 🔄 Processing available sequence ${currentSequence} (skipped ${currentSequence - lastProcessedSequence - 1} sequences)`);
+    }
+  }
 
   if (!pending) {
-    console.warn(`[${new Date().toISOString()}] ⚠️ No pending tile changes for sequence number: ${currentSequence}`);
+    console.warn(`[${new Date().toISOString()}] ⚠️ No pending tile changes available (last processed: ${lastProcessedSequence})`);
     isProcessingTileChanges = false;
     return;
   }
@@ -1666,7 +1680,8 @@ function processQueuedTileChanges(this: Phaser.Scene) {
             isProcessingTileChanges = false;
             
             // If there are still pending changes, process the next one
-            if (pendingTileChanges.has(lastProcessedSequence + 1)) {
+            const nextAvailableSequence = Math.min(...Array.from(pendingTileChanges.keys()).filter(seq => seq > lastProcessedSequence));
+            if (!isNaN(nextAvailableSequence)) {
               processQueuedTileChanges.call(this);
             }
           }

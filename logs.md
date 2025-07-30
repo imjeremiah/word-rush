@@ -1,86 +1,110 @@
 chunk-WAYAUXAG.js?v=a41833a3:21580 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
-App.tsx:177 [2025-07-30T04:06:49.601Z] 🎯 AppContent render: gameState=menu, phaserKey=phaser-stable-default-room, sessionId=none, roomCode=none
-App.tsx:177 [2025-07-30T04:06:49.601Z] 🎯 AppContent render: gameState=menu, phaserKey=phaser-stable-default-room, sessionId=none, roomCode=none
-GameConnection.tsx:282 🔌 Creating socket connection (should only happen once)
-GameConnection.tsx:299 [2025-07-30T04:06:49.604Z] 📱 Using adaptive socket config: {reconnectionAttempts: 5, reconnectionDelay: 1000, reconnectionDelayMax: 5000, timeout: 45000}
-GameConnection.tsx:309 [2025-07-30T04:06:49.605Z] 📱 Device detection: mobile=false, slow_connection=false
-GameConnection.tsx:1269 [GameConnection] Timer prerequisites not met: gameState=menu, duration=null
-GameConnection.tsx:1229 🔌 Closing socket connection (cleanup)
-GameConnection.tsx:282 🔌 Creating socket connection (should only happen once)
-GameConnection.tsx:299 [2025-07-30T04:06:49.605Z] 📱 Using adaptive socket config: {reconnectionAttempts: 5, reconnectionDelay: 1000, reconnectionDelayMax: 5000, timeout: 45000}
-GameConnection.tsx:309 [2025-07-30T04:06:49.606Z] 📱 Device detection: mobile=false, slow_connection=false
-GameConnection.tsx:1269 [GameConnection] Timer prerequisites not met: gameState=menu, duration=null
+App.tsx:177 [2025-07-30T16:49:35.529Z] 🎯 AppContent render: gameState=menu, phaserKey=phaser-stable-default-room, sessionId=none, roomCode=none
+App.tsx:177 [2025-07-30T16:49:35.529Z] 🎯 AppContent render: gameState=menu, phaserKey=phaser-stable-default-room, sessionId=none, roomCode=none
+GameConnection.tsx:283 🔌 Creating socket connection (should only happen once)
+GameConnection.tsx:300 [2025-07-30T16:49:35.531Z] 📱 Using adaptive socket config: {reconnectionAttempts: 5, reconnectionDelay: 1000, reconnectionDelayMax: 5000, timeout: 45000}
+GameConnection.tsx:310 [2025-07-30T16:49:35.533Z] 📱 Device detection: mobile=false, slow_connection=false
+GameConnection.tsx:1270 [GameConnection] Timer prerequisites not met: gameState=menu, duration=null
+GameConnection.tsx:1230 🔌 Closing socket connection (cleanup)
+GameConnection.tsx:283 🔌 Creating socket connection (should only happen once)
+GameConnection.tsx:300 [2025-07-30T16:49:35.533Z] 📱 Using adaptive socket config: {reconnectionAttempts: 5, reconnectionDelay: 1000, reconnectionDelayMax: 5000, timeout: 45000}
+GameConnection.tsx:310 [2025-07-30T16:49:35.533Z] 📱 Device detection: mobile=false, slow_connection=false
+GameConnection.tsx:1270 [GameConnection] Timer prerequisites not met: gameState=menu, duration=null
 checksumTestUtils.ts:89 🧪 TEST UTILITIES: Board corruption testing available:
 checksumTestUtils.ts:90   - window.testBoardCorruption() - Corrupt current board
 checksumTestUtils.ts:91   - window.corruptBoard(board, type) - Corrupt specific board
-App.tsx:177 [2025-07-30T04:06:49.624Z] 🎯 AppContent render: gameState=menu, phaserKey=phaser-stable-default-room, sessionId=none, roomCode=none
-App.tsx:177 [2025-07-30T04:06:49.624Z] 🎯 AppContent render: gameState=menu, phaserKey=phaser-stable-default-room, sessionId=none, roomCode=none
+App.tsx:177 [2025-07-30T16:49:35.541Z] 🎯 AppContent render: gameState=menu, phaserKey=phaser-stable-default-room, sessionId=none, roomCode=none
+App.tsx:177 [2025-07-30T16:49:35.541Z] 🎯 AppContent render: gameState=menu, phaserKey=phaser-stable-default-room, sessionId=none, roomCode=none
 edgeCaseTestUtils.ts:183 🧪 Edge case testing utilities loaded. Available as window.testEdgeCases
 edgeCaseTestUtils.ts:184 🧪 Available methods: (7) ['simulateNoBoardOnGo', 'simulateHighLatency', 'simulateServerCrash', 'simulateMobileNetwork', 'simulateConnectionDrop', 'testBoardCorruption', 'resetNetworkConditions']
-syncMonitoring.ts:157 [2025-07-30T04:06:49.630Z] 📊 Sync monitoring started
+syncMonitoring.ts:157 [2025-07-30T16:49:35.544Z] 📊 Sync monitoring started
 syncMonitoring.ts:157 📊 Sync monitoring utilities available:
 syncMonitoring.ts:157   - window.getSyncMetrics() - Get current metrics summary
 syncMonitoring.ts:157   - window.exportSyncData() - Export full monitoring data
 syncMonitoring.ts:157   - window.syncMonitoring - Direct access to monitoring service
-syncMonitoring.ts:157 [2025-07-30T04:06:49.630Z] 🏥 Deployment health monitoring started
+syncMonitoring.ts:157 [2025-07-30T16:49:35.545Z] 🏥 Deployment health monitoring started
 syncMonitoring.ts:157 🏥 Deployment health utilities available:
 syncMonitoring.ts:157   - window.getHealthStatus() - Get current health status
 syncMonitoring.ts:157   - window.triggerRollback() - Manually trigger rollback
 syncMonitoring.ts:157   - window.exportHealthData() - Export health data
 syncMonitoring.ts:157   - window.deploymentHealth - Direct access to health service
-syncMonitoring.ts:157 [2025-07-30T04:06:49.634Z] ✅ Socket connected successfully to http://localhost:3001
+syncMonitoring.ts:157 [2025-07-30T16:49:35.547Z] ✅ Socket connected successfully to http://localhost:3001
 syncMonitoring.ts:157 Connected to server
-syncMonitoring.ts:157 Attempting to reconnect with stored session: {id: 'JBuMIj-rsDs9EC7FAAAF', username: 'Player-JBuMIj-r', score: 6, wordsSubmitted: 3}
+syncMonitoring.ts:157 Attempting to reconnect with stored session: {id: '0JXzdja5STABosnpAAAf', username: 'Player-EWshXkPJ', score: 7, wordsSubmitted: 2}
 syncMonitoring.ts:157 Session update: {session: {…}}
-syncMonitoring.ts:157 [2025-07-30T04:06:49.635Z] Socket Event Received: server:welcome {message: 'Connected to Word Rush server', socketId: 'y1R3XlmmE4bihUBfAAAC'}
-syncMonitoring.ts:157 Welcome message received: {message: 'Connected to Word Rush server', socketId: 'y1R3XlmmE4bihUBfAAAC'}
-syncMonitoring.ts:157 [2025-07-30T04:06:49.635Z] 🎯 AppContent render: gameState=menu, phaserKey=phaser-stable-default-room, sessionId=none, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:06:49.635Z] 🎯 AppContent render: gameState=menu, phaserKey=phaser-stable-default-room, sessionId=none, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:35.548Z] Socket Event Received: server:welcome {message: 'Connected to Word Rush server', socketId: '7y9OywCLlYVcVFtlAAAi'}
+syncMonitoring.ts:157 Welcome message received: {message: 'Connected to Word Rush server', socketId: '7y9OywCLlYVcVFtlAAAi'}
+syncMonitoring.ts:157 [2025-07-30T16:49:35.549Z] 🎯 AppContent render: gameState=menu, phaserKey=phaser-stable-default-room, sessionId=none, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:35.549Z] 🎯 AppContent render: gameState=menu, phaserKey=phaser-stable-default-room, sessionId=none, roomCode=none
 syncMonitoring.ts:157 Initial board received: {board: {…}}
 syncMonitoring.ts:157 Session update: {session: {…}}
-syncMonitoring.ts:157 Reconnection failed: {message: 'Previous session not found, started new session'}
-syncMonitoring.ts:157 [GameContext] State change: playerSession {from: null, to: {…}, triggeredBy: 'setPlayerSession', timestamp: '2025-07-30T04:06:49.860Z'}
-syncMonitoring.ts:157 [2025-07-30T04:06:49.861Z] 🎯 AppContent render: gameState=menu, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:06:49.861Z] 🎯 AppContent render: gameState=menu, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [GameContext] State change: gameState {from: 'menu', to: 'single-player-setup', triggeredBy: 'setGameState', timestamp: '2025-07-30T04:06:52.157Z'}
-syncMonitoring.ts:157 [2025-07-30T04:06:52.159Z] 🎯 AppContent render: gameState=single-player-setup, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:06:52.159Z] 🎯 AppContent render: gameState=single-player-setup, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
+syncMonitoring.ts:157 Reconnection successful: {message: 'Successfully reconnected!', session: {…}}
+syncMonitoring.ts:157 [GameContext] State change: playerSession {from: null, to: {…}, triggeredBy: 'setPlayerSession', timestamp: '2025-07-30T16:49:35.755Z'}
+syncMonitoring.ts:157 [2025-07-30T16:49:35.756Z] 🎯 AppContent render: gameState=menu, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:35.756Z] 🎯 AppContent render: gameState=menu, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [GameContext] State change: gameState {from: 'menu', to: 'single-player-setup', triggeredBy: 'setGameState', timestamp: '2025-07-30T16:49:37.729Z'}
+syncMonitoring.ts:157 [2025-07-30T16:49:37.732Z] 🎯 AppContent render: gameState=single-player-setup, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:37.733Z] 🎯 AppContent render: gameState=single-player-setup, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
 syncMonitoring.ts:157 [GameConnection] Timer prerequisites not met: gameState=single-player-setup, duration=null
-syncMonitoring.ts:157 [2025-07-30T04:06:54.631Z] 🏥 Running deployment health checks...
-deploymentHealthCheck.ts:157  HEAD http://localhost:5173/favicon.ico net::ERR_ABORTED 404 (Not Found)
-checkNetworkHealth @ deploymentHealthCheck.ts:157
-runHealthChecks @ deploymentHealthCheck.ts:103
-await in runHealthChecks
-(anonymous) @ deploymentHealthCheck.ts:78
-setTimeout
-startHealthChecks @ deploymentHealthCheck.ts:78
-DeploymentHealthService @ deploymentHealthCheck.ts:40
-(anonymous) @ deploymentHealthCheck.ts:370
-syncMonitoring.ts:157 [GameContext] State change: gameState {from: 'single-player-setup', to: 'single-player', triggeredBy: 'setGameState', timestamp: '2025-07-30T04:06:55.275Z'}
-syncMonitoring.ts:157 [2025-07-30T04:06:55.276Z] 🎯 AppContent render: gameState=single-player-setup, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:06:55.276Z] 🎯 AppContent render: gameState=single-player-setup, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
+syncMonitoring.ts:157 [GameContext] State change: gameState {from: 'single-player-setup', to: 'single-player', triggeredBy: 'setGameState', timestamp: '2025-07-30T16:49:40.336Z'}
+syncMonitoring.ts:157 [2025-07-30T16:49:40.337Z] 🎯 AppContent render: gameState=single-player-setup, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:40.337Z] 🎯 AppContent render: gameState=single-player-setup, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
 syncMonitoring.ts:157 [GameConnection] Timer prerequisites not met: gameState=single-player-setup, duration=30
-syncMonitoring.ts:157 [2025-07-30T04:06:55.278Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:06:55.278Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:40.340Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:40.341Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
 syncMonitoring.ts:157 [GameConnection] Starting single player timer: 30s
-syncMonitoring.ts:157 [2025-07-30T04:06:55.282Z] 🎮 PhaserGame MOUNTED - Instance ID: phaser-1753848415281-31tw4u7la
-syncMonitoring.ts:157 [2025-07-30T04:06:55.283Z] 🕹️ Creating Phaser game instance - ID: phaser-1753848415281-31tw4u7la
-syncMonitoring.ts:157 [2025-07-30T04:06:55.283Z] 🎮 PhaserGame UNMOUNTING - Instance ID: phaser-1753848415281-31tw4u7la
-syncMonitoring.ts:157 [2025-07-30T04:06:55.283Z] 🧹 Starting Phaser cleanup - Instance: phaser-1753848415281-31tw4u7la
-syncMonitoring.ts:157 [2025-07-30T04:06:55.283Z] 📡 Cleaning up socket listeners - Instance: phaser-1753848415281-31tw4u7la
-syncMonitoring.ts:157 [2025-07-30T04:06:55.283Z] 🧹 Clearing 0 component-level timeouts
-syncMonitoring.ts:157 [2025-07-30T04:06:55.283Z] 🧹 Clearing 0 global particle effect timeouts
-syncMonitoring.ts:157 [2025-07-30T04:06:55.283Z] ⚠️ No Phaser instance to clean up - Instance: phaser-1753848415281-31tw4u7la
-syncMonitoring.ts:157 [2025-07-30T04:06:55.283Z] 🎮 PhaserGame MOUNTED - Instance ID: phaser-1753848415281-31tw4u7la
-syncMonitoring.ts:157 [2025-07-30T04:06:55.283Z] 🕹️ Creating Phaser game instance - ID: phaser-1753848415281-31tw4u7la
-syncMonitoring.ts:157 [2025-07-30T04:06:55.291Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:06:55.291Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 Failed to clear module timeouts: TypeError: clearModuleTimeouts is not a function
-    at PhaserGame.tsx:229:9
+syncMonitoring.ts:157 [2025-07-30T16:49:40.348Z] 🎮 PhaserGame MOUNTED - Instance ID: phaser-1753894180346-60ttt9bgr
+syncMonitoring.ts:157 [2025-07-30T16:49:40.348Z] ⚠️ PhaserGame mounting during active game state: lobby
 (anonymous) @ syncMonitoring.ts:157
-(anonymous) @ PhaserGame.tsx:231
+(anonymous) @ PhaserGame.tsx:85
+commitHookEffectListMount @ chunk-WAYAUXAG.js?v=a41833a3:16936
+commitPassiveMountOnFiber @ chunk-WAYAUXAG.js?v=a41833a3:18184
+commitPassiveMountEffects_complete @ chunk-WAYAUXAG.js?v=a41833a3:18157
+commitPassiveMountEffects_begin @ chunk-WAYAUXAG.js?v=a41833a3:18147
+commitPassiveMountEffects @ chunk-WAYAUXAG.js?v=a41833a3:18137
+flushPassiveEffectsImpl @ chunk-WAYAUXAG.js?v=a41833a3:19518
+flushPassiveEffects @ chunk-WAYAUXAG.js?v=a41833a3:19475
+(anonymous) @ chunk-WAYAUXAG.js?v=a41833a3:19356
+workLoop @ chunk-WAYAUXAG.js?v=a41833a3:197
+flushWork @ chunk-WAYAUXAG.js?v=a41833a3:176
+performWorkUntilDeadline @ chunk-WAYAUXAG.js?v=a41833a3:384
+syncMonitoring.ts:157 [2025-07-30T16:49:40.348Z] 🕹️ Creating Phaser game instance - ID: phaser-1753894180346-60ttt9bgr
+syncMonitoring.ts:157 [2025-07-30T16:49:40.348Z] 🎮 PhaserGame UNMOUNTING - Instance ID: phaser-1753894180346-60ttt9bgr
+syncMonitoring.ts:157 [2025-07-30T16:49:40.349Z] 🧹 Starting Phaser cleanup - Instance: phaser-1753894180346-60ttt9bgr
+syncMonitoring.ts:157 [2025-07-30T16:49:40.349Z] 📡 Cleaning up socket listeners - Instance: phaser-1753894180346-60ttt9bgr
+syncMonitoring.ts:157 [2025-07-30T16:49:40.349Z] 🧹 Clearing 0 component-level timeouts
+syncMonitoring.ts:157 [2025-07-30T16:49:40.349Z] 🧹 Clearing 0 global particle effect timeouts
+syncMonitoring.ts:157 [2025-07-30T16:49:40.349Z] ⚠️ No Phaser instance to clean up - Instance: phaser-1753894180346-60ttt9bgr
+syncMonitoring.ts:157 [2025-07-30T16:49:40.349Z] 🎮 PhaserGame MOUNTED - Instance ID: phaser-1753894180346-60ttt9bgr
+syncMonitoring.ts:157 [2025-07-30T16:49:40.349Z] ⚠️ PhaserGame mounting during active game state: lobby
+(anonymous) @ syncMonitoring.ts:157
+(anonymous) @ PhaserGame.tsx:85
+commitHookEffectListMount @ chunk-WAYAUXAG.js?v=a41833a3:16936
+invokePassiveEffectMountInDEV @ chunk-WAYAUXAG.js?v=a41833a3:18352
+invokeEffectsInDev @ chunk-WAYAUXAG.js?v=a41833a3:19729
+commitDoubleInvokeEffectsInDEV @ chunk-WAYAUXAG.js?v=a41833a3:19714
+flushPassiveEffectsImpl @ chunk-WAYAUXAG.js?v=a41833a3:19531
+flushPassiveEffects @ chunk-WAYAUXAG.js?v=a41833a3:19475
+(anonymous) @ chunk-WAYAUXAG.js?v=a41833a3:19356
+workLoop @ chunk-WAYAUXAG.js?v=a41833a3:197
+flushWork @ chunk-WAYAUXAG.js?v=a41833a3:176
+performWorkUntilDeadline @ chunk-WAYAUXAG.js?v=a41833a3:384
+syncMonitoring.ts:157 [2025-07-30T16:49:40.349Z] 🕹️ Creating Phaser game instance - ID: phaser-1753894180346-60ttt9bgr
+syncMonitoring.ts:157 [2025-07-30T16:49:40.350Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:40.350Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157      Phaser v3.90.0 (WebGL | Web Audio)  https://phaser.io/v390
+syncMonitoring.ts:157 [2025-07-30T16:49:40.390Z] ✅ Phaser game instance created successfully - ID: phaser-1753894180346-60ttt9bgr
+syncMonitoring.ts:157 [2025-07-30T16:49:40.464Z] 🎬 Phaser scene PRELOAD - Instance: phaser-1753894180346-60ttt9bgr
+syncMonitoring.ts:157 [2025-07-30T16:49:40.464Z] 🎵 Loading audio assets...
+syncMonitoring.ts:157 [2025-07-30T16:49:40.466Z] 🔤 Starting optimized font loading...
+syncMonitoring.ts:157 [2025-07-30T16:49:40.466Z] ⚠️ No preloaded board found - will wait for match:started event
+syncMonitoring.ts:157 [2025-07-30T16:49:40.466Z] ✅ Font preload hints processed successfully
+syncMonitoring.ts:157 Failed to clear module timeouts: TypeError: clearModuleTimeouts is not a function
+    at PhaserGame.tsx:225:9
+(anonymous) @ syncMonitoring.ts:157
+(anonymous) @ PhaserGame.tsx:227
 Promise.catch
-(anonymous) @ PhaserGame.tsx:230
+(anonymous) @ PhaserGame.tsx:226
 safelyCallDestroy @ chunk-WAYAUXAG.js?v=a41833a3:16769
 commitHookEffectListUnmount @ chunk-WAYAUXAG.js?v=a41833a3:16896
 invokePassiveEffectUnmountInDEV @ chunk-WAYAUXAG.js?v=a41833a3:18391
@@ -92,19 +116,12 @@ flushPassiveEffects @ chunk-WAYAUXAG.js?v=a41833a3:19475
 workLoop @ chunk-WAYAUXAG.js?v=a41833a3:197
 flushWork @ chunk-WAYAUXAG.js?v=a41833a3:176
 performWorkUntilDeadline @ chunk-WAYAUXAG.js?v=a41833a3:384
-syncMonitoring.ts:157      Phaser v3.90.0 (WebGL | Web Audio)  https://phaser.io/v390
-syncMonitoring.ts:157 [2025-07-30T04:06:55.309Z] ✅ Phaser game instance created successfully - ID: phaser-1753848415281-31tw4u7la
-syncMonitoring.ts:157 [2025-07-30T04:06:55.360Z] 🎬 Phaser scene PRELOAD - Instance: phaser-1753848415281-31tw4u7la
-syncMonitoring.ts:157 [2025-07-30T04:06:55.361Z] 🎵 Loading audio assets...
-syncMonitoring.ts:157 [2025-07-30T04:06:55.365Z] 🔤 Starting optimized font loading...
-syncMonitoring.ts:157 [2025-07-30T04:06:55.365Z] ⚠️ No preloaded board found - will wait for match:started event
-syncMonitoring.ts:157 [2025-07-30T04:06:55.366Z] ✅ Font preload hints processed successfully
-syncMonitoring.ts:157 [2025-07-30T04:06:55.368Z] ✨ Premium particle textures created
-syncMonitoring.ts:157 [2025-07-30T04:06:55.368Z] 🎬 Phaser scene CREATE - Instance: phaser-1753848415281-31tw4u7la
-syncMonitoring.ts:157 [2025-07-30T04:06:55.368Z] 🎬 Scene CREATE started - optimized initialization...
-syncMonitoring.ts:157 [2025-07-30T04:06:55.368Z] ⚡ Scene not fully active, continuing with initialization...
+syncMonitoring.ts:157 [2025-07-30T16:49:40.469Z] ✨ Premium particle textures created
+syncMonitoring.ts:157 [2025-07-30T16:49:40.469Z] 🎬 Phaser scene CREATE - Instance: phaser-1753894180346-60ttt9bgr
+syncMonitoring.ts:157 [2025-07-30T16:49:40.469Z] 🎬 Scene CREATE started - optimized initialization...
+syncMonitoring.ts:157 [2025-07-30T16:49:40.469Z] ⚡ Scene not fully active, continuing with initialization...
 (anonymous) @ syncMonitoring.ts:157
-create @ PhaserGame.tsx:1292
+create @ PhaserGame.tsx:1254
 create @ PhaserGame.tsx:152
 create @ phaser.js?v=a41833a3:110868
 loadComplete @ phaser.js?v=a41833a3:110799
@@ -113,189 +130,90 @@ loadComplete @ phaser.js?v=a41833a3:67118
 fileProcessComplete @ phaser.js?v=a41833a3:67094
 onProcessComplete @ phaser.js?v=a41833a3:66323
 config.context @ phaser.js?v=a41833a3:68044
-syncMonitoring.ts:157 [2025-07-30T04:06:55.369Z] 🎵 Initializing audio system (independent)...
-syncMonitoring.ts:157 [2025-07-30T04:06:55.369Z] 🔇 Audio disabled globally - skipping initialization to prevent buzzing sounds
-syncMonitoring.ts:157 [2025-07-30T04:06:55.369Z] ✨ Initializing particle system (independent)...
-syncMonitoring.ts:157 [2025-07-30T04:06:55.369Z] ✅ Particle system initialized successfully with 3 emitters (independent of audio system)
+syncMonitoring.ts:157 [2025-07-30T16:49:40.469Z] 🎵 Initializing audio system (independent)...
+syncMonitoring.ts:157 [2025-07-30T16:49:40.469Z] 🔇 Audio disabled globally - skipping initialization to prevent buzzing sounds
+syncMonitoring.ts:157 [2025-07-30T16:49:40.469Z] ✨ Initializing particle system (independent)...
+syncMonitoring.ts:157 [2025-07-30T16:49:40.470Z] ✅ Particle system initialized successfully with 3 emitters (independent of audio system)
 syncMonitoring.ts:157 [Layout] Creating word builder text at Y=150 (guaranteed visible position)
-syncMonitoring.ts:157 [2025-07-30T04:06:55.371Z] 📨 Requesting board for single-player or lobby mode (gameState: single-player)
-syncMonitoring.ts:157 [2025-07-30T04:06:55.371Z] ✅ Scene CREATE completed successfully
-syncMonitoring.ts:157 [2025-07-30T04:06:55.372Z] ✅ System fonts ready from preload
-syncMonitoring.ts:157 [2025-07-30T04:06:55.377Z] 📨 SYNC_DEBUG: Received initial board at 1753848415377
-syncMonitoring.ts:157 [2025-07-30T04:06:55.384Z] ✅ game:initial-board checksum validated: eyJ3aWR0aCI6NSwi
+syncMonitoring.ts:157 [2025-07-30T16:49:40.472Z] 📨 Requesting board for single-player or lobby mode (gameState: single-player)
+syncMonitoring.ts:157 [2025-07-30T16:49:40.472Z] ✅ Scene CREATE completed successfully
+syncMonitoring.ts:157 [2025-07-30T16:49:40.473Z] ✅ System fonts ready from preload
+syncMonitoring.ts:157 [2025-07-30T16:49:40.473Z] 📨 SYNC_DEBUG: Received initial board at 1753894180473
+syncMonitoring.ts:157 [2025-07-30T16:49:40.476Z] ✅ game:initial-board checksum validated: eyJ3aWR0aCI6NSwi
 syncMonitoring.ts:157 Received and validated initial board: {tiles: Array(5), width: 5, height: 5}
-syncMonitoring.ts:157 [2025-07-30T04:06:55.384Z] 🎯 Updating board display with validation...
+syncMonitoring.ts:157 [2025-07-30T16:49:40.476Z] 🎯 Updating board display with validation...
 syncMonitoring.ts:157 [BoardUpdate] Starting board display update. Board size: 5x5. Removed tiles: 0
-syncMonitoring.ts:157 [2025-07-30T04:06:55.385Z] 🧹 Starting comprehensive visual cleanup...
-syncMonitoring.ts:157 [2025-07-30T04:06:55.385Z] ✅ Cleanup completed: 0 tiles, 0 shadows, 0 texts, 0 point texts, 2 particles
+syncMonitoring.ts:157 [2025-07-30T16:49:40.476Z] 🧹 Starting comprehensive visual cleanup...
+syncMonitoring.ts:157 [2025-07-30T16:49:40.477Z] ✅ Cleanup completed: 0 tiles, 0 shadows, 0 texts, 0 point texts, 2 particles
 syncMonitoring.ts:157 Premium board display created with 5 x 5 point-colored tiles
-syncMonitoring.ts:157 [2025-07-30T04:06:55.395Z] 🔄 Starting periodic visual validation...
+syncMonitoring.ts:157 [2025-07-30T16:49:40.486Z] 🔄 Starting periodic visual validation...
 syncMonitoring.ts:157 [Layout] Repositioning word builder to Y=150 (GUARANTEED VISIBLE)
-syncMonitoring.ts:157 [2025-07-30T04:06:55.467Z] ⚠️ No preloaded board found - will wait for match:started event
-syncMonitoring.ts:157 [2025-07-30T04:06:55.566Z] ⚠️ No preloaded board found - will wait for match:started event
-syncMonitoring.ts:157 [2025-07-30T04:06:55.595Z] 🔧 Force repositioning points for 5x5 board...
-syncMonitoring.ts:157 [2025-07-30T04:06:55.595Z] ✅ All point texts already correctly positioned
-syncMonitoring.ts:157 [2025-07-30T04:06:55.665Z] ⚠️ No preloaded board found - will wait for match:started event
-syncMonitoring.ts:157 [2025-07-30T04:06:55.696Z] ✅ Visual state validation passed
-syncMonitoring.ts:157 [2025-07-30T04:06:55.766Z] ⚠️ No preloaded board found - will wait for match:started event
-syncMonitoring.ts:157 [2025-07-30T04:06:55.867Z] ⚠️ No preloaded board found - will wait for match:started event
-syncMonitoring.ts:157 [2025-07-30T04:06:55.966Z] ⚠️ No preloaded board found - will wait for match:started event
-syncMonitoring.ts:157 [2025-07-30T04:06:56.066Z] ⚠️ No preloaded board found - will wait for match:started event
-syncMonitoring.ts:157 [2025-07-30T04:06:56.166Z] ⚠️ No preloaded board found - will wait for match:started event
-syncMonitoring.ts:157 [2025-07-30T04:06:56.266Z] ⚠️ No preloaded board found - will wait for match:started event
-syncMonitoring.ts:157 [2025-07-30T04:06:56.284Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:06:56.285Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:06:56.366Z] ⚠️ No preloaded board found - will wait for match:started event
-syncMonitoring.ts:157 [2025-07-30T04:06:56.466Z] ⚠️ No preloaded board found - will wait for match:started event
-syncMonitoring.ts:157 [2025-07-30T04:06:56.566Z] ⚠️ No preloaded board found - will wait for match:started event
-syncMonitoring.ts:157 [2025-07-30T04:06:56.666Z] ⚠️ No preloaded board found - will wait for match:started event
-syncMonitoring.ts:157 [2025-07-30T04:06:56.766Z] ⚠️ No preloaded board found - will wait for match:started event
-syncMonitoring.ts:157 [2025-07-30T04:06:56.867Z] ⚠️ No preloaded board found - will wait for match:started event
-syncMonitoring.ts:157 [2025-07-30T04:06:56.966Z] ⚠️ No preloaded board found - will wait for match:started event
-syncMonitoring.ts:157 [2025-07-30T04:06:57.066Z] ⚠️ No preloaded board found - will wait for match:started event
-syncMonitoring.ts:157 [2025-07-30T04:06:57.166Z] ⚠️ No preloaded board found - will wait for match:started event
-syncMonitoring.ts:157 [2025-07-30T04:06:57.266Z] ⚠️ No preloaded board found - will wait for match:started event
-syncMonitoring.ts:157 [2025-07-30T04:06:57.283Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:06:57.284Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:06:57.366Z] ⚠️ No preloaded board found - will wait for match:started event
-syncMonitoring.ts:157 [2025-07-30T04:06:57.466Z] ⚠️ No preloaded board found - will wait for match:started event
-syncMonitoring.ts:157 [2025-07-30T04:06:57.566Z] ⚠️ No preloaded board found - will wait for match:started event
-syncMonitoring.ts:157 [2025-07-30T04:06:57.666Z] ⚠️ No preloaded board found - will wait for match:started event
-syncMonitoring.ts:157 [updateWordDisplay] Set word builder text to: "I (1 points)" at position (332.66796875, 150)
-syncMonitoring.ts:157 [2025-07-30T04:06:57.767Z] ⚠️ No preloaded board found - will wait for match:started event
-syncMonitoring.ts:157 [2025-07-30T04:06:57.866Z] ⚠️ No preloaded board found - will wait for match:started event
-syncMonitoring.ts:157 [updateWordDisplay] Set word builder text to: "IF (5 points)" at position (332.66796875, 150)
-syncMonitoring.ts:157 [2025-07-30T04:06:57.966Z] ⚠️ No preloaded board found - will wait for match:started event
+syncMonitoring.ts:157 [2025-07-30T16:49:40.546Z] 🏥 Running deployment health checks...
+deploymentHealthCheck.ts:157  HEAD http://localhost:5173/favicon.ico net::ERR_ABORTED 404 (Not Found)
+checkNetworkHealth @ deploymentHealthCheck.ts:157
+runHealthChecks @ deploymentHealthCheck.ts:103
+await in runHealthChecks
+(anonymous) @ deploymentHealthCheck.ts:78
+setTimeout
+startHealthChecks @ deploymentHealthCheck.ts:78
+DeploymentHealthService @ deploymentHealthCheck.ts:40
+(anonymous) @ deploymentHealthCheck.ts:370
+syncMonitoring.ts:157 [2025-07-30T16:49:40.567Z] ⚠️ No preloaded board found - will wait for match:started event
+syncMonitoring.ts:157 [2025-07-30T16:49:40.667Z] ⚠️ No preloaded board found - will wait for match:started event
+syncMonitoring.ts:157 [2025-07-30T16:49:40.686Z] 🔧 Force repositioning points for 5x5 board...
+syncMonitoring.ts:157 [2025-07-30T16:49:40.686Z] ✅ All point texts already correctly positioned
+syncMonitoring.ts:157 [2025-07-30T16:49:40.766Z] ⚠️ No preloaded board found - will wait for match:started event
+syncMonitoring.ts:157 [2025-07-30T16:49:40.787Z] ✅ Visual state validation passed
+syncMonitoring.ts:157 [2025-07-30T16:49:40.867Z] ⚠️ No preloaded board found - will wait for match:started event
+syncMonitoring.ts:157 [2025-07-30T16:49:40.967Z] ⚠️ No preloaded board found - will wait for match:started event
+syncMonitoring.ts:157 [2025-07-30T16:49:41.066Z] ⚠️ No preloaded board found - will wait for match:started event
+syncMonitoring.ts:157 [2025-07-30T16:49:41.166Z] ⚠️ No preloaded board found - will wait for match:started event
+syncMonitoring.ts:157 [2025-07-30T16:49:41.267Z] ⚠️ No preloaded board found - will wait for match:started event
+syncMonitoring.ts:157 [2025-07-30T16:49:41.349Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:41.349Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:41.367Z] ⚠️ No preloaded board found - will wait for match:started event
+syncMonitoring.ts:157 [2025-07-30T16:49:41.466Z] ⚠️ No preloaded board found - will wait for match:started event
+syncMonitoring.ts:157 [2025-07-30T16:49:41.567Z] ⚠️ No preloaded board found - will wait for match:started event
+syncMonitoring.ts:157 [2025-07-30T16:49:41.667Z] ⚠️ No preloaded board found - will wait for match:started event
+syncMonitoring.ts:157 [2025-07-30T16:49:41.767Z] ⚠️ No preloaded board found - will wait for match:started event
+syncMonitoring.ts:157 [2025-07-30T16:49:41.866Z] ⚠️ No preloaded board found - will wait for match:started event
+syncMonitoring.ts:157 [2025-07-30T16:49:41.967Z] ⚠️ No preloaded board found - will wait for match:started event
+syncMonitoring.ts:157 [2025-07-30T16:49:42.067Z] ⚠️ No preloaded board found - will wait for match:started event
+syncMonitoring.ts:157 [2025-07-30T16:49:42.167Z] ⚠️ No preloaded board found - will wait for match:started event
+syncMonitoring.ts:157 [2025-07-30T16:49:42.267Z] ⚠️ No preloaded board found - will wait for match:started event
+syncMonitoring.ts:157 [2025-07-30T16:49:42.349Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:42.349Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:42.367Z] ⚠️ No preloaded board found - will wait for match:started event
+syncMonitoring.ts:157 [2025-07-30T16:49:42.467Z] ⚠️ No preloaded board found - will wait for match:started event
+syncMonitoring.ts:157 [2025-07-30T16:49:42.566Z] ⚠️ No preloaded board found - will wait for match:started event
+syncMonitoring.ts:157 [2025-07-30T16:49:42.667Z] ⚠️ No preloaded board found - will wait for match:started event
+syncMonitoring.ts:157 [2025-07-30T16:49:42.766Z] ⚠️ No preloaded board found - will wait for match:started event
+syncMonitoring.ts:157 [2025-07-30T16:49:42.867Z] ⚠️ No preloaded board found - will wait for match:started event
+syncMonitoring.ts:157 [2025-07-30T16:49:42.966Z] ⚠️ No preloaded board found - will wait for match:started event
+syncMonitoring.ts:157 [2025-07-30T16:49:43.067Z] ⚠️ No preloaded board found - will wait for match:started event
+syncMonitoring.ts:157 [2025-07-30T16:49:43.167Z] ⚠️ No preloaded board found - will wait for match:started event
+syncMonitoring.ts:157 [updateWordDisplay] Set word builder text to: "B (3 points)" at position (332.66796875, 150)
+syncMonitoring.ts:157 [2025-07-30T16:49:43.267Z] ⚠️ No preloaded board found - will wait for match:started event
+syncMonitoring.ts:157 [2025-07-30T16:49:43.348Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:43.348Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:43.367Z] ⚠️ No preloaded board found - will wait for match:started event
+syncMonitoring.ts:157 [updateWordDisplay] Set word builder text to: "BE (4 points)" at position (332.66796875, 150)
+syncMonitoring.ts:157 [2025-07-30T16:49:43.467Z] ⚠️ No preloaded board found - will wait for match:started event
+syncMonitoring.ts:157 [2025-07-30T16:49:43.566Z] ⚠️ No preloaded board found - will wait for match:started event
+syncMonitoring.ts:157 [updateWordDisplay] Set word builder text to: "BET (5 points)" at position (332.66796875, 150)
+syncMonitoring.ts:157 [2025-07-30T16:49:43.667Z] ⚠️ No preloaded board found - will wait for match:started event
+syncMonitoring.ts:157 [2025-07-30T16:49:43.766Z] ⚠️ No preloaded board found - will wait for match:started event
+syncMonitoring.ts:157 [2025-07-30T16:49:43.866Z] ⚠️ No preloaded board found - will wait for match:started event
 syncMonitoring.ts:157 [updateWordDisplay] Cleared word builder text
-syncMonitoring.ts:157 [2025-07-30T04:06:58.044Z] Socket Event Received: game:score-update {playerId: 'y1R3XlmmE4bihUBfAAAC', score: 2, totalScore: 2}
-syncMonitoring.ts:157 Score update: {playerId: 'y1R3XlmmE4bihUBfAAAC', score: 2, totalScore: 2}
-syncMonitoring.ts:157 Session update: {session: {…}}
-syncMonitoring.ts:157 Valid word submitted: {word: 'IF', points: 2, score: 2}
-syncMonitoring.ts:157 [Client] Word validation latency: 6ms (VALID) - "IF"
-syncMonitoring.ts:157 [GameConnection] Single player word scored: "IF" = 2 points (server already applied multiplier)
-syncMonitoring.ts:157 [2025-07-30T04:06:58.045Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:06:58.045Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:06:58.066Z] ⚠️ No preloaded board found - will wait for match:started event
-syncMonitoring.ts:157 [GameContext] State change: currentRoom {from: null, triggeredBy: 'setCurrentRoom', timestamp: '2025-07-30T04:06:58.095Z', to: ƒ}
-syncMonitoring.ts:157 [2025-07-30T04:06:58.166Z] ⚠️ No preloaded board found - will wait for match:started event
-syncMonitoring.ts:157 [GameContext] State change: playerSession {from: {…}, to: {…}, triggeredBy: 'setPlayerSession', timestamp: '2025-07-30T04:06:58.245Z'}
-syncMonitoring.ts:157 [2025-07-30T04:06:58.245Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:06:58.246Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:06:58.266Z] ⚠️ No preloaded board found - will wait for match:started event
-syncMonitoring.ts:157 [2025-07-30T04:06:58.283Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:06:58.283Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:06:58.366Z] ⚠️ No preloaded board found - will wait for match:started event
-syncMonitoring.ts:157 [2025-07-30T04:06:58.466Z] ⚠️ No preloaded board found - will wait for match:started event
-syncMonitoring.ts:157 [GameConnection] Triggering tile removal for 2 tiles
-syncMonitoring.ts:157 [2025-07-30T04:06:58.547Z] 🎮 Received single-player cascade for 2 tiles
-syncMonitoring.ts:157 [2025-07-30T04:06:58.566Z] ⚠️ No preloaded board found - will wait for match:started event
-syncMonitoring.ts:157 [2025-07-30T04:06:58.666Z] ⚠️ No preloaded board found - will wait for match:started event
-syncMonitoring.ts:157 [2025-07-30T04:06:58.695Z] 🎬 Starting cascade animation with 2 removed tiles
-syncMonitoring.ts:157 [2025-07-30T04:06:58.695Z] 🎬 Cascade animations: STARTED
-syncMonitoring.ts:157 [2025-07-30T04:06:58.766Z] ⚠️ No preloaded board found - will wait for match:started event
-syncMonitoring.ts:157 [2025-07-30T04:06:58.866Z] ⚠️ No preloaded board found - will wait for match:started event
-syncMonitoring.ts:157 [2025-07-30T04:06:58.966Z] ⚠️ No preloaded board found - will wait for match:started event
-board-rendering.ts:2419 Uncaught TypeError: Cannot read properties of undefined (reading 'game')
-    at board-rendering.ts:2419:41
-(anonymous) @ board-rendering.ts:2419
-setTimeout
-createTileRemovalEffect @ board-rendering.ts:2418
-(anonymous) @ board-rendering.ts:1329
-animateTileRemovalAndCascade @ board-rendering.ts:1323
-(anonymous) @ PhaserGame.tsx:802
-Promise.then
-handleSinglePlayerCascade @ PhaserGame.tsx:800
-(anonymous) @ GameConnection.tsx:1334
-Promise.then
-(anonymous) @ GameConnection.tsx:1319
-setTimeout
-handleWordValid @ GameConnection.tsx:1318
-Emitter.emit @ socket__io-client.js?v=a41833a3:356
-emitEvent @ socket__io-client.js?v=a41833a3:2657
-onevent @ socket__io-client.js?v=a41833a3:2645
-onpacket @ socket__io-client.js?v=a41833a3:2616
-Emitter.emit @ socket__io-client.js?v=a41833a3:356
-(anonymous) @ socket__io-client.js?v=a41833a3:3220
-Promise.then
-(anonymous) @ socket__io-client.js?v=a41833a3:374
-ondecoded @ socket__io-client.js?v=a41833a3:3219
-Emitter.emit @ socket__io-client.js?v=a41833a3:356
-add @ socket__io-client.js?v=a41833a3:2071
-ondata @ socket__io-client.js?v=a41833a3:3208
-Emitter.emit @ socket__io-client.js?v=a41833a3:356
-_onPacket @ socket__io-client.js?v=a41833a3:1381
-Emitter.emit @ socket__io-client.js?v=a41833a3:356
-onPacket @ socket__io-client.js?v=a41833a3:555
-onData @ socket__io-client.js?v=a41833a3:547
-ws.onmessage @ socket__io-client.js?v=a41833a3:1011
-board-rendering.ts:2419 Uncaught TypeError: Cannot read properties of undefined (reading 'game')
-    at board-rendering.ts:2419:41
-(anonymous) @ board-rendering.ts:2419
-setTimeout
-createTileRemovalEffect @ board-rendering.ts:2418
-(anonymous) @ board-rendering.ts:1329
-animateTileRemovalAndCascade @ board-rendering.ts:1323
-(anonymous) @ PhaserGame.tsx:802
-Promise.then
-handleSinglePlayerCascade @ PhaserGame.tsx:800
-(anonymous) @ GameConnection.tsx:1334
-Promise.then
-(anonymous) @ GameConnection.tsx:1319
-setTimeout
-handleWordValid @ GameConnection.tsx:1318
-Emitter.emit @ socket__io-client.js?v=a41833a3:356
-emitEvent @ socket__io-client.js?v=a41833a3:2657
-onevent @ socket__io-client.js?v=a41833a3:2645
-onpacket @ socket__io-client.js?v=a41833a3:2616
-Emitter.emit @ socket__io-client.js?v=a41833a3:356
-(anonymous) @ socket__io-client.js?v=a41833a3:3220
-Promise.then
-(anonymous) @ socket__io-client.js?v=a41833a3:374
-ondecoded @ socket__io-client.js?v=a41833a3:3219
-Emitter.emit @ socket__io-client.js?v=a41833a3:356
-add @ socket__io-client.js?v=a41833a3:2071
-ondata @ socket__io-client.js?v=a41833a3:3208
-Emitter.emit @ socket__io-client.js?v=a41833a3:356
-_onPacket @ socket__io-client.js?v=a41833a3:1381
-Emitter.emit @ socket__io-client.js?v=a41833a3:356
-onPacket @ socket__io-client.js?v=a41833a3:555
-onData @ socket__io-client.js?v=a41833a3:547
-ws.onmessage @ socket__io-client.js?v=a41833a3:1011
-syncMonitoring.ts:157 [2025-07-30T04:06:59.066Z] ⚠️ No preloaded board found - will wait for match:started event
-syncMonitoring.ts:157 [2025-07-30T04:06:59.077Z] ✅ Cascade animation complete: 382ms 🟢 (target: <400ms)
-syncMonitoring.ts:157 [2025-07-30T04:06:59.077Z] 🎬 Cascade animations: COMPLETED
-syncMonitoring.ts:157 [2025-07-30T04:06:59.166Z] ⚠️ No preloaded board found - will wait for match:started event
-syncMonitoring.ts:157 [2025-07-30T04:06:59.266Z] ⚠️ No preloaded board found - will wait for match:started event
-syncMonitoring.ts:157 [2025-07-30T04:06:59.284Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:06:59.284Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:06:59.367Z] ⚠️ No preloaded board found - will wait for match:started event
-syncMonitoring.ts:157 [2025-07-30T04:06:59.466Z] ⚠️ No preloaded board found - will wait for match:started event
-syncMonitoring.ts:157 [2025-07-30T04:06:59.566Z] ⚠️ No preloaded board found - will wait for match:started event
-syncMonitoring.ts:157 [2025-07-30T04:06:59.666Z] ⚠️ No preloaded board found - will wait for match:started event
-syncMonitoring.ts:157 [2025-07-30T04:06:59.766Z] ⚠️ No preloaded board found - will wait for match:started event
-syncMonitoring.ts:157 [2025-07-30T04:06:59.866Z] ⚠️ No preloaded board found - will wait for match:started event
-syncMonitoring.ts:157 [2025-07-30T04:06:59.966Z] ⚠️ No preloaded board found - will wait for match:started event
-syncMonitoring.ts:157 [2025-07-30T04:07:00.066Z] ⚠️ No preloaded board found - will wait for match:started event
-syncMonitoring.ts:157 [2025-07-30T04:07:00.166Z] ⚠️ No preloaded board found - will wait for match:started event
-syncMonitoring.ts:157 [2025-07-30T04:07:00.266Z] ⚠️ No preloaded board found - will wait for match:started event
-syncMonitoring.ts:157 [2025-07-30T04:07:00.284Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:00.284Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:00.366Z] ⚠️ No preloaded board found - will wait for match:started event
-syncMonitoring.ts:157 [2025-07-30T04:07:01.284Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:01.284Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:01.395Z] 🔍 Starting throttled visual state validation...
-syncMonitoring.ts:157 [2025-07-30T04:07:01.396Z] ⚠️ Visual state validation failed: 21 mismatches found between visual and logical state
+syncMonitoring.ts:157 [2025-07-30T16:49:43.966Z] Socket Event Received: game:tile-changes {removedPositions: Array(3), fallingTiles: Array(0), newTiles: Array(3), sequenceNumber: 10, timestamp: 1753894183961}
+syncMonitoring.ts:157 [2025-07-30T16:49:43.966Z] 📨 GameConnection received tile changes (seq: 10): {removed: 3, falling: 0, new: 3}
+syncMonitoring.ts:157 [2025-07-30T16:49:43.966Z] 📨 PhaserGame received tile changes from GameConnection (seq: 10, latency: 5ms): {removed: 3, falling: 0, new: 3}
+syncMonitoring.ts:157 [2025-07-30T16:49:43.966Z] ⚠️ No pending tile changes for sequence number: 1
 (anonymous) @ syncMonitoring.ts:157
-performThrottledValidation @ board-rendering.ts:2179
-(anonymous) @ board-rendering.ts:2141
-setTimeout
-(anonymous) @ board-rendering.ts:2140
-setInterval
-startPeriodicVisualValidation @ board-rendering.ts:2123
-updateBoardDisplayWrapper @ PhaserGame.tsx:1485
-(anonymous) @ PhaserGame.tsx:535
-Promise.then
-(anonymous) @ PhaserGame.tsx:515
+processQueuedTileChanges @ PhaserGame.tsx:1574
+handleTileChanges @ PhaserGame.tsx:652
+(anonymous) @ GameConnection.tsx:684
+(anonymous) @ schemas.ts:318
 Emitter.emit @ socket__io-client.js?v=a41833a3:356
 emitEvent @ socket__io-client.js?v=a41833a3:2657
 onevent @ socket__io-client.js?v=a41833a3:2645
@@ -314,270 +232,76 @@ Emitter.emit @ socket__io-client.js?v=a41833a3:356
 onPacket @ socket__io-client.js?v=a41833a3:555
 onData @ socket__io-client.js?v=a41833a3:547
 ws.onmessage @ socket__io-client.js?v=a41833a3:1011
-syncMonitoring.ts:157 [2025-07-30T04:07:01.396Z] 🔍 Mismatches: (21) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
-syncMonitoring.ts:157 [2025-07-30T04:07:01.396Z] ⏱️ Recovery attempt 1 scheduled with 4000ms backoff
-syncMonitoring.ts:157 [updateWordDisplay] Set word builder text to: "I (1 points)" at position (332.66796875, 150)
-syncMonitoring.ts:157 [updateWordDisplay] Set word builder text to: "IF (5 points)" at position (332.66796875, 150)
-syncMonitoring.ts:157 [updateWordDisplay] Set word builder text to: "IFS (6 points)" at position (332.66796875, 150)
-syncMonitoring.ts:157 [2025-07-30T04:07:02.284Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:02.284Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [updateWordDisplay] Cleared word builder text
-syncMonitoring.ts:157 [2025-07-30T04:07:02.494Z] Socket Event Received: game:score-update {playerId: 'y1R3XlmmE4bihUBfAAAC', score: 3, totalScore: 5}
-syncMonitoring.ts:157 Score update: {playerId: 'y1R3XlmmE4bihUBfAAAC', score: 3, totalScore: 5}
+syncMonitoring.ts:157 [2025-07-30T16:49:43.966Z] Socket Event Received: game:score-update {playerId: '7y9OywCLlYVcVFtlAAAi', score: 3, totalScore: 10}
+syncMonitoring.ts:157 Score update: {playerId: '7y9OywCLlYVcVFtlAAAi', score: 3, totalScore: 10}
 syncMonitoring.ts:157 Session update: {session: {…}}
-syncMonitoring.ts:157 Valid word submitted: {word: 'IFS', points: 3, score: 5}
-syncMonitoring.ts:157 [Client] Word validation latency: 3ms (VALID) - "IFS"
-syncMonitoring.ts:157 [GameConnection] Single player word scored: "IFS" = 3 points (server already applied multiplier)
-syncMonitoring.ts:157 [2025-07-30T04:07:02.495Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:02.495Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [GameContext] State change: currentRoom {from: null, triggeredBy: 'setCurrentRoom', timestamp: '2025-07-30T04:07:02.544Z', to: ƒ}
-syncMonitoring.ts:157 [GameContext] State change: playerSession {from: {…}, to: {…}, triggeredBy: 'setPlayerSession', timestamp: '2025-07-30T04:07:02.694Z'}
-syncMonitoring.ts:157 [2025-07-30T04:07:02.695Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:02.695Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [GameConnection] Triggering tile removal for 3 tiles
-syncMonitoring.ts:157 [2025-07-30T04:07:02.995Z] 🎮 Received single-player cascade for 3 tiles
-syncMonitoring.ts:157 [2025-07-30T04:07:03.144Z] 🎬 Starting cascade animation with 3 removed tiles
-syncMonitoring.ts:157 [2025-07-30T04:07:03.144Z] 🎬 Cascade animations: STARTED
-syncMonitoring.ts:157 [2025-07-30T04:07:03.284Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:03.284Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-board-rendering.ts:2419 Uncaught TypeError: Cannot read properties of undefined (reading 'game')
-    at board-rendering.ts:2419:41
-(anonymous) @ board-rendering.ts:2419
-setTimeout
-createTileRemovalEffect @ board-rendering.ts:2418
-(anonymous) @ board-rendering.ts:1329
-animateTileRemovalAndCascade @ board-rendering.ts:1323
-(anonymous) @ PhaserGame.tsx:802
-Promise.then
-handleSinglePlayerCascade @ PhaserGame.tsx:800
-(anonymous) @ GameConnection.tsx:1334
-Promise.then
-(anonymous) @ GameConnection.tsx:1319
-setTimeout
-handleWordValid @ GameConnection.tsx:1318
-Emitter.emit @ socket__io-client.js?v=a41833a3:356
-emitEvent @ socket__io-client.js?v=a41833a3:2657
-onevent @ socket__io-client.js?v=a41833a3:2645
-onpacket @ socket__io-client.js?v=a41833a3:2616
-Emitter.emit @ socket__io-client.js?v=a41833a3:356
-(anonymous) @ socket__io-client.js?v=a41833a3:3220
-Promise.then
-(anonymous) @ socket__io-client.js?v=a41833a3:374
-ondecoded @ socket__io-client.js?v=a41833a3:3219
-Emitter.emit @ socket__io-client.js?v=a41833a3:356
-add @ socket__io-client.js?v=a41833a3:2071
-ondata @ socket__io-client.js?v=a41833a3:3208
-Emitter.emit @ socket__io-client.js?v=a41833a3:356
-_onPacket @ socket__io-client.js?v=a41833a3:1381
-Emitter.emit @ socket__io-client.js?v=a41833a3:356
-onPacket @ socket__io-client.js?v=a41833a3:555
-onData @ socket__io-client.js?v=a41833a3:547
-ws.onmessage @ socket__io-client.js?v=a41833a3:1011
-board-rendering.ts:2419 Uncaught TypeError: Cannot read properties of undefined (reading 'game')
-    at board-rendering.ts:2419:41
-(anonymous) @ board-rendering.ts:2419
-setTimeout
-createTileRemovalEffect @ board-rendering.ts:2418
-(anonymous) @ board-rendering.ts:1329
-animateTileRemovalAndCascade @ board-rendering.ts:1323
-(anonymous) @ PhaserGame.tsx:802
-Promise.then
-handleSinglePlayerCascade @ PhaserGame.tsx:800
-(anonymous) @ GameConnection.tsx:1334
-Promise.then
-(anonymous) @ GameConnection.tsx:1319
-setTimeout
-handleWordValid @ GameConnection.tsx:1318
-Emitter.emit @ socket__io-client.js?v=a41833a3:356
-emitEvent @ socket__io-client.js?v=a41833a3:2657
-onevent @ socket__io-client.js?v=a41833a3:2645
-onpacket @ socket__io-client.js?v=a41833a3:2616
-Emitter.emit @ socket__io-client.js?v=a41833a3:356
-(anonymous) @ socket__io-client.js?v=a41833a3:3220
-Promise.then
-(anonymous) @ socket__io-client.js?v=a41833a3:374
-ondecoded @ socket__io-client.js?v=a41833a3:3219
-Emitter.emit @ socket__io-client.js?v=a41833a3:356
-add @ socket__io-client.js?v=a41833a3:2071
-ondata @ socket__io-client.js?v=a41833a3:3208
-Emitter.emit @ socket__io-client.js?v=a41833a3:356
-_onPacket @ socket__io-client.js?v=a41833a3:1381
-Emitter.emit @ socket__io-client.js?v=a41833a3:356
-onPacket @ socket__io-client.js?v=a41833a3:555
-onData @ socket__io-client.js?v=a41833a3:547
-ws.onmessage @ socket__io-client.js?v=a41833a3:1011
-board-rendering.ts:2419 Uncaught TypeError: Cannot read properties of undefined (reading 'game')
-    at board-rendering.ts:2419:41
-(anonymous) @ board-rendering.ts:2419
-setTimeout
-createTileRemovalEffect @ board-rendering.ts:2418
-(anonymous) @ board-rendering.ts:1329
-animateTileRemovalAndCascade @ board-rendering.ts:1323
-(anonymous) @ PhaserGame.tsx:802
-Promise.then
-handleSinglePlayerCascade @ PhaserGame.tsx:800
-(anonymous) @ GameConnection.tsx:1334
-Promise.then
-(anonymous) @ GameConnection.tsx:1319
-setTimeout
-handleWordValid @ GameConnection.tsx:1318
-Emitter.emit @ socket__io-client.js?v=a41833a3:356
-emitEvent @ socket__io-client.js?v=a41833a3:2657
-onevent @ socket__io-client.js?v=a41833a3:2645
-onpacket @ socket__io-client.js?v=a41833a3:2616
-Emitter.emit @ socket__io-client.js?v=a41833a3:356
-(anonymous) @ socket__io-client.js?v=a41833a3:3220
-Promise.then
-(anonymous) @ socket__io-client.js?v=a41833a3:374
-ondecoded @ socket__io-client.js?v=a41833a3:3219
-Emitter.emit @ socket__io-client.js?v=a41833a3:356
-add @ socket__io-client.js?v=a41833a3:2071
-ondata @ socket__io-client.js?v=a41833a3:3208
-Emitter.emit @ socket__io-client.js?v=a41833a3:356
-_onPacket @ socket__io-client.js?v=a41833a3:1381
-Emitter.emit @ socket__io-client.js?v=a41833a3:356
-onPacket @ socket__io-client.js?v=a41833a3:555
-onData @ socket__io-client.js?v=a41833a3:547
-ws.onmessage @ socket__io-client.js?v=a41833a3:1011
-syncMonitoring.ts:157 [2025-07-30T04:07:03.527Z] ✅ Cascade animation complete: 383ms 🟢 (target: <400ms)
-syncMonitoring.ts:157 [2025-07-30T04:07:03.527Z] 🎬 Cascade animations: COMPLETED
-syncMonitoring.ts:157 [2025-07-30T04:07:04.283Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:04.284Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:05.284Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:05.285Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:05.396Z] 🔧 Attempting visual state recovery...
-syncMonitoring.ts:157 [2025-07-30T04:07:05.397Z] 🔧 Correcting 11 visual state mismatches...
-syncMonitoring.ts:157 [2025-07-30T04:07:05.403Z] ✅ Corrected 13 visual state mismatches
-syncMonitoring.ts:157 [2025-07-30T04:07:05.403Z] ✅ Recovery successful - corrected 13 tiles
-syncMonitoring.ts:157 [2025-07-30T04:07:06.284Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:06.285Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:06.396Z] 🔍 Starting throttled visual state validation...
-syncMonitoring.ts:157 [2025-07-30T04:07:06.396Z] ✅ Visual state validation passed
-syncMonitoring.ts:157 [2025-07-30T04:07:07.283Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:07.284Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:08.284Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:08.284Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [updateWordDisplay] Set word builder text to: "I (1 points)" at position (332.66796875, 150)
-syncMonitoring.ts:157 [updateWordDisplay] Set word builder text to: "IF (5 points)" at position (332.66796875, 150)
+syncMonitoring.ts:157 Valid word submitted: {word: 'BET', points: 3, score: 10}
+syncMonitoring.ts:157 [Client] Word validation latency: 7ms (VALID) - "BET"
+syncMonitoring.ts:157 [GameConnection] Single player word scored: "BET" = 3 points (server already applied multiplier)
+syncMonitoring.ts:157 [2025-07-30T16:49:43.967Z] ⚠️ No preloaded board found - will wait for match:started event
+syncMonitoring.ts:157 [2025-07-30T16:49:43.967Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:43.967Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [GameContext] State change: currentRoom {from: null, triggeredBy: 'setCurrentRoom', timestamp: '2025-07-30T16:49:44.017Z', to: ƒ}
+syncMonitoring.ts:157 [2025-07-30T16:49:44.066Z] ⚠️ No preloaded board found - will wait for match:started event
+syncMonitoring.ts:157 [2025-07-30T16:49:44.166Z] ⚠️ No preloaded board found - will wait for match:started event
+syncMonitoring.ts:157 [GameContext] State change: playerSession {from: {…}, to: {…}, triggeredBy: 'setPlayerSession', timestamp: '2025-07-30T16:49:44.168Z'}
+syncMonitoring.ts:157 [2025-07-30T16:49:44.168Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:44.168Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:44.267Z] ⚠️ No preloaded board found - will wait for match:started event
+syncMonitoring.ts:157 [2025-07-30T16:49:44.348Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:44.349Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:44.367Z] ⚠️ No preloaded board found - will wait for match:started event
+syncMonitoring.ts:157 [2025-07-30T16:49:44.466Z] ⚠️ No preloaded board found - will wait for match:started event
+syncMonitoring.ts:157 [2025-07-30T16:49:44.566Z] ⚠️ No preloaded board found - will wait for match:started event
+syncMonitoring.ts:157 [2025-07-30T16:49:44.666Z] ⚠️ No preloaded board found - will wait for match:started event
+syncMonitoring.ts:157 [2025-07-30T16:49:44.766Z] ⚠️ No preloaded board found - will wait for match:started event
+syncMonitoring.ts:157 [2025-07-30T16:49:44.866Z] ⚠️ No preloaded board found - will wait for match:started event
+syncMonitoring.ts:157 [2025-07-30T16:49:44.967Z] ⚠️ No preloaded board found - will wait for match:started event
+syncMonitoring.ts:157 [2025-07-30T16:49:45.067Z] ⚠️ No preloaded board found - will wait for match:started event
+syncMonitoring.ts:157 [2025-07-30T16:49:45.167Z] ⚠️ No preloaded board found - will wait for match:started event
+syncMonitoring.ts:157 [2025-07-30T16:49:45.267Z] ⚠️ No preloaded board found - will wait for match:started event
+syncMonitoring.ts:157 [2025-07-30T16:49:45.348Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:45.349Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:45.367Z] ⚠️ No preloaded board found - will wait for match:started event
+syncMonitoring.ts:157 [2025-07-30T16:49:45.467Z] ⚠️ No preloaded board found - will wait for match:started event
+syncMonitoring.ts:157 [updateWordDisplay] Set word builder text to: "L (1 points)" at position (332.66796875, 150)
+syncMonitoring.ts:157 [updateWordDisplay] Set word builder text to: "LE (2 points)" at position (332.66796875, 150)
+syncMonitoring.ts:157 [updateWordDisplay] Set word builder text to: "LEO (3 points)" at position (332.66796875, 150)
+syncMonitoring.ts:157 [updateWordDisplay] Set word builder text to: "LEON (4 points)" at position (332.66796875, 150)
 syncMonitoring.ts:157 [updateWordDisplay] Cleared word builder text
-syncMonitoring.ts:157 [2025-07-30T04:07:08.693Z] Socket Event Received: game:score-update {playerId: 'y1R3XlmmE4bihUBfAAAC', score: 2, totalScore: 7}
-syncMonitoring.ts:157 Score update: {playerId: 'y1R3XlmmE4bihUBfAAAC', score: 2, totalScore: 7}
-syncMonitoring.ts:157 Session update: {session: {…}}
-syncMonitoring.ts:157 Valid word submitted: {word: 'IF', points: 2, score: 7}
-syncMonitoring.ts:157 [Client] Word validation latency: 16ms (VALID) - "IF"
-syncMonitoring.ts:157 [GameConnection] Single player word scored: "IF" = 2 points (server already applied multiplier)
-syncMonitoring.ts:157 [2025-07-30T04:07:08.694Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:08.694Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [GameContext] State change: currentRoom {from: null, triggeredBy: 'setCurrentRoom', timestamp: '2025-07-30T04:07:08.744Z', to: ƒ}
-syncMonitoring.ts:157 [GameContext] State change: playerSession {from: {…}, to: {…}, triggeredBy: 'setPlayerSession', timestamp: '2025-07-30T04:07:08.893Z'}
-syncMonitoring.ts:157 [2025-07-30T04:07:08.894Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:08.894Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [GameConnection] Triggering tile removal for 2 tiles
-syncMonitoring.ts:157 [2025-07-30T04:07:09.195Z] 🎮 Received single-player cascade for 2 tiles
-syncMonitoring.ts:157 [2025-07-30T04:07:09.283Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:09.283Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:09.344Z] 🎬 Starting cascade animation with 2 removed tiles
-syncMonitoring.ts:157 [2025-07-30T04:07:09.344Z] 🎬 Cascade animations: STARTED
-board-rendering.ts:2419 Uncaught TypeError: Cannot read properties of undefined (reading 'game')
-    at board-rendering.ts:2419:41
-(anonymous) @ board-rendering.ts:2419
-setTimeout
-createTileRemovalEffect @ board-rendering.ts:2418
-(anonymous) @ board-rendering.ts:1329
-animateTileRemovalAndCascade @ board-rendering.ts:1323
-(anonymous) @ PhaserGame.tsx:802
-Promise.then
-handleSinglePlayerCascade @ PhaserGame.tsx:800
-(anonymous) @ GameConnection.tsx:1334
-Promise.then
-(anonymous) @ GameConnection.tsx:1319
-setTimeout
-handleWordValid @ GameConnection.tsx:1318
-Emitter.emit @ socket__io-client.js?v=a41833a3:356
-emitEvent @ socket__io-client.js?v=a41833a3:2657
-onevent @ socket__io-client.js?v=a41833a3:2645
-onpacket @ socket__io-client.js?v=a41833a3:2616
-Emitter.emit @ socket__io-client.js?v=a41833a3:356
-(anonymous) @ socket__io-client.js?v=a41833a3:3220
-Promise.then
-(anonymous) @ socket__io-client.js?v=a41833a3:374
-ondecoded @ socket__io-client.js?v=a41833a3:3219
-Emitter.emit @ socket__io-client.js?v=a41833a3:356
-add @ socket__io-client.js?v=a41833a3:2071
-ondata @ socket__io-client.js?v=a41833a3:3208
-Emitter.emit @ socket__io-client.js?v=a41833a3:356
-_onPacket @ socket__io-client.js?v=a41833a3:1381
-Emitter.emit @ socket__io-client.js?v=a41833a3:356
-onPacket @ socket__io-client.js?v=a41833a3:555
-onData @ socket__io-client.js?v=a41833a3:547
-ws.onmessage @ socket__io-client.js?v=a41833a3:1011
-board-rendering.ts:2419 Uncaught TypeError: Cannot read properties of undefined (reading 'game')
-    at board-rendering.ts:2419:41
-(anonymous) @ board-rendering.ts:2419
-setTimeout
-createTileRemovalEffect @ board-rendering.ts:2418
-(anonymous) @ board-rendering.ts:1329
-animateTileRemovalAndCascade @ board-rendering.ts:1323
-(anonymous) @ PhaserGame.tsx:802
-Promise.then
-handleSinglePlayerCascade @ PhaserGame.tsx:800
-(anonymous) @ GameConnection.tsx:1334
-Promise.then
-(anonymous) @ GameConnection.tsx:1319
-setTimeout
-handleWordValid @ GameConnection.tsx:1318
-Emitter.emit @ socket__io-client.js?v=a41833a3:356
-emitEvent @ socket__io-client.js?v=a41833a3:2657
-onevent @ socket__io-client.js?v=a41833a3:2645
-onpacket @ socket__io-client.js?v=a41833a3:2616
-Emitter.emit @ socket__io-client.js?v=a41833a3:356
-(anonymous) @ socket__io-client.js?v=a41833a3:3220
-Promise.then
-(anonymous) @ socket__io-client.js?v=a41833a3:374
-ondecoded @ socket__io-client.js?v=a41833a3:3219
-Emitter.emit @ socket__io-client.js?v=a41833a3:356
-add @ socket__io-client.js?v=a41833a3:2071
-ondata @ socket__io-client.js?v=a41833a3:3208
-Emitter.emit @ socket__io-client.js?v=a41833a3:356
-_onPacket @ socket__io-client.js?v=a41833a3:1381
-Emitter.emit @ socket__io-client.js?v=a41833a3:356
-onPacket @ socket__io-client.js?v=a41833a3:555
-onData @ socket__io-client.js?v=a41833a3:547
-ws.onmessage @ socket__io-client.js?v=a41833a3:1011
-syncMonitoring.ts:157 [2025-07-30T04:07:09.710Z] ✅ Cascade animation complete: 367ms 🟢 (target: <400ms)
-syncMonitoring.ts:157 [2025-07-30T04:07:09.711Z] 🎬 Cascade animations: COMPLETED
-syncMonitoring.ts:157 [2025-07-30T04:07:10.284Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:10.285Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [updateWordDisplay] Set word builder text to: "I (1 points)" at position (332.66796875, 150)
-syncMonitoring.ts:157 [updateWordDisplay] Set word builder text to: "IF (5 points)" at position (332.66796875, 150)
+syncMonitoring.ts:157 Invalid word submitted: {word: 'LEON', reason: 'Word not found in dictionary'}
+syncMonitoring.ts:157 [Client] Cached invalid word: "LEON" - Word not found in dictionary (Cache size: 1)
+syncMonitoring.ts:157 [Client] Word validation latency: 6ms (INVALID) - "LEON"
+syncMonitoring.ts:157 [2025-07-30T16:49:46.316Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:46.316Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:46.349Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:46.349Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:46.488Z] 🔍 Starting throttled visual state validation...
+syncMonitoring.ts:157 [2025-07-30T16:49:46.488Z] ✅ Visual state validation passed
+syncMonitoring.ts:157 [2025-07-30T16:49:47.350Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:47.350Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:48.350Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:48.351Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:49.349Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:49.349Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:50.349Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:50.350Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [updateWordDisplay] Set word builder text to: "D (2 points)" at position (332.66796875, 150)
+syncMonitoring.ts:157 [2025-07-30T16:49:51.348Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:51.348Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [updateWordDisplay] Set word builder text to: "DO (3 points)" at position (332.66796875, 150)
+syncMonitoring.ts:157 [2025-07-30T16:49:51.487Z] 🔍 Starting throttled visual state validation...
+syncMonitoring.ts:157 [2025-07-30T16:49:51.488Z] ✅ Visual state validation passed
 syncMonitoring.ts:157 [updateWordDisplay] Cleared word builder text
-syncMonitoring.ts:157 [2025-07-30T04:07:10.944Z] Socket Event Received: game:score-update {playerId: 'y1R3XlmmE4bihUBfAAAC', score: 2, totalScore: 9}
-syncMonitoring.ts:157 Score update: {playerId: 'y1R3XlmmE4bihUBfAAAC', score: 2, totalScore: 9}
-syncMonitoring.ts:157 Session update: {session: {…}}
-syncMonitoring.ts:157 Valid word submitted: {word: 'IF', points: 2, score: 9}
-syncMonitoring.ts:157 [Client] Word validation latency: 6ms (VALID) - "IF"
-syncMonitoring.ts:157 [GameConnection] Single player word scored: "IF" = 2 points (server already applied multiplier)
-syncMonitoring.ts:157 [2025-07-30T04:07:10.944Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:10.945Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [GameContext] State change: currentRoom {from: null, triggeredBy: 'setCurrentRoom', timestamp: '2025-07-30T04:07:10.994Z', to: ƒ}
-syncMonitoring.ts:157 [GameContext] State change: playerSession {from: {…}, to: {…}, triggeredBy: 'setPlayerSession', timestamp: '2025-07-30T04:07:11.144Z'}
-syncMonitoring.ts:157 [2025-07-30T04:07:11.144Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:11.145Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:11.283Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:11.283Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:11.396Z] 🔍 Starting throttled visual state validation...
-syncMonitoring.ts:157 [2025-07-30T04:07:11.396Z] ⚠️ Visual state validation failed: 21 mismatches found between visual and logical state
+syncMonitoring.ts:157 [2025-07-30T16:49:51.682Z] Socket Event Received: game:tile-changes {removedPositions: Array(2), fallingTiles: Array(4), newTiles: Array(2), sequenceNumber: 11, timestamp: 1753894191677}
+syncMonitoring.ts:157 [2025-07-30T16:49:51.682Z] 📨 GameConnection received tile changes (seq: 11): {removed: 2, falling: 4, new: 2}
+syncMonitoring.ts:157 [2025-07-30T16:49:51.682Z] 📨 PhaserGame received tile changes from GameConnection (seq: 11, latency: 5ms): {removed: 2, falling: 4, new: 2}
+syncMonitoring.ts:157 [2025-07-30T16:49:51.682Z] ⚠️ No pending tile changes for sequence number: 1
 (anonymous) @ syncMonitoring.ts:157
-performThrottledValidation @ board-rendering.ts:2179
-(anonymous) @ board-rendering.ts:2141
-setTimeout
-(anonymous) @ board-rendering.ts:2140
-setInterval
-startPeriodicVisualValidation @ board-rendering.ts:2123
-updateBoardDisplayWrapper @ PhaserGame.tsx:1485
-(anonymous) @ PhaserGame.tsx:535
-Promise.then
-(anonymous) @ PhaserGame.tsx:515
+processQueuedTileChanges @ PhaserGame.tsx:1574
+handleTileChanges @ PhaserGame.tsx:652
+(anonymous) @ GameConnection.tsx:684
+(anonymous) @ schemas.ts:318
 Emitter.emit @ socket__io-client.js?v=a41833a3:356
 emitEvent @ socket__io-client.js?v=a41833a3:2657
 onevent @ socket__io-client.js?v=a41833a3:2645
@@ -596,27 +320,34 @@ Emitter.emit @ socket__io-client.js?v=a41833a3:356
 onPacket @ socket__io-client.js?v=a41833a3:555
 onData @ socket__io-client.js?v=a41833a3:547
 ws.onmessage @ socket__io-client.js?v=a41833a3:1011
-syncMonitoring.ts:157 [2025-07-30T04:07:11.396Z] 🔍 Mismatches: (21) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
-syncMonitoring.ts:157 [2025-07-30T04:07:11.396Z] ⏱️ Recovery attempt 1 scheduled with 4000ms backoff
-syncMonitoring.ts:157 [GameConnection] Triggering tile removal for 2 tiles
-syncMonitoring.ts:157 [2025-07-30T04:07:11.445Z] 🎮 Received single-player cascade for 2 tiles
-syncMonitoring.ts:157 [2025-07-30T04:07:11.594Z] 🎬 Starting cascade animation with 2 removed tiles
-syncMonitoring.ts:157 [2025-07-30T04:07:11.594Z] 🎬 Cascade animations: STARTED
-board-rendering.ts:2419 Uncaught TypeError: Cannot read properties of undefined (reading 'game')
-    at board-rendering.ts:2419:41
-(anonymous) @ board-rendering.ts:2419
-setTimeout
-createTileRemovalEffect @ board-rendering.ts:2418
-(anonymous) @ board-rendering.ts:1329
-animateTileRemovalAndCascade @ board-rendering.ts:1323
-(anonymous) @ PhaserGame.tsx:802
-Promise.then
-handleSinglePlayerCascade @ PhaserGame.tsx:800
-(anonymous) @ GameConnection.tsx:1334
-Promise.then
-(anonymous) @ GameConnection.tsx:1319
-setTimeout
-handleWordValid @ GameConnection.tsx:1318
+syncMonitoring.ts:157 [2025-07-30T16:49:51.682Z] Socket Event Received: game:score-update {playerId: '7y9OywCLlYVcVFtlAAAi', score: 2, totalScore: 12}
+syncMonitoring.ts:157 Score update: {playerId: '7y9OywCLlYVcVFtlAAAi', score: 2, totalScore: 12}
+syncMonitoring.ts:157 Session update: {session: {…}}
+syncMonitoring.ts:157 Valid word submitted: {word: 'DO', points: 2, score: 12}
+syncMonitoring.ts:157 [Client] Word validation latency: 6ms (VALID) - "DO"
+syncMonitoring.ts:157 [GameConnection] Single player word scored: "DO" = 2 points (server already applied multiplier)
+syncMonitoring.ts:157 [2025-07-30T16:49:51.683Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:51.683Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [GameContext] State change: currentRoom {from: null, triggeredBy: 'setCurrentRoom', timestamp: '2025-07-30T16:49:51.733Z', to: ƒ}
+syncMonitoring.ts:157 [GameContext] State change: playerSession {from: {…}, to: {…}, triggeredBy: 'setPlayerSession', timestamp: '2025-07-30T16:49:51.883Z'}
+syncMonitoring.ts:157 [2025-07-30T16:49:51.883Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:51.883Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:52.349Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:52.350Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [updateWordDisplay] Set word builder text to: "W (4 points)" at position (332.66796875, 150)
+syncMonitoring.ts:157 [updateWordDisplay] Set word builder text to: "WE (5 points)" at position (332.66796875, 150)
+syncMonitoring.ts:157 [2025-07-30T16:49:53.348Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:53.349Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [updateWordDisplay] Cleared word builder text
+syncMonitoring.ts:157 [2025-07-30T16:49:53.515Z] Socket Event Received: game:tile-changes {removedPositions: Array(2), fallingTiles: Array(0), newTiles: Array(2), sequenceNumber: 12, timestamp: 1753894193509}
+syncMonitoring.ts:157 [2025-07-30T16:49:53.515Z] 📨 GameConnection received tile changes (seq: 12): {removed: 2, falling: 0, new: 2}
+syncMonitoring.ts:157 [2025-07-30T16:49:53.515Z] 📨 PhaserGame received tile changes from GameConnection (seq: 12, latency: 6ms): {removed: 2, falling: 0, new: 2}
+syncMonitoring.ts:157 [2025-07-30T16:49:53.515Z] ⚠️ No pending tile changes for sequence number: 1
+(anonymous) @ syncMonitoring.ts:157
+processQueuedTileChanges @ PhaserGame.tsx:1574
+handleTileChanges @ PhaserGame.tsx:652
+(anonymous) @ GameConnection.tsx:684
+(anonymous) @ schemas.ts:318
 Emitter.emit @ socket__io-client.js?v=a41833a3:356
 emitEvent @ socket__io-client.js?v=a41833a3:2657
 onevent @ socket__io-client.js?v=a41833a3:2645
@@ -635,21 +366,42 @@ Emitter.emit @ socket__io-client.js?v=a41833a3:356
 onPacket @ socket__io-client.js?v=a41833a3:555
 onData @ socket__io-client.js?v=a41833a3:547
 ws.onmessage @ socket__io-client.js?v=a41833a3:1011
-board-rendering.ts:2419 Uncaught TypeError: Cannot read properties of undefined (reading 'game')
-    at board-rendering.ts:2419:41
-(anonymous) @ board-rendering.ts:2419
-setTimeout
-createTileRemovalEffect @ board-rendering.ts:2418
-(anonymous) @ board-rendering.ts:1329
-animateTileRemovalAndCascade @ board-rendering.ts:1323
-(anonymous) @ PhaserGame.tsx:802
-Promise.then
-handleSinglePlayerCascade @ PhaserGame.tsx:800
-(anonymous) @ GameConnection.tsx:1334
-Promise.then
-(anonymous) @ GameConnection.tsx:1319
-setTimeout
-handleWordValid @ GameConnection.tsx:1318
+syncMonitoring.ts:157 [2025-07-30T16:49:53.515Z] Socket Event Received: game:score-update {playerId: '7y9OywCLlYVcVFtlAAAi', score: 2, totalScore: 14}
+syncMonitoring.ts:157 Score update: {playerId: '7y9OywCLlYVcVFtlAAAi', score: 2, totalScore: 14}
+syncMonitoring.ts:157 Session update: {session: {…}}
+syncMonitoring.ts:157 Valid word submitted: {word: 'WE', points: 2, score: 14}
+syncMonitoring.ts:157 [Client] Word validation latency: 8ms (VALID) - "WE"
+syncMonitoring.ts:157 [GameConnection] Single player word scored: "WE" = 2 points (server already applied multiplier)
+syncMonitoring.ts:157 [2025-07-30T16:49:53.516Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:53.516Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [GameContext] State change: currentRoom {from: null, triggeredBy: 'setCurrentRoom', timestamp: '2025-07-30T16:49:53.566Z', to: ƒ}
+syncMonitoring.ts:157 [GameContext] State change: playerSession {from: {…}, to: {…}, triggeredBy: 'setPlayerSession', timestamp: '2025-07-30T16:49:53.716Z'}
+syncMonitoring.ts:157 [2025-07-30T16:49:53.717Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:53.717Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:54.349Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:54.349Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:55.350Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:55.350Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [updateWordDisplay] Set word builder text to: "B (3 points)" at position (332.66796875, 150)
+syncMonitoring.ts:157 [updateWordDisplay] Set word builder text to: "BE (4 points)" at position (332.66796875, 150)
+syncMonitoring.ts:157 [updateWordDisplay] Set word builder text to: "BES (5 points)" at position (332.66796875, 150)
+syncMonitoring.ts:157 [2025-07-30T16:49:56.348Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:56.349Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:56.488Z] 🔍 Starting throttled visual state validation...
+syncMonitoring.ts:157 [2025-07-30T16:49:56.488Z] ✅ Visual state validation passed
+syncMonitoring.ts:157 [updateWordDisplay] Set word builder text to: "BEST (6 points)" at position (332.66796875, 150)
+syncMonitoring.ts:157 [2025-07-30T16:49:57.349Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:57.349Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [updateWordDisplay] Cleared word builder text
+syncMonitoring.ts:157 [2025-07-30T16:49:57.666Z] Socket Event Received: game:tile-changes {removedPositions: Array(4), fallingTiles: Array(1), newTiles: Array(4), sequenceNumber: 13, timestamp: 1753894197663}
+syncMonitoring.ts:157 [2025-07-30T16:49:57.666Z] 📨 GameConnection received tile changes (seq: 13): {removed: 4, falling: 1, new: 4}
+syncMonitoring.ts:157 [2025-07-30T16:49:57.666Z] 📨 PhaserGame received tile changes from GameConnection (seq: 13, latency: 3ms): {removed: 4, falling: 1, new: 4}
+syncMonitoring.ts:157 [2025-07-30T16:49:57.666Z] ⚠️ No pending tile changes for sequence number: 1
+(anonymous) @ syncMonitoring.ts:157
+processQueuedTileChanges @ PhaserGame.tsx:1574
+handleTileChanges @ PhaserGame.tsx:652
+(anonymous) @ GameConnection.tsx:684
+(anonymous) @ schemas.ts:318
 Emitter.emit @ socket__io-client.js?v=a41833a3:356
 emitEvent @ socket__io-client.js?v=a41833a3:2657
 onevent @ socket__io-client.js?v=a41833a3:2645
@@ -668,31 +420,81 @@ Emitter.emit @ socket__io-client.js?v=a41833a3:356
 onPacket @ socket__io-client.js?v=a41833a3:555
 onData @ socket__io-client.js?v=a41833a3:547
 ws.onmessage @ socket__io-client.js?v=a41833a3:1011
-syncMonitoring.ts:157 [2025-07-30T04:07:11.977Z] ✅ Cascade animation complete: 383ms 🟢 (target: <400ms)
-syncMonitoring.ts:157 [2025-07-30T04:07:11.977Z] 🎬 Cascade animations: COMPLETED
-syncMonitoring.ts:157 [2025-07-30T04:07:12.284Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:12.284Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:13.283Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:13.284Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:14.283Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:14.284Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:15.283Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:15.284Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:15.397Z] 🔧 Attempting visual state recovery...
-syncMonitoring.ts:157 [2025-07-30T04:07:15.397Z] 🔧 Correcting 9 visual state mismatches...
-syncMonitoring.ts:157 [2025-07-30T04:07:15.402Z] ✅ Corrected 9 visual state mismatches
-syncMonitoring.ts:157 [2025-07-30T04:07:15.402Z] ✅ Recovery successful - corrected 9 tiles
-syncMonitoring.ts:157 [2025-07-30T04:07:16.283Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:16.283Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:16.396Z] 🔍 Starting throttled visual state validation...
-syncMonitoring.ts:157 [2025-07-30T04:07:16.396Z] ✅ Visual state validation passed
-syncMonitoring.ts:157 [2025-07-30T04:07:17.283Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:17.284Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:18.283Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:18.284Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:19.283Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:19.284Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:19.630Z] 🏥 Running deployment health checks...
+syncMonitoring.ts:157 [2025-07-30T16:49:57.666Z] Socket Event Received: game:score-update {playerId: '7y9OywCLlYVcVFtlAAAi', score: 4, totalScore: 18}
+syncMonitoring.ts:157 Score update: {playerId: '7y9OywCLlYVcVFtlAAAi', score: 4, totalScore: 18}
+syncMonitoring.ts:157 Session update: {session: {…}}
+syncMonitoring.ts:157 Valid word submitted: {word: 'BEST', points: 4, score: 18}
+syncMonitoring.ts:157 [Client] Word validation latency: 5ms (VALID) - "BEST"
+syncMonitoring.ts:157 [GameConnection] Single player word scored: "BEST" = 4 points (server already applied multiplier)
+syncMonitoring.ts:157 [2025-07-30T16:49:57.667Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:57.668Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [GameContext] State change: currentRoom {from: null, triggeredBy: 'setCurrentRoom', timestamp: '2025-07-30T16:49:57.718Z', to: ƒ}
+syncMonitoring.ts:157 [GameContext] State change: playerSession {from: {…}, to: {…}, triggeredBy: 'setPlayerSession', timestamp: '2025-07-30T16:49:57.867Z'}
+syncMonitoring.ts:157 [2025-07-30T16:49:57.868Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:57.868Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:58.350Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:58.351Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:59.348Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:49:59.349Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [updateWordDisplay] Set word builder text to: "W (4 points)" at position (332.66796875, 150)
+syncMonitoring.ts:157 [updateWordDisplay] Set word builder text to: "WO (5 points)" at position (332.66796875, 150)
+syncMonitoring.ts:157 [updateWordDisplay] Set word builder text to: "WOV (9 points)" at position (332.66796875, 150)
+syncMonitoring.ts:157 [2025-07-30T16:50:00.349Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:50:00.349Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [updateWordDisplay] Set word builder text to: "WOVE (10 points)" at position (332.66796875, 150)
+syncMonitoring.ts:157 [2025-07-30T16:50:01.348Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:50:01.348Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:50:01.487Z] 🔍 Starting throttled visual state validation...
+syncMonitoring.ts:157 [2025-07-30T16:50:01.488Z] ✅ Visual state validation passed
+syncMonitoring.ts:157 [updateWordDisplay] Cleared word builder text
+syncMonitoring.ts:157 [2025-07-30T16:50:02.016Z] Socket Event Received: game:tile-changes {removedPositions: Array(4), fallingTiles: Array(0), newTiles: Array(4), sequenceNumber: 14, timestamp: 1753894202013}
+syncMonitoring.ts:157 [2025-07-30T16:50:02.016Z] 📨 GameConnection received tile changes (seq: 14): {removed: 4, falling: 0, new: 4}
+syncMonitoring.ts:157 [2025-07-30T16:50:02.017Z] 📨 PhaserGame received tile changes from GameConnection (seq: 14, latency: 4ms): {removed: 4, falling: 0, new: 4}
+syncMonitoring.ts:157 [2025-07-30T16:50:02.017Z] ⚠️ No pending tile changes for sequence number: 1
+(anonymous) @ syncMonitoring.ts:157
+processQueuedTileChanges @ PhaserGame.tsx:1574
+handleTileChanges @ PhaserGame.tsx:652
+(anonymous) @ GameConnection.tsx:684
+(anonymous) @ schemas.ts:318
+Emitter.emit @ socket__io-client.js?v=a41833a3:356
+emitEvent @ socket__io-client.js?v=a41833a3:2657
+onevent @ socket__io-client.js?v=a41833a3:2645
+onpacket @ socket__io-client.js?v=a41833a3:2616
+Emitter.emit @ socket__io-client.js?v=a41833a3:356
+(anonymous) @ socket__io-client.js?v=a41833a3:3220
+Promise.then
+(anonymous) @ socket__io-client.js?v=a41833a3:374
+ondecoded @ socket__io-client.js?v=a41833a3:3219
+Emitter.emit @ socket__io-client.js?v=a41833a3:356
+add @ socket__io-client.js?v=a41833a3:2071
+ondata @ socket__io-client.js?v=a41833a3:3208
+Emitter.emit @ socket__io-client.js?v=a41833a3:356
+_onPacket @ socket__io-client.js?v=a41833a3:1381
+Emitter.emit @ socket__io-client.js?v=a41833a3:356
+onPacket @ socket__io-client.js?v=a41833a3:555
+onData @ socket__io-client.js?v=a41833a3:547
+ws.onmessage @ socket__io-client.js?v=a41833a3:1011
+syncMonitoring.ts:157 [2025-07-30T16:50:02.017Z] Socket Event Received: game:score-update {playerId: '7y9OywCLlYVcVFtlAAAi', score: 4, totalScore: 22}
+syncMonitoring.ts:157 Score update: {playerId: '7y9OywCLlYVcVFtlAAAi', score: 4, totalScore: 22}
+syncMonitoring.ts:157 Session update: {session: {…}}
+syncMonitoring.ts:157 Valid word submitted: {word: 'WOVE', points: 4, score: 22}
+syncMonitoring.ts:157 [Client] Word validation latency: 6ms (VALID) - "WOVE"
+syncMonitoring.ts:157 [GameConnection] Single player word scored: "WOVE" = 4 points (server already applied multiplier)
+syncMonitoring.ts:157 [2025-07-30T16:50:02.018Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:50:02.018Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [GameContext] State change: currentRoom {from: null, triggeredBy: 'setCurrentRoom', timestamp: '2025-07-30T16:50:02.068Z', to: ƒ}
+syncMonitoring.ts:157 [GameContext] State change: playerSession {from: {…}, to: {…}, triggeredBy: 'setPlayerSession', timestamp: '2025-07-30T16:50:02.218Z'}
+syncMonitoring.ts:157 [2025-07-30T16:50:02.219Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:50:02.219Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:50:02.348Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:50:02.348Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:50:03.349Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:50:03.350Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:50:04.350Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:50:04.351Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:50:05.349Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:50:05.349Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:50:05.546Z] 🏥 Running deployment health checks...
 deploymentHealthCheck.ts:157  HEAD http://localhost:5173/favicon.ico net::ERR_ABORTED 404 (Not Found)
 checkNetworkHealth @ deploymentHealthCheck.ts:157
 runHealthChecks @ deploymentHealthCheck.ts:103
@@ -702,41 +504,41 @@ setInterval
 startHealthChecks @ deploymentHealthCheck.ts:73
 DeploymentHealthService @ deploymentHealthCheck.ts:40
 (anonymous) @ deploymentHealthCheck.ts:370
-syncMonitoring.ts:157 [2025-07-30T04:07:20.284Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:20.284Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:21.283Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:21.283Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:21.396Z] 🔍 Starting throttled visual state validation...
-syncMonitoring.ts:157 [2025-07-30T04:07:21.396Z] ✅ Visual state validation passed
-syncMonitoring.ts:157 [2025-07-30T04:07:22.284Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:22.284Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:23.283Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:23.284Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:24.284Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:24.284Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:50:06.349Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:50:06.350Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:50:06.487Z] 🔍 Starting throttled visual state validation...
+syncMonitoring.ts:157 [2025-07-30T16:50:06.488Z] ✅ Visual state validation passed
+syncMonitoring.ts:157 [2025-07-30T16:50:07.350Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:50:07.351Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:50:08.349Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:50:08.350Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [updateWordDisplay] Set word builder text to: "Z (10 points)" at position (332.66796875, 150)
+syncMonitoring.ts:157 [updateWordDisplay] Set word builder text to: "ZE (11 points)" at position (332.66796875, 150)
+syncMonitoring.ts:157 [2025-07-30T16:50:09.348Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:50:09.348Z] 🎯 AppContent render: gameState=single-player, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [updateWordDisplay] Set word builder text to: "ZEN (12 points)" at position (332.66796875, 150)
 syncMonitoring.ts:157 [GameConnection] Single player round complete
-syncMonitoring.ts:157 [GameContext] State change: gameState {from: 'single-player', to: 'single-player-end', triggeredBy: 'setGameState', timestamp: '2025-07-30T04:07:25.284Z'}
-syncMonitoring.ts:157 [2025-07-30T04:07:25.284Z] 🎯 AppContent render: gameState=single-player-end, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:25.285Z] 🎯 AppContent render: gameState=single-player-end, phaserKey=phaser-stable-default-room, sessionId=y1R3XlmmE4bihUBfAAAC, roomCode=none
-syncMonitoring.ts:157 [2025-07-30T04:07:25.287Z] 🎮 PhaserGame UNMOUNTING - Instance ID: phaser-1753848415281-31tw4u7la
-syncMonitoring.ts:157 [2025-07-30T04:07:25.287Z] 🧹 Starting Phaser cleanup - Instance: phaser-1753848415281-31tw4u7la
-syncMonitoring.ts:157 [2025-07-30T04:07:25.287Z] 📡 Cleaning up socket listeners - Instance: phaser-1753848415281-31tw4u7la
-syncMonitoring.ts:157 [2025-07-30T04:07:25.287Z] 📡 Cleaned up custom tile changes event listener
-syncMonitoring.ts:157 [2025-07-30T04:07:25.288Z] 📡 Cleaned up board update event listener
-syncMonitoring.ts:157 [2025-07-30T04:07:25.288Z] 📡 Cleaned up single-player cascade event listener
-syncMonitoring.ts:157 [2025-07-30T04:07:25.288Z] 🧹 Clearing 0 component-level timeouts
-syncMonitoring.ts:157 [2025-07-30T04:07:25.288Z] 🧹 Clearing 0 global particle effect timeouts
-syncMonitoring.ts:157 [2025-07-30T04:07:25.288Z] 🎮 Destroying Phaser game instance - Instance: phaser-1753848415281-31tw4u7la
-syncMonitoring.ts:157 [2025-07-30T04:07:25.288Z] 🎬 Active scenes before destruction: 1
-syncMonitoring.ts:157 [2025-07-30T04:07:25.288Z] ✅ Phaser game instance destroyed successfully - Instance: phaser-1753848415281-31tw4u7la
+syncMonitoring.ts:157 [GameContext] State change: gameState {from: 'single-player', to: 'single-player-end', triggeredBy: 'setGameState', timestamp: '2025-07-30T16:50:10.348Z'}
+syncMonitoring.ts:157 [2025-07-30T16:50:10.348Z] 🎯 AppContent render: gameState=single-player-end, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:50:10.348Z] 🎯 AppContent render: gameState=single-player-end, phaserKey=phaser-stable-default-room, sessionId=7y9OywCLlYVcVFtlAAAi, roomCode=none
+syncMonitoring.ts:157 [2025-07-30T16:50:10.350Z] 🎮 PhaserGame UNMOUNTING - Instance ID: phaser-1753894180346-60ttt9bgr
+syncMonitoring.ts:157 [2025-07-30T16:50:10.350Z] 🧹 Starting Phaser cleanup - Instance: phaser-1753894180346-60ttt9bgr
+syncMonitoring.ts:157 [2025-07-30T16:50:10.350Z] 📡 Cleaning up socket listeners - Instance: phaser-1753894180346-60ttt9bgr
+syncMonitoring.ts:157 [2025-07-30T16:50:10.350Z] 📡 Cleaned up custom tile changes event listener
+syncMonitoring.ts:157 [2025-07-30T16:50:10.350Z] 📡 Cleaned up board update event listener
+syncMonitoring.ts:157 [2025-07-30T16:50:10.350Z] 🧹 Clearing 0 component-level timeouts
+syncMonitoring.ts:157 [2025-07-30T16:50:10.350Z] 🧹 Clearing 0 global particle effect timeouts
+syncMonitoring.ts:157 [2025-07-30T16:50:10.350Z] 🎮 Destroying Phaser game instance - Instance: phaser-1753894180346-60ttt9bgr
+syncMonitoring.ts:157 [2025-07-30T16:50:10.351Z] 🎬 Active scenes before destruction: 1
+syncMonitoring.ts:157 [2025-07-30T16:50:10.351Z] ✅ Phaser game instance destroyed successfully - Instance: phaser-1753894180346-60ttt9bgr
 syncMonitoring.ts:157 [GameConnection] Cleaning up single player timer
 syncMonitoring.ts:157 [GameConnection] Timer prerequisites not met: gameState=single-player-end, duration=30
 syncMonitoring.ts:157 Failed to clear module timeouts: TypeError: clearModuleTimeouts is not a function
-    at PhaserGame.tsx:229:9
+    at PhaserGame.tsx:225:9
 (anonymous) @ syncMonitoring.ts:157
-(anonymous) @ PhaserGame.tsx:231
+(anonymous) @ PhaserGame.tsx:227
 Promise.catch
-(anonymous) @ PhaserGame.tsx:230
+(anonymous) @ PhaserGame.tsx:226
 safelyCallDestroy @ chunk-WAYAUXAG.js?v=a41833a3:16769
 commitHookEffectListUnmount @ chunk-WAYAUXAG.js?v=a41833a3:16896
 commitPassiveUnmountInsideDeletedTreeOnFiber @ chunk-WAYAUXAG.js?v=a41833a3:18311
@@ -749,13 +551,14 @@ flushPassiveEffects @ chunk-WAYAUXAG.js?v=a41833a3:19475
 workLoop @ chunk-WAYAUXAG.js?v=a41833a3:197
 flushWork @ chunk-WAYAUXAG.js?v=a41833a3:176
 performWorkUntilDeadline @ chunk-WAYAUXAG.js?v=a41833a3:384
-syncMonitoring.ts:157 [2025-07-30T04:07:25.372Z] ⏭️ Visual validation skipped - bypass conditions met
-syncMonitoring.ts:157 [2025-07-30T04:07:25.373Z] 📊 Recovery Metrics: {state: 'none', totalAttempts: 0, successRate: '0.0%', recentFailures: 0, historyLength: 0}
-syncMonitoring.ts:157 [2025-07-30T04:07:30.373Z] ⏭️ Visual validation skipped - bypass conditions met
-syncMonitoring.ts:157 [2025-07-30T04:07:35.372Z] ⏭️ Visual validation skipped - bypass conditions met
-syncMonitoring.ts:157 [2025-07-30T04:07:40.372Z] ⏭️ Visual validation skipped - bypass conditions met
-syncMonitoring.ts:157 [2025-07-30T04:07:45.372Z] ⏭️ Visual validation skipped - bypass conditions met
-syncMonitoring.ts:157 [2025-07-30T04:07:49.630Z] 🏥 Running deployment health checks...
+syncMonitoring.ts:157 [2025-07-30T16:50:10.474Z] ⏭️ Visual validation skipped - bypass conditions met
+syncMonitoring.ts:157 [2025-07-30T16:50:10.474Z] 📊 Recovery Metrics: {state: 'none', totalAttempts: 0, successRate: '0.0%', recentFailures: 0, historyLength: 0}
+syncMonitoring.ts:157 [2025-07-30T16:50:15.473Z] ⏭️ Visual validation skipped - bypass conditions met
+syncMonitoring.ts:157 [2025-07-30T16:50:20.473Z] ⏭️ Visual validation skipped - bypass conditions met
+syncMonitoring.ts:157 [2025-07-30T16:50:25.474Z] ⏭️ Visual validation skipped - bypass conditions met
+syncMonitoring.ts:157 [2025-07-30T16:50:30.473Z] ⏭️ Visual validation skipped - bypass conditions met
+syncMonitoring.ts:157 [2025-07-30T16:50:35.473Z] ⏭️ Visual validation skipped - bypass conditions met
+syncMonitoring.ts:157 [2025-07-30T16:50:35.545Z] 🏥 Running deployment health checks...
 deploymentHealthCheck.ts:157  HEAD http://localhost:5173/favicon.ico net::ERR_ABORTED 404 (Not Found)
 checkNetworkHealth @ deploymentHealthCheck.ts:157
 runHealthChecks @ deploymentHealthCheck.ts:103
@@ -765,9 +568,26 @@ setInterval
 startHealthChecks @ deploymentHealthCheck.ts:73
 DeploymentHealthService @ deploymentHealthCheck.ts:40
 (anonymous) @ deploymentHealthCheck.ts:370
-syncMonitoring.ts:157 [2025-07-30T04:07:50.372Z] ⏭️ Visual validation skipped - bypass conditions met
-syncMonitoring.ts:157 [2025-07-30T04:07:55.372Z] ⏭️ Visual validation skipped - bypass conditions met
-syncMonitoring.ts:157 [2025-07-30T04:07:55.373Z] 📊 Recovery Metrics: {state: 'none', totalAttempts: 0, successRate: '0.0%', recentFailures: 0, historyLength: 0}
-syncMonitoring.ts:157 [2025-07-30T04:08:00.372Z] ⏭️ Visual validation skipped - bypass conditions met
-syncMonitoring.ts:157 [2025-07-30T04:08:05.373Z] ⏭️ Visual validation skipped - bypass conditions met
-syncMonitoring.ts:157 [2025-07-30T04:08:10.372Z] ⏭️ Visual validation skipped - bypass conditions met
+syncMonitoring.ts:157 [2025-07-30T16:50:40.473Z] ⏭️ Visual validation skipped - bypass conditions met
+syncMonitoring.ts:157 [2025-07-30T16:50:40.473Z] 📊 Recovery Metrics: {state: 'none', totalAttempts: 0, successRate: '0.0%', recentFailures: 0, historyLength: 0}
+syncMonitoring.ts:157 [2025-07-30T16:50:45.473Z] ⏭️ Visual validation skipped - bypass conditions met
+syncMonitoring.ts:157 [2025-07-30T16:50:50.473Z] ⏭️ Visual validation skipped - bypass conditions met
+syncMonitoring.ts:157 [2025-07-30T16:50:55.473Z] ⏭️ Visual validation skipped - bypass conditions met
+syncMonitoring.ts:157 [2025-07-30T16:51:00.473Z] ⏭️ Visual validation skipped - bypass conditions met
+syncMonitoring.ts:157 [2025-07-30T16:51:05.472Z] ⏭️ Visual validation skipped - bypass conditions met
+syncMonitoring.ts:157 [2025-07-30T16:51:05.545Z] 🏥 Running deployment health checks...
+deploymentHealthCheck.ts:157  HEAD http://localhost:5173/favicon.ico net::ERR_ABORTED 404 (Not Found)
+checkNetworkHealth @ deploymentHealthCheck.ts:157
+runHealthChecks @ deploymentHealthCheck.ts:103
+await in runHealthChecks
+(anonymous) @ deploymentHealthCheck.ts:74
+setInterval
+startHealthChecks @ deploymentHealthCheck.ts:73
+DeploymentHealthService @ deploymentHealthCheck.ts:40
+(anonymous) @ deploymentHealthCheck.ts:370
+syncMonitoring.ts:157 [2025-07-30T16:51:10.473Z] ⏭️ Visual validation skipped - bypass conditions met
+syncMonitoring.ts:157 [2025-07-30T16:51:10.474Z] 📊 Recovery Metrics: {state: 'none', totalAttempts: 0, successRate: '0.0%', recentFailures: 0, historyLength: 0}
+syncMonitoring.ts:157 [2025-07-30T16:51:15.473Z] ⏭️ Visual validation skipped - bypass conditions met
+syncMonitoring.ts:157 [2025-07-30T16:51:20.473Z] ⏭️ Visual validation skipped - bypass conditions met
+syncMonitoring.ts:157 [2025-07-30T16:51:25.473Z] ⏭️ Visual validation skipped - bypass conditions met
+syncMonitoring.ts:157 [2025-07-30T16:51:30.473Z] ⏭️ Visual validation skipped - bypass conditions met
